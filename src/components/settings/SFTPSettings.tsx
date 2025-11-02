@@ -148,6 +148,11 @@ export function SFTPSettings() {
       const sftpData = await provisionSftp(user.id);
       console.log('✅ SFTP provisioning successful:', sftpData);
 
+      // Validate response data
+      if (!sftpData.username || !sftpData.host_name || !sftpData.port_number) {
+        throw new Error('Invalid SFTP response: missing required fields');
+      }
+
       // Update state with new credentials
       setCredentials(sftpData);
       setShowCredentials(true);
@@ -336,8 +341,8 @@ export function SFTPSettings() {
                   תכונות אבטחה
                 </h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• שם משתמש: ftp_{user.id} (ייחודי לכל משתמש)</li>
-                  <li>• תיקיית עבודה מבודדת: /sftp/{user.id}/upload</li>
+                  <li>• שם משתמש ייחודי לכל משתמש</li>
+                  <li>• תיקיית עבודה מבודדת</li>
                   <li>• סיסמה חדשה בכל הפעלה (לא נשמרת במסד הנתונים)</li>
                   <li>• בדיקת חיבור אוטומטית עם פרטי החשבון</li>
                   <li>• עיבוד אוטומטי של CSV לצינור יהלומים</li>
@@ -395,7 +400,9 @@ export function SFTPSettings() {
               )}
 
               {/* Account Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {credentials && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Folder className="h-4 w-4" />
@@ -429,10 +436,10 @@ export function SFTPSettings() {
                     </Button>
                   </div>
                 </div>
-              </div>
+                  </div>
 
-              {showCredentials && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {showCredentials && credentials.host_name && credentials.port_number && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>שרת SFTP</Label>
                     <div className="flex items-center gap-2">
@@ -468,7 +475,9 @@ export function SFTPSettings() {
                       </Button>
                     </div>
                   </div>
-                </div>
+                 </div>
+               )}
+                </>
               )}
 
               {lastProvisionTime && (
