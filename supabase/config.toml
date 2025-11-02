@@ -70,3 +70,9 @@ verify_jwt = false
 
 [functions.send-individual-message]
 verify_jwt = false
+
+[functions.generate-seller-message]
+verify_jwt = false
+
+[functions.send-seller-message]
+verify_jwt = false

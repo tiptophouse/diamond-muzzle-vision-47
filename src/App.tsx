@@ -21,6 +21,7 @@ import InsightsPage from './pages/InsightsPage';
 import DiamondAgentsPage from './pages/DiamondAgentsPage';
 import ExecutiveAgentsPage from './pages/ExecutiveAgentsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import NotificationPageFeatureTesting from './pages/NotificationPageFeatureTesting';
 import ProfilePage from './pages/ProfilePage';
 import WishlistPage from './pages/WishlistPage';
 import PublicDiamondPage from './pages/PublicDiamondPage';
@@ -143,11 +144,16 @@ function App() {
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />
-                  <Route path="/notifications" element={
-                    <AuthenticatedRoute>
-                      <NotificationsPage />
-                    </AuthenticatedRoute>
-                  } />
+          <Route path="/notifications" element={
+            <AuthenticatedRoute>
+              <NotificationsPage />
+            </AuthenticatedRoute>
+          } />
+          <Route path="/notifications-test" element={
+            <AuthenticatedRoute>
+              <NotificationPageFeatureTesting />
+            </AuthenticatedRoute>
+          } />
                   <Route path="/profile" element={
                     <AuthenticatedRoute>
                       <ProfilePage />
