@@ -18,6 +18,8 @@ interface DiamondMatch {
   clarity: string;
   total_price?: number;
   price_per_carat: number;
+  cut?: string;
+  picture?: string;
 }
 
 interface BuyerInfo {
@@ -71,6 +73,8 @@ export function GroupedNotificationCard({
         color: m.color,
         clarity: m.clarity,
         price_per_carat: m.price_per_carat,
+        cut: m.cut,
+        picture: m.picture,
       })),
     });
     

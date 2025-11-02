@@ -63,6 +63,8 @@ export function ContactBuyerDialog({
   const generateMessage = async () => {
     setLoading(true);
     try {
+      console.log('🤖 Generating AI message for buyer:', buyerName);
+      
       const { data, error } = await supabase.functions.invoke('generate-buyer-message', {
         body: {
           diamonds,
@@ -71,16 +73,35 @@ export function ContactBuyerDialog({
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Edge function error:', error);
+        throw error;
+      }
 
+      if (!data) {
+        throw new Error('No data returned from edge function');
+      }
+
+      console.log('✅ AI message generated successfully');
       setGeneratedMessage(data.message);
       setDiamondData(data.diamonds);
       setTotalValue(data.totalValue);
       impactOccurred('light');
+      toast.success('Message generated successfully!');
       
-    } catch (error) {
-      console.error('Failed to generate message:', error);
-      toast.error('Failed to generate message');
+    } catch (error: any) {
+      console.error('❌ Failed to generate message:', error);
+      
+      // Provide helpful error messages
+      if (error?.message?.includes('LOVABLE_API_KEY')) {
+        toast.error('AI service not configured. Please contact support.');
+      } else if (error?.status === 429) {
+        toast.error('Too many requests. Please wait a moment and try again.');
+      } else if (error?.status === 402) {
+        toast.error('AI credits exhausted. Please add more credits.');
+      } else {
+        toast.error('Failed to generate message. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -100,8 +121,10 @@ export function ContactBuyerDialog({
     try {
       impactOccurred('medium');
       
-      // Track the contact
-      await supabase.functions.invoke('track-buyer-contact', {
+      console.log('📞 Opening Telegram chat with buyer:', buyerId);
+      
+      // Track the contact (fire and forget - don't block the user)
+      supabase.functions.invoke('track-buyer-contact', {
         body: {
           seller_telegram_id: sellerTelegramId,
           buyer_telegram_id: buyerId,
@@ -112,13 +135,17 @@ export function ContactBuyerDialog({
           message_preview: generatedMessage,
           diamonds_data: diamondData,
         },
-      });
+      }).catch(err => console.error('⚠️ Failed to track contact:', err));
 
-      // Open Telegram chat
+      // Open Telegram chat - prioritize Telegram SDK
+      const telegramLink = `https://t.me/user?id=${buyerId}`;
+      
       if (webApp && typeof (webApp as any).openTelegramLink === 'function') {
-        (webApp as any).openTelegramLink(`https://t.me/user?id=${buyerId}`);
+        console.log('✅ Opening via Telegram SDK');
+        (webApp as any).openTelegramLink(telegramLink);
       } else {
-        window.open(`https://t.me/user?id=${buyerId}`, '_blank');
+        console.log('⚠️ Telegram SDK not available, using fallback');
+        window.open(telegramLink, '_blank');
       }
 
       notificationOccurred('success');
@@ -126,8 +153,8 @@ export function ContactBuyerDialog({
       onOpenChange(false);
       
     } catch (error) {
-      console.error('Failed to send message:', error);
-      toast.error('Failed to track or open chat');
+      console.error('❌ Failed to open chat:', error);
+      toast.error('Failed to open Telegram chat');
     }
   };
 
