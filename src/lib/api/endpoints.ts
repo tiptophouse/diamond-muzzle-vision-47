@@ -60,6 +60,19 @@ export const apiEndpoints = {
   // Seller notification endpoints - ADDED (seller-centric view)
   sellerNotifications: (userId: number, limit: number = 20, offset: number = 0) => `/api/v1/seller/notifications?user_id=${userId}&limit=${limit}&offset=${offset}`,
   sellerNotificationsCount: (userId: number) => `/api/v1/seller/notifications/count?user_id=${userId}`,
+  getSellerNotifications: (userId: number, params?: { limit?: number; offset?: number }) => {
+    const limit = params?.limit || 50;
+    const offset = params?.offset || 0;
+    return `/api/v1/seller/notifications?user_id=${userId}&limit=${limit}&offset=${offset}`;
+  },
+  getSellerNotificationsCount: (userId: number) => `/api/v1/seller/notifications/count?user_id=${userId}`,
+  
+  // Billing & Subscriptions - ADDED
+  getBilling: () => `/api/v1/billing`,
+  cancelSubscription: () => `/api/v1/billing/cancel-subscription`,
+  updatePaymentMethod: () => `/api/v1/billing/update-payment-method`,
+  trialSubscribe: () => `/api/v1/billing/trial-subscribe`,
+  getActiveSubscription: () => `/api/v1/user/active-subscription`,
   
   // Client and admin endpoints
   getAllClients: () => `/api/v1/clients`,
