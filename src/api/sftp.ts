@@ -2,19 +2,14 @@
 // src/api/sftp.ts
 import { http } from "./http";
 
-// Updated to match actual FastAPI response format (flat structure)
+// Match actual FastAPI response format
 export type SFTPProvisionResponse = {
-  host: string;
-  port: number;
   username: string;
   password: string;
-  folder_path: string;
-  ftp_username: string;
-  status: string;
-  created_at: string;
-  id?: string;
-  last_used_at?: string;
-  expires_at?: string;
+  host_name: string;
+  port_number: number;
+  folder: string;
+  test_result: boolean;
 };
 
 export type SFTPStatusResponse = {

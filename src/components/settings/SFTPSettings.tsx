@@ -27,17 +27,12 @@ import {
 } from 'lucide-react';
 
 interface SFTPCredentials {
-  host: string;
-  port: number;
   username: string;
   password: string;
-  folder_path: string;
-  ftp_username: string;
-  status: string;
-  created_at: string;
-  id?: string;
-  last_used_at?: string;
-  expires_at?: string;
+  host_name: string;
+  port_number: number;
+  folder: string;
+  test_result: boolean;
 }
 
 type ErrorType = 'network' | 'auth' | 'server' | 'timeout' | 'unknown';
@@ -160,7 +155,7 @@ export function SFTPSettings() {
 
       toast({
         title: "🎉 חשבון SFTP הוקם בהצלחה!",
-        description: `שם משתמש: ${sftpData.ftp_username} | תיקיית העלאה: ${sftpData.folder_path}`,
+        description: `שם משתמש: ${sftpData.username} | תיקיית העלאה: ${sftpData.folder}`,
       });
 
       // Auto-test connection
@@ -407,11 +402,11 @@ export function SFTPSettings() {
                     שם משתמש
                   </Label>
                   <div className="flex items-center gap-2">
-                    <Input value={credentials.ftp_username} readOnly className="bg-muted" />
+                    <Input value={credentials.username} readOnly className="bg-muted" />
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(credentials.ftp_username)}
+                      onClick={() => copyToClipboard(credentials.username)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -424,11 +419,11 @@ export function SFTPSettings() {
                     תיקיית העלאה
                   </Label>
                   <div className="flex items-center gap-2">
-                    <Input value={credentials.folder_path} readOnly className="bg-muted" />
+                    <Input value={credentials.folder} readOnly className="bg-muted" />
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(credentials.folder_path)}
+                      onClick={() => copyToClipboard(credentials.folder)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -441,11 +436,11 @@ export function SFTPSettings() {
                   <div className="space-y-2">
                     <Label>שרת SFTP</Label>
                     <div className="flex items-center gap-2">
-                      <Input value={`${credentials.host}:${credentials.port}`} readOnly className="bg-muted" />
+                      <Input value={`${credentials.host_name}:${credentials.port_number}`} readOnly className="bg-muted" />
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => copyToClipboard(`${credentials.host}:${credentials.port}`)}
+                        onClick={() => copyToClipboard(`${credentials.host_name}:${credentials.port_number}`)}
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
