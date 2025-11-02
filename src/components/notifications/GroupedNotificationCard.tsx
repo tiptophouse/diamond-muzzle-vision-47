@@ -6,6 +6,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MessageCircle, ChevronDown, ChevronUp, Diamond, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
+import { ContactBuyerDialog } from './ContactBuyerDialog';
+import { useContactBuyer } from '@/hooks/useContactBuyer';
+import { getCurrentUserId } from '@/lib/api';
 
 interface DiamondMatch {
   stock_number: string;
@@ -45,6 +48,7 @@ export function GroupedNotificationCard({
 }: GroupedNotificationCardProps) {
   const [expanded, setExpanded] = useState(false);
   const { impactOccurred, selectionChanged } = useTelegramHapticFeedback();
+  const contactBuyer = useContactBuyer();
 
   const handleToggle = () => {
     impactOccurred('light');
@@ -54,7 +58,22 @@ export function GroupedNotificationCard({
 
   const handleContact = () => {
     impactOccurred('medium');
-    onContactBuyer(group.buyer);
+    
+    // Open the AI-powered contact dialog
+    contactBuyer.openContactDialog({
+      buyerId: group.buyer.userId,
+      buyerName: group.buyer.name,
+      notificationId: group.notificationIds[0],
+      diamonds: group.matches.map(m => ({
+        stock: m.stock_number,
+        shape: m.shape,
+        weight: m.weight,
+        color: m.color,
+        clarity: m.clarity,
+        price_per_carat: m.price_per_carat,
+      })),
+    });
+    
     onMarkAsRead(group.notificationIds);
   };
 
@@ -187,6 +206,18 @@ export function GroupedNotificationCard({
           </div>
         </div>
       )}
+
+      {/* Contact Buyer Dialog */}
+      <ContactBuyerDialog
+        open={contactBuyer.open}
+        onOpenChange={contactBuyer.closeContactDialog}
+        buyerId={contactBuyer.buyerId!}
+        buyerName={contactBuyer.buyerName}
+        notificationId={contactBuyer.notificationId}
+        diamonds={contactBuyer.diamonds}
+        searchQuery={contactBuyer.searchQuery}
+        sellerTelegramId={getCurrentUserId() || 0}
+      />
     </Card>
   );
 }
