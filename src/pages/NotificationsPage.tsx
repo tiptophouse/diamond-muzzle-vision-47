@@ -1,74 +1,42 @@
-
-import React from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
-import { SmartNotificationCard } from '@/components/notifications/SmartNotificationCard';
-import { GroupNotificationCard } from '@/components/notifications/GroupNotificationCard';
-import { BusinessNotificationCard } from '@/components/notifications/BusinessNotificationCard';
-import { IncomingChatbotMessages } from '@/components/notifications/IncomingChatbotMessages';
-import { TelegramNotificationsList } from '@/components/notifications/TelegramNotificationsList';
-
 import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
-import { useNotifications as useDbNotifications } from '@/hooks/useNotifications';
-import { useTelegramNotificationBridge } from '@/hooks/useTelegramNotificationBridge';
-import { useDiamondSearch } from '@/hooks/useDiamondSearch';
-import { useTelegramMessaging } from '@/hooks/useTelegramMessaging';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
-import { useNotificationRealtimeUpdates } from '@/hooks/useNotificationRealtimeUpdates';
-import { useMemo, useCallback } from 'react';
-import { GroupedNotificationCard } from '@/components/notifications/GroupedNotificationCard';
-import { EmptyStateVariations } from '@/components/notifications/EmptyStateVariations';
 import { NotificationSkeleton } from '@/components/notifications/NotificationSkeleton';
-import { Bell, BellRing, RefreshCw, Users, Diamond, Heart, TrendingUp, Search, MessageCircle } from 'lucide-react';
+import { Bell, RefreshCw, Users, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MatchNotificationCard } from '@/components/notifications/MatchNotificationCard';
+import { BuyerContactDialog } from '@/components/notifications/BuyerContactDialog';
+import { getCurrentUserId } from '@/lib/api';
 
 const NotificationsPage = () => {
-  const { notifications, isLoading, markAsRead, contactCustomer, refetch, loadMore, hasMore } = useFastApiNotifications();
-  const { notifications: dbNotifications, isLoading: isLoadingDb, markAsRead: markAsReadDb, refetch: refetchDb } = useDbNotifications();
-  const { simulateSearchFromBot, isLoading: isSearching } = useDiamondSearch();
-  const { sendMessage, isLoading: isSendingMessage } = useTelegramMessaging();
+  const { notifications, isLoading, markAsRead, refetch, loadMore, hasMore } = useFastApiNotifications();
   const { user } = useTelegramAuth();
   const haptic = useTelegramHapticFeedback();
   const { toast } = useToast();
   const { webApp } = useTelegramWebApp();
   
-  const hasFast = notifications.length > 0;
-  const displayNotifications = hasFast ? notifications : dbNotifications;
-  const displayIsLoading = hasFast ? isLoading : isLoadingDb;
-  const markAsReadHandler = hasFast ? markAsRead : markAsReadDb;
-  const refetchAll = useCallback(async () => {
-    await Promise.all([refetch(), refetchDb()]);
-  }, [refetch, refetchDb]);
-  
-  // Initialize Telegram notification bridge
-  useTelegramNotificationBridge();
+  const [selectedBuyerId, setSelectedBuyerId] = useState<number | null>(null);
+  const [selectedDiamonds, setSelectedDiamonds] = useState<Record<number, Set<string>>>({});
   
   // Pull-to-refresh
   const { isRefreshing, pullDistance, isPulling } = usePullToRefresh({
     onRefresh: async () => {
-      await refetchAll();
+      await refetch();
     },
     threshold: 80,
   });
-
-  // Real-time updates
-  useNotificationRealtimeUpdates({
-    onNewNotification: (newNotif) => {
-      console.log('📲 New notification received via realtime:', newNotif);
-      refetchAll(); // Refresh the list to include the new notification
-    }
-  });
   
-  // Smart grouping by buyer (memoized for performance)
+  // Group notifications by buyer with diamond_match type only
   const groupedNotifications = useMemo(() => {
     const groups = new Map<number, any>();
     
-    displayNotifications
+    notifications
       .filter(n => n.type === 'diamond_match' && n.data?.searcher_info?.telegram_id)
       .forEach(notif => {
         const buyerId = notif.data.searcher_info.telegram_id;
@@ -82,110 +50,140 @@ const NotificationsPage = () => {
               phone: notif.data.searcher_info.phone,
             },
             matches: [],
-            totalCount: 0,
+            searchQuery: notif.data.search_criteria || {},
             latestTimestamp: notif.created_at,
             notificationIds: [],
+            read: notif.read,
           });
         }
         
         const group = groups.get(buyerId);
         group.matches.push(...(notif.data.matches || []));
-        group.totalCount = group.matches.length;
         group.notificationIds.push(notif.id);
         
         // Update to latest timestamp
         if (new Date(notif.created_at) > new Date(group.latestTimestamp)) {
           group.latestTimestamp = notif.created_at;
         }
+        
+        // If any notification is unread, mark group as unread
+        if (!notif.read) {
+          group.read = false;
+        }
       });
     
     return Array.from(groups.values()).sort(
       (a, b) => new Date(b.latestTimestamp).getTime() - new Date(a.latestTimestamp).getTime()
     );
-  }, [displayNotifications]);
+  }, [notifications]);
 
-  // Stats calculation (memoized)
+  // Stats calculation
   const stats = useMemo(() => ({
-    unreadCount: displayNotifications.filter(n => !n.read).length,
-    businessCount: displayNotifications.filter(n => 
-      ['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities'].includes(n.type)
-    ).length,
-    groupCount: displayNotifications.filter(n => n.type === 'group_diamond_request').length,
-    diamondMatchCount: displayNotifications.filter(n => n.type === 'diamond_match').length,
-  }), [displayNotifications]);
+    totalBuyers: groupedNotifications.length,
+    unreadCount: groupedNotifications.filter(g => !g.read).length,
+    totalDiamonds: groupedNotifications.reduce((sum, g) => sum + g.matches.length, 0),
+  }), [groupedNotifications]);
 
-  const unreadCount = stats.unreadCount;
-  const businessNotifications = useMemo(() => 
-    displayNotifications.filter(n => 
-      ['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities'].includes(n.type)
-    ),
-    [displayNotifications]
-  );
-  const groupNotifications = useMemo(() => 
-    displayNotifications.filter(n => n.type === 'group_diamond_request'),
-    [displayNotifications]
-  );
-  const diamondMatches = useMemo(() => 
-    displayNotifications.filter(n => n.type === 'diamond_match'),
-    [displayNotifications]
-  );
-  const otherNotifications = useMemo(() =>
-    displayNotifications.filter(n => 
-      !['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities', 'group_diamond_request', 'diamond_match'].includes(n.type)
-    ),
-    [displayNotifications]
-  );
-  
-  // Determine empty state type
-  const getEmptyStateType = useCallback(() => {
-    if (displayNotifications.length === 0) return 'first_time';
-    if (unreadCount === 0 && displayNotifications.length > 0) return 'all_read';
-    if (diamondMatches.length === 0) return 'no_matches';
-    return 'no_buyers';
-  }, [displayNotifications.length, unreadCount, diamondMatches.length]);
+  // Handle diamond selection toggle
+  const handleToggleDiamond = useCallback((buyerId: number, stockNumber: string) => {
+    haptic.impactOccurred('light');
+    
+    setSelectedDiamonds(prev => {
+      const buyerSet = new Set(prev[buyerId] || []);
+      
+      if (buyerSet.has(stockNumber)) {
+        buyerSet.delete(stockNumber);
+      } else {
+        buyerSet.add(stockNumber);
+      }
+      
+      return {
+        ...prev,
+        [buyerId]: buyerSet,
+      };
+    });
+  }, [haptic]);
 
-  const handleContactBuyer = useCallback(async (buyerInfo: any) => {
+  // Handle select all diamonds for a buyer
+  const handleSelectAll = useCallback((buyerId: number, allStockNumbers: string[]) => {
     haptic.impactOccurred('medium');
+    
+    setSelectedDiamonds(prev => ({
+      ...prev,
+      [buyerId]: new Set(allStockNumbers),
+    }));
+    
+    toast({
+      title: 'All diamonds selected',
+      description: `Selected ${allStockNumbers.length} diamonds`,
+    });
+  }, [haptic, toast]);
 
-    const id = buyerInfo?.userId || buyerInfo?.telegram_id;
-    const username = buyerInfo?.telegram_username || buyerInfo?.username;
+  // Handle clear all selections for a buyer
+  const handleClearSelection = useCallback((buyerId: number) => {
+    haptic.impactOccurred('light');
+    
+    setSelectedDiamonds(prev => {
+      const newState = { ...prev };
+      delete newState[buyerId];
+      return newState;
+    });
+    
+    toast({
+      title: 'Selection cleared',
+    });
+  }, [haptic, toast]);
 
-    if (!id && !username) {
+  // Open contact dialog with selected diamonds
+  const handleContactBuyer = useCallback((buyerId: number) => {
+    const selectedCount = selectedDiamonds[buyerId]?.size || 0;
+    
+    if (selectedCount === 0) {
       toast({
-        title: 'שגיאה',
-        description: 'לא נמצאו פרטי קשר של הקונה (ID או שם משתמש)',
+        title: 'No diamonds selected',
+        description: 'Please select at least one diamond to send',
         variant: 'destructive',
       });
       return;
     }
+    
+    haptic.impactOccurred('medium');
+    setSelectedBuyerId(buyerId);
+  }, [selectedDiamonds, haptic, toast]);
 
-    const link = username ? `https://t.me/${username}` : `https://t.me/user?id=${id}`;
+  // Close contact dialog
+  const handleCloseDialog = useCallback(() => {
+    setSelectedBuyerId(null);
+  }, []);
 
-    try {
-      if (webApp && typeof (webApp as any).openTelegramLink === 'function') {
-        (webApp as any).openTelegramLink(link);
-      } else {
-        window.open(link, '_blank');
-      }
-      toast({
-        title: 'פותח צ׳אט',
-        description: `פותח שיחה עם ${buyerInfo?.name || username || id}`,
-      });
-    } catch (error) {
-      console.error('Failed to open Telegram chat:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן לפתוח צ׳אט בטלגרם כרגע',
-        variant: 'destructive',
-      });
+  // Get selected buyer and diamonds
+  const selectedBuyerData = useMemo(() => {
+    if (!selectedBuyerId) return null;
+    
+    const group = groupedNotifications.find(g => g.buyer.userId === selectedBuyerId);
+    if (!group) return null;
+    
+    const selectedStocks = selectedDiamonds[selectedBuyerId] || new Set();
+    const selectedMatches = group.matches.filter(m => selectedStocks.has(m.stock_number));
+    
+    return {
+      ...group,
+      selectedMatches,
+    };
+  }, [selectedBuyerId, groupedNotifications, selectedDiamonds]);
+
+  // Handle successful message send
+  const handleMessageSent = useCallback(() => {
+    if (selectedBuyerId && selectedBuyerData) {
+      // Mark notifications as read
+      selectedBuyerData.notificationIds.forEach(id => markAsRead(id));
+      
+      // Clear selections
+      handleClearSelection(selectedBuyerId);
     }
-  }, [haptic, toast, webApp]);
+  }, [selectedBuyerId, selectedBuyerData, markAsRead, handleClearSelection]);
 
-  const handleMarkMultipleAsRead = useCallback((notificationIds: string[]) => {
-    notificationIds.forEach(id => markAsReadHandler(id));
-  }, [markAsReadHandler]);
-
-  if (displayIsLoading && displayNotifications.length === 0) {
+  if (isLoading && groupedNotifications.length === 0) {
     return (
       <TelegramMiniAppLayout>
         <div className="p-4 space-y-3">
@@ -194,47 +192,6 @@ const NotificationsPage = () => {
       </TelegramMiniAppLayout>
     );
   }
-
-  const handleContactCustomer = async (customerInfo: any) => {
-    haptic.impactOccurred('medium');
-    
-    if (!customerInfo.telegram_id) {
-      toast({
-        title: "שגיאה",
-        description: "לא נמצא מזהה טלגרם עבור הלקוח",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const success = await sendMessage({
-      telegramId: customerInfo.telegram_id,
-      message: `שלום ${customerInfo.name || 'לקוח יקר'},\n\nאני רוצה ליצור איתך קשר בנוגע לבקשה שלך ליהלום.\nאשמח לקבל פרטים נוספים ולעזור לך למצוא את היהלום המושלם.\n\nבברכה,\n${user?.first_name || 'המוכר'}`
-    });
-
-    if (success) {
-      toast({
-        title: "הודעה נשלחה בהצלחה",
-        description: `הודעה נשלחה ל-${customerInfo.name || 'הלקוח'}`,
-      });
-    }
-  };
-
-  const handleTestDiamondSearch = async () => {
-    if (!user?.id) return;
-    
-    // Simulate a search for round diamonds
-    await simulateSearchFromBot({
-      shape: 'round',
-      color: 'G',
-      clarity: 'VVS2',
-      weight_min: 1.0,
-      weight_max: 2.0
-    }, 987654321, "Test Buyer");
-    
-    // Refresh notifications after search
-    setTimeout(() => refetchAll(), 1000);
-  };
 
   return (
     <TelegramMiniAppLayout>
@@ -258,311 +215,130 @@ const NotificationsPage = () => {
         </div>
       )}
       
-      <div className="p-3 space-y-4 pb-20">
-        {/* Debug Panel */}
-        <details className="bg-muted/50 rounded-lg p-3 text-xs">
-          <summary className="cursor-pointer font-semibold flex items-center gap-2">
-            🔍 Debug Info ({displayNotifications.length} total)
-          </summary>
-          <div className="mt-2 space-y-2">
-            <p>✅ With Telegram ID: {displayNotifications.filter(n => 
-              n.data?.searcher_info?.telegram_id).length}</p>
-            <p>👤 Username-only: {displayNotifications.filter(n => 
-              !n.data?.searcher_info?.telegram_id && 
-              n.data?.searcher_info?.telegram_username).length}</p>
-            <p>📋 First 3 notifications:</p>
-            {displayNotifications.slice(0, 3).map(n => (
-              <details key={n.id} className="ml-4">
-                <summary className="cursor-pointer text-primary">Notification #{n.id}</summary>
-                <pre className="text-[10px] overflow-auto max-h-40 bg-background p-2 rounded mt-1">
-                  {JSON.stringify({
-                    id: n.id,
-                    type: n.type,
-                    telegram_id: n.data?.searcher_info?.telegram_id,
-                    username: n.data?.searcher_info?.telegram_username,
-                    name: n.data?.searcher_info?.name,
-                    has_full_info: n.data?.searcher_info?.has_full_info
-                  }, null, 2)}
-                </pre>
-              </details>
+      <div className="p-4 space-y-4 pb-20">
+        {/* Header */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between" dir="rtl">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Bell className="h-6 w-6 text-primary" />
+                {stats.unreadCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0"
+                  >
+                    {stats.unreadCount}
+                  </Badge>
+                )}
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">
+                  התראות התאמה
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  קונים מעוניינים ביהלומים שלך
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={refetch} 
+              variant="outline" 
+              size="icon"
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-card border rounded-lg p-3">
+              <div className="flex items-center gap-1 mb-1">
+                <Users className="h-3 w-3 text-primary" />
+                <span className="text-xs text-muted-foreground">קונים</span>
+              </div>
+              <div className="text-xl font-bold text-primary">{stats.totalBuyers}</div>
+            </div>
+            <div className="bg-card border rounded-lg p-3">
+              <div className="flex items-center gap-1 mb-1">
+                <Bell className="h-3 w-3 text-primary" />
+                <span className="text-xs text-muted-foreground">חדשות</span>
+              </div>
+              <div className="text-xl font-bold text-destructive">{stats.unreadCount}</div>
+            </div>
+            <div className="bg-card border rounded-lg p-3">
+              <div className="flex items-center gap-1 mb-1">
+                <Sparkles className="h-3 w-3 text-primary" />
+                <span className="text-xs text-muted-foreground">יהלומים</span>
+              </div>
+              <div className="text-xl font-bold text-primary">{stats.totalDiamonds}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Notifications List */}
+        {groupedNotifications.length === 0 ? (
+          <div className="text-center py-12">
+            <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">אין התראות חדשות</h3>
+            <p className="text-sm text-muted-foreground">
+              כשקונים יחפשו יהלומים שמתאימים למלאי שלך, תקבל התראה כאן
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {groupedNotifications.map((group) => (
+              <MatchNotificationCard
+                key={group.buyer.userId}
+                group={group}
+                selectedDiamonds={selectedDiamonds[group.buyer.userId] || new Set()}
+                onToggleDiamond={(stockNumber) => handleToggleDiamond(group.buyer.userId, stockNumber)}
+                onSelectAll={(stockNumbers) => handleSelectAll(group.buyer.userId, stockNumbers)}
+                onClearSelection={() => handleClearSelection(group.buyer.userId)}
+                onContactBuyer={() => handleContactBuyer(group.buyer.userId)}
+              />
             ))}
           </div>
-        </details>
-        
-        <Tabs defaultValue="enhanced" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4 h-auto">
-            <TabsTrigger value="enhanced" className="flex items-center gap-1 py-3 text-xs">
-              <Bell className="h-3 w-3" />
-              Enhanced
-            </TabsTrigger>
-            <TabsTrigger value="outgoing" className="flex items-center gap-1 py-3 text-xs">
-              <Bell className="h-3 w-3" />
-              יוצאות
-            </TabsTrigger>
-            <TabsTrigger value="incoming" className="flex items-center gap-1 py-3 text-xs">
-              <MessageCircle className="h-3 w-3" />
-              נכנסות
-            </TabsTrigger>
-          </TabsList>
+        )}
 
-          <TabsContent value="enhanced" className="space-y-6">
-            {/* Grouped Notifications */}
-            {groupedNotifications.length > 0 && (
-              <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-foreground flex items-center gap-2 px-2">
-                  <Users className="h-4 w-4 text-primary" />
-                  קונים מעוניינים ({groupedNotifications.length})
-                </h2>
-                {groupedNotifications.map((group) => (
-                  <GroupedNotificationCard
-                    key={group.buyer.userId}
-                    group={group}
-                    onContactBuyer={handleContactBuyer}
-                    onMarkAsRead={handleMarkMultipleAsRead}
-                  />
-                ))}
-              </div>
-            )}
-            
-            {/* Regular Notifications List */}
-            <TelegramNotificationsList
-              notifications={displayNotifications}
-              onMarkAsRead={markAsReadHandler}
-              onMarkAllAsRead={() => {
-                displayNotifications.forEach(n => {
-                  if (!n.read) markAsReadHandler(n.id);
-                });
-              }}
-              onContactCustomer={handleContactCustomer}
-              loading={displayIsLoading}
-            />
-            
-            {/* Empty State */}
-            {displayNotifications.length === 0 && !displayIsLoading && (
-              <EmptyStateVariations 
-                type={getEmptyStateType()}
-                onAction={(action) => {
-                  if (action === 'share_store') {
-                    toast({ title: "שיתוף החנות", description: "פתח את דף החנות לשיתוף" });
-                  } else if (action === 'start_tour') {
-                    toast({ title: "סיור מודרך", description: "מתחיל סיור באפליקציה" });
-                  }
-                }}
-              />
-            )}
-            
-            {/* Load More Button */}
-            {hasMore && displayNotifications.length > 0 && (
-              <div className="flex justify-center py-4">
-                <Button
-                  onClick={loadMore}
-                  variant="outline"
-                  disabled={displayIsLoading}
-                  className="gap-2"
-                >
-                  {displayIsLoading ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      טוען...
-                    </>
-                  ) : (
-                    <>
-                      <Diamond className="h-4 w-4" />
-                      טען עוד התראות
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-
-
-          <TabsContent value="outgoing" className="space-y-4">
-            {/* Header */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2" dir="rtl">
-                <div className="relative">
-                  <Bell className="h-5 w-5 text-primary" />
-                  {unreadCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-1 -right-1 h-3 w-3 flex items-center justify-center text-xs p-0 min-w-[12px]"
-                    >
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </Badge>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-base font-bold text-foreground leading-tight">
-                    התראות עסקיות חכמות
-                  </h1>
-                  <p className="text-xs text-muted-foreground mt-1 leading-snug">
-                    קבל התראות על קונים מעוניינים וזוגות יהלומים
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleTestDiamondSearch} 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1 text-xs"
-                  disabled={isSearching}
-                >
-                  <Search className="h-3 w-3 mr-1" />
-                  {isSearching ? 'מחפש...' : 'בדיקה'}
-                </Button>
-                
-                <Button onClick={refetchAll} variant="outline" size="sm" className="flex-1 text-xs">
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  רענן
-                </Button>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-card border rounded-lg p-3">
-                <div className="flex items-center gap-1">
-                  <BellRing className="h-3 w-3 text-primary" />
-                  <span className="font-medium text-xs text-foreground">חדשות</span>
-                </div>
-                <div className="text-lg font-bold text-primary mt-1">{unreadCount}</div>
-              </div>
-              
-              <div className="bg-card border rounded-lg p-3">
-                <div className="flex items-center gap-1">
-                  <Heart className="h-3 w-3 text-pink-600" />
-                  <span className="font-medium text-xs text-foreground">קונים</span>
-                </div>
-                <div className="text-lg font-bold text-pink-600 mt-1">
-                  {businessNotifications.filter(n => n.type === 'buyer_interest' || n.type === 'interested_buyers').length}
-                </div>
-              </div>
-              
-              <div className="bg-card border rounded-lg p-3">
-                <div className="flex items-center gap-1">
-                  <Users className="h-3 w-3 text-green-600" />
-                  <span className="font-medium text-xs text-foreground">קבוצות</span>
-                </div>
-                <div className="text-lg font-bold text-green-600 mt-1">
-                  {businessNotifications.filter(n => n.type === 'group_demand').length + groupNotifications.length}
-                </div>
-              </div>
-              
-              <div className="bg-card border rounded-lg p-3">
-                <div className="flex items-center gap-1">
-                  <Diamond className="h-3 w-3 text-purple-600" />
-                  <span className="font-medium text-xs text-foreground">זוגות</span>
-                </div>
-                <div className="text-lg font-bold text-purple-600 mt-1">
-                  {businessNotifications.filter(n => n.type === 'pair_match' || n.type === 'diamond_pairs').length}
-                </div>
-              </div>
-            </div>
-
-            {/* Notifications List */}
-            <div className="space-y-4">
-              {/* Business Notifications */}
-              {businessNotifications.length > 0 && (
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                    <Diamond className="h-4 w-4 text-primary" />
-                    התראות עסקיות
-                  </h2>
-                  <div className="space-y-3">
-                    {businessNotifications.map((notification) => (
-                      <BusinessNotificationCard
-                        key={notification.id}
-                        notification={notification}
-                        onMarkAsRead={markAsRead}
-                        onContactCustomer={handleContactCustomer}
-                        isLoading={isSendingMessage}
-                      />
-                    ))}
-                  </div>
-                </div>
+        {/* Load More Button */}
+        {hasMore && groupedNotifications.length > 0 && (
+          <div className="flex justify-center py-4">
+            <Button
+              onClick={loadMore}
+              variant="outline"
+              disabled={isLoading}
+              className="gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  טוען...
+                </>
+              ) : (
+                <>
+                  טען עוד התראות
+                </>
               )}
-
-              {/* Group Notifications */}
-              {groupNotifications.length > 0 && (
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                    <Users className="h-4 w-4 text-green-600" />
-                    בקשות מקבוצות B2B
-                  </h2>
-                  <div className="space-y-3">
-                    {groupNotifications.map((notification) => (
-                      <GroupNotificationCard
-                        key={notification.id}
-                        notification={notification}
-                        onMarkAsRead={markAsRead}
-                        onContactCustomer={handleContactCustomer}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Regular Notifications */}
-              {(diamondMatches.length > 0 || otherNotifications.length > 0) && (
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                    <Bell className="h-4 w-4 text-primary" />
-                    התראות רגילות
-                  </h2>
-                  <div className="space-y-3">
-                    {[...diamondMatches, ...otherNotifications].map((notification) => (
-                      <SmartNotificationCard
-                        key={notification.id}
-                        notification={notification}
-                        onMarkAsRead={markAsRead}
-                        onContactCustomer={handleContactCustomer}
-                        isLoading={isSendingMessage}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Empty State */}
-              {notifications.length === 0 && (
-                <div className="text-center py-8">
-                  <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <h3 className="text-base font-medium text-foreground mb-2">אין התראות עדיין</h3>
-                  <p className="text-sm text-muted-foreground px-4">
-                    כשיהיו קונים מעוניינים או זוגות יהלומים, תקבל התראות כאן
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Info Box */}
-            <div className="bg-card border rounded-lg p-4">
-              <h3 className="font-semibold text-foreground mb-2 text-sm">התראות עסקיות חכמות</h3>
-              <ul className="space-y-2 text-xs text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <Heart className="h-3 w-3 mt-0.5 text-pink-600 flex-shrink-0" />
-                  <span><strong>קונים מעוניינים:</strong> התראות כשלקוחות מחפשים יהלומים דומים</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Diamond className="h-3 w-3 mt-0.5 text-purple-600 flex-shrink-0" />
-                  <span><strong>זוגות יהלומים:</strong> הזדמנויות ליצור זוגות עם סוחרים אחרים</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Users className="h-3 w-3 mt-0.5 text-green-600 flex-shrink-0" />
-                  <span><strong>ביקוש בקבוצות:</strong> ניתוח ביקוש בקבוצות הטלגרם</span>
-                </li>
-              </ul>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="incoming">
-            <IncomingChatbotMessages />
-          </TabsContent>
-        </Tabs>
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Buyer Contact Dialog */}
+      {selectedBuyerData && (
+        <BuyerContactDialog
+          open={!!selectedBuyerId}
+          onOpenChange={handleCloseDialog}
+          buyerId={selectedBuyerData.buyer.userId}
+          buyerName={selectedBuyerData.buyer.name}
+          notificationIds={selectedBuyerData.notificationIds}
+          diamonds={selectedBuyerData.selectedMatches}
+          searchQuery={selectedBuyerData.searchQuery}
+          sellerTelegramId={getCurrentUserId() || 0}
+          onMessageSent={handleMessageSent}
+        />
+      )}
     </TelegramMiniAppLayout>
   );
 };
