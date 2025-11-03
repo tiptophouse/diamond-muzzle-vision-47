@@ -38,6 +38,11 @@ serve(async (req) => {
 
     const allDiamonds = await response.json();
     console.log('✅ Fetched diamonds from FastAPI:', allDiamonds.length);
+    
+    // Log sample diamond to check image field names
+    if (allDiamonds.length > 0) {
+      console.log('📸 Sample diamond data:', JSON.stringify(allDiamonds[0], null, 2));
+    }
 
     // Filter by stock numbers if provided
     let filteredDiamonds = allDiamonds;
