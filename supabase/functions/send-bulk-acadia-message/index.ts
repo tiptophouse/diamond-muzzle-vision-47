@@ -100,8 +100,10 @@ serve(async (req) => {
     };
 
     let successCount = 0;
+    let skippedCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
+    const skipped: string[] = [];
 
     // If test mode, send only to admin
     if (testMode) {
@@ -188,7 +190,8 @@ ${escapedMessage}
                   bulk_message: true,
                   sender_id: senderId,
                   sender_name: senderName,
-                  message_timestamp: new Date().toISOString()
+                  message_timestamp: new Date().toISOString(),
+                  campaign_type: 'acadia_bulk'
                 }
               });
             } catch (notificationError) {
@@ -196,9 +199,18 @@ ${escapedMessage}
             }
             
           } else {
-            errorCount++;
-            errors.push(`${user.first_name}: ${result.description}`);
-            console.error(`❌ Failed to send Acadia message to ${user.first_name}:`, result);
+            // Distinguish between expected skips and real errors
+            const isExpectedSkip = result.error_code === 403 || result.error_code === 400;
+            
+            if (isExpectedSkip) {
+              skippedCount++;
+              skipped.push(`${user.first_name}: ${result.description}`);
+              console.warn(`⏭️ Skipped ${user.first_name}: ${result.description}`);
+            } else {
+              errorCount++;
+              errors.push(`${user.first_name}: ${result.description}`);
+              console.error(`❌ Failed to send Acadia message to ${user.first_name}:`, result);
+            }
           }
 
           // Add delay to avoid rate limiting
@@ -215,17 +227,19 @@ ${escapedMessage}
         const adminMessage = `📨 **Bulk Acadia Message Complete!**
 
 **Message Type:** Acadia Connection Instructions
-**Target:** All Users
+**Target:** All Users (${users.length})
 
 **Results:**
 ✅ Successfully sent: ${successCount}
-❌ Failed: ${errorCount}
+⏭️ Skipped (blocked/not found): ${skippedCount}
+❌ Real errors: ${errorCount}
 
 **Sent by:** ${senderName} (${senderId})
 
+${skippedCount > 0 ? `\n**Skipped (first 5):**\n${skipped.slice(0, 5).join('\n')}` : ''}
 ${errorCount > 0 ? `\n**Errors (first 5):**\n${errors.slice(0, 5).join('\n')}` : ''}
 
-The Acadia connection message campaign has been completed!`;
+Campaign completed! Track button clicks in Notifications table.`;
         
         const response = await fetch(`${telegramApiUrl}/sendMessage`, {
           method: 'POST',
@@ -246,15 +260,17 @@ The Acadia connection message campaign has been completed!`;
       }
     }
 
-    console.log(`📊 Acadia Message Results: ${successCount} success, ${errorCount} errors`);
+    console.log(`📊 Acadia Message Results: ${successCount} sent, ${skippedCount} skipped, ${errorCount} errors`);
 
     return new Response(
       JSON.stringify({
         success: true,
         successCount,
+        skippedCount,
         errorCount,
-        errors: errors.slice(0, 10), // Limit errors to first 10
-        message: testMode ? 'Test Acadia message sent' : 'Acadia message sent to all users'
+        errors: errors.slice(0, 10),
+        skipped: skipped.slice(0, 10),
+        message: testMode ? 'Test Acadia message sent' : `Sent to ${successCount} users, skipped ${skippedCount}, ${errorCount} errors`
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
