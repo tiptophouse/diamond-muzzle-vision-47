@@ -5,9 +5,10 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useTelegramAdvanced } from '@/hooks/useTelegramAdvanced';
+import { useTelegramSensors } from '@/hooks/useTelegramSensors';
 import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,11 +37,17 @@ interface ImmersiveDiamondViewerProps {
 }
 
 export function ImmersiveDiamondViewer({ diamond, isOwner, onBack }: ImmersiveDiamondViewerProps) {
-  const { deviceOrientation, features, isInitialized } = useTelegramAdvanced();
+  const { 
+    orientation, 
+    isOrientationStarted, 
+    startOrientation, 
+    stopOrientation,
+    isSensorsAvailable 
+  } = useTelegramSensors();
+  const { webApp } = useTelegramWebApp();
   const { haptic } = useTelegramSDK();
   const { user } = useTelegramAuth();
   
-  const [isMotionActive, setIsMotionActive] = useState(false);
   const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
   const [zoom, setZoom] = useState(1);
   const [showInstructions, setShowInstructions] = useState(true);
@@ -48,13 +55,15 @@ export function ImmersiveDiamondViewer({ diamond, isOwner, onBack }: ImmersiveDi
   const [offerPrice, setOfferPrice] = useState('');
   const [offerMessage, setOfferMessage] = useState('');
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
+  const [calibration, setCalibration] = useState({ alpha: 0, beta: 0, gamma: 0 });
   
   const imageRef = useRef<HTMLDivElement>(null);
   const touchStartDistance = useRef<number>(0);
   const lastTouchPos = useRef({ x: 0, y: 0 });
   const viewStartTime = useRef(Date.now());
+  const animationFrameId = useRef<number | null>(null);
 
-  const hasMotionSupport = features.hasDeviceOrientation;
+  const hasMotionSupport = isSensorsAvailable && !!webApp?.DeviceOrientation;
 
   // Track view session
   useEffect(() => {
@@ -88,7 +97,39 @@ export function ImmersiveDiamondViewer({ diamond, isOwner, onBack }: ImmersiveDi
     };
   }, [diamond.stockNumber, user?.id]);
 
-  // Motion control for tilt-to-rotate
+  // Update rotation based on device orientation (60 FPS smooth animation)
+  useEffect(() => {
+    if (!isOrientationStarted) return;
+
+    const updateRotation = () => {
+      // Apply calibration offset and map to diamond rotation
+      // Beta: -180 to 180 (X-axis tilt, forward/backward)
+      // Gamma: -90 to 90 (Y-axis tilt, left/right)
+      // Alpha: 0 to 360 (Z-axis rotation)
+      
+      const rotX = ((orientation.beta - calibration.beta) * 0.5);
+      const rotY = ((orientation.gamma - calibration.gamma) * 0.8);
+      const rotZ = ((orientation.alpha - calibration.alpha) * 0.1);
+      
+      setRotation({ 
+        x: Math.max(-60, Math.min(60, rotX)), 
+        y: Math.max(-60, Math.min(60, rotY)), 
+        z: rotZ 
+      });
+
+      animationFrameId.current = requestAnimationFrame(updateRotation);
+    };
+
+    animationFrameId.current = requestAnimationFrame(updateRotation);
+
+    return () => {
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+    };
+  }, [isOrientationStarted, orientation, calibration]);
+
+  // Motion control for tilt-to-rotate using Telegram SDK 2.0
   const startMotionControl = useCallback(() => {
     if (!hasMotionSupport) {
       toast.error('Motion sensors not available on this device');
@@ -98,30 +139,34 @@ export function ImmersiveDiamondViewer({ diamond, isOwner, onBack }: ImmersiveDi
     haptic?.impact?.('medium');
     setShowInstructions(false);
 
-    const started = deviceOrientation.start((data) => {
-      const rotX = ((data.beta || 0) - 90) * 0.8;
-      const rotY = (data.gamma || 0) * 0.8;
-      const rotZ = (data.alpha || 0) * 0.1;
-      
-      setRotation({ 
-        x: Math.max(-45, Math.min(45, rotX)), 
-        y: Math.max(-45, Math.min(45, rotY)), 
-        z: rotZ 
+    try {
+      // Calibrate to current position
+      setCalibration({
+        alpha: orientation.alpha,
+        beta: orientation.beta,
+        gamma: orientation.gamma
       });
-    }, false, 60);
 
-    if (started) {
-      setIsMotionActive(true);
-      toast.success('Motion control enabled - tilt to rotate');
+      // Start Telegram SDK 2.0 DeviceOrientation (60Hz refresh rate)
+      startOrientation(60);
+      
+      toast.success('🎯 Motion control enabled - tilt to rotate!');
+      console.log('🚀 DeviceOrientation started at 60Hz');
+    } catch (error) {
+      console.error('Failed to start motion control:', error);
+      toast.error('Failed to start motion sensors');
     }
-  }, [hasMotionSupport, deviceOrientation, haptic]);
+  }, [hasMotionSupport, orientation, startOrientation, haptic]);
 
   const stopMotionControl = useCallback(() => {
     haptic?.impact?.('light');
-    deviceOrientation.stop();
-    setIsMotionActive(false);
+    stopOrientation();
     setRotation({ x: 0, y: 0, z: 0 });
-  }, [deviceOrientation, haptic]);
+    
+    if (animationFrameId.current) {
+      cancelAnimationFrame(animationFrameId.current);
+    }
+  }, [stopOrientation, haptic]);
 
   // Pinch-to-zoom support
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -132,7 +177,7 @@ export function ImmersiveDiamondViewer({ diamond, isOwner, onBack }: ImmersiveDi
         touch2.clientX - touch1.clientX,
         touch2.clientY - touch1.clientY
       );
-    } else if (e.touches.length === 1 && !isMotionActive) {
+    } else if (e.touches.length === 1 && !isOrientationStarted) {
       lastTouchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
@@ -151,14 +196,14 @@ export function ImmersiveDiamondViewer({ diamond, isOwner, onBack }: ImmersiveDi
       setZoom(prev => Math.max(1, Math.min(3, prev * scale)));
       touchStartDistance.current = currentDistance;
       haptic?.selection?.();
-    } else if (e.touches.length === 1 && !isMotionActive) {
+    } else if (e.touches.length === 1 && !isOrientationStarted) {
       // Manual rotation with finger
       const deltaX = e.touches[0].clientX - lastTouchPos.current.x;
       const deltaY = e.touches[0].clientY - lastTouchPos.current.y;
       
       setRotation(prev => ({
-        x: Math.max(-45, Math.min(45, prev.x + deltaY * 0.3)),
-        y: Math.max(-45, Math.min(45, prev.y + deltaX * 0.3)),
+        x: Math.max(-60, Math.min(60, prev.x + deltaY * 0.3)),
+        y: Math.max(-60, Math.min(60, prev.y + deltaX * 0.3)),
         z: prev.z
       }));
       
@@ -276,8 +321,8 @@ Can we discuss this further?`;
             <p className="text-xs text-slate-400">Stock #{diamond.stockNumber}</p>
           </div>
 
-          <Badge variant={isMotionActive ? "default" : "secondary"} className="px-3 py-1.5">
-            {isMotionActive ? '🎯 Motion ON' : '📱 Touch'}
+          <Badge variant={isOrientationStarted ? "default" : "secondary"} className="px-3 py-1.5">
+            {isOrientationStarted ? '🎯 Gyro ON' : '📱 Touch'}
           </Badge>
         </div>
       </div>
@@ -333,7 +378,8 @@ Can we discuss this further?`;
               scale(${zoom})
             `,
             transformStyle: 'preserve-3d',
-            transition: isMotionActive ? 'none' : 'transform 0.3s ease-out',
+            transition: isOrientationStarted ? 'none' : 'transform 0.3s ease-out',
+            willChange: isOrientationStarted ? 'transform' : 'auto',
           }}
         >
           <img
@@ -388,17 +434,24 @@ Can we discuss this further?`;
             </Button>
           </div>
 
-          {/* Motion Toggle */}
+          {/* Motion Toggle - Telegram SDK 2.0 DeviceOrientation */}
           {hasMotionSupport && (
             <Button
-              onClick={isMotionActive ? stopMotionControl : startMotionControl}
-              variant={isMotionActive ? "destructive" : "default"}
+              onClick={isOrientationStarted ? stopMotionControl : startMotionControl}
+              variant={isOrientationStarted ? "destructive" : "default"}
               className="w-full"
               size="lg"
             >
-              <Hand className={`h-5 w-5 mr-2 ${isMotionActive ? 'animate-pulse' : ''}`} />
-              {isMotionActive ? 'Disable' : 'Enable'} Motion Control
+              <Smartphone className={`h-5 w-5 mr-2 ${isOrientationStarted ? 'animate-pulse' : ''}`} />
+              {isOrientationStarted ? 'Stop' : 'Start'} Gyroscope Control
             </Button>
+          )}
+          
+          {!hasMotionSupport && (
+            <div className="text-center text-sm text-slate-400 py-2">
+              <p>⚠️ Device motion sensors not available</p>
+              <p className="text-xs">Use touch gestures to rotate</p>
+            </div>
           )}
 
           {/* Action Buttons - Hide if owner */}

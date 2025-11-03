@@ -101,20 +101,28 @@ export function useTelegramSensors(): UseSensorsReturn {
     };
   }, [webApp]);
 
-  // Orientation handlers
+  // Orientation handlers - Poll sensor data at refresh rate
   useEffect(() => {
-    if (!webApp) return;
+    if (!webApp?.DeviceOrientation || !isOrientationStarted) return;
 
-    const handleOrientationChange = () => {
-      console.log('📱 Device orientation changed');
-    };
-
-    webApp.onEvent?.('deviceOrientationChanged', handleOrientationChange);
+    const pollInterval = setInterval(() => {
+      const device = webApp.DeviceOrientation;
+      if (device && device.isStarted) {
+        // Read current orientation values from SDK
+        // Note: The actual data structure depends on Telegram SDK implementation
+        // Fallback to 0 if not available
+        setOrientation({
+          alpha: (device as any).z || 0,  // Z-axis (compass heading)
+          beta: (device as any).x || 0,   // X-axis (front-to-back tilt)
+          gamma: (device as any).y || 0   // Y-axis (left-to-right tilt)
+        });
+      }
+    }, 16); // ~60 FPS polling
 
     return () => {
-      webApp.offEvent?.('deviceOrientationChanged', handleOrientationChange);
+      clearInterval(pollInterval);
     };
-  }, [webApp]);
+  }, [webApp, isOrientationStarted]);
 
   const startAccelerometer = useCallback((refreshRate = 60) => {
     if (!webApp?.Accelerometer) {
@@ -175,9 +183,13 @@ export function useTelegramSensors(): UseSensorsReturn {
       return;
     }
 
-    webApp.DeviceOrientation.start({ refresh_rate: refreshRate });
-    setIsOrientationStarted(true);
-    console.log(`🚀 DeviceOrientation started (${refreshRate}Hz)`);
+    try {
+      webApp.DeviceOrientation.start({ refresh_rate: refreshRate });
+      setIsOrientationStarted(true);
+      console.log(`🚀 DeviceOrientation started (${refreshRate}Hz)`);
+    } catch (error) {
+      console.error('Failed to start DeviceOrientation:', error);
+    }
   }, [webApp]);
 
   const stopOrientation = useCallback(() => {
