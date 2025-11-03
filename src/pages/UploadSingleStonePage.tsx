@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
-import { StoneFormContainer } from "@/components/upload/StoneFormContainer";
+import { DiamondForm } from "@/components/upload/stone/DiamondForm";
 import { UploadForm } from "@/components/upload/UploadForm";
 import { UploadWizard } from "@/components/upload/UploadWizard";
 import { MobileTutorialWizard } from "@/components/tutorial/MobileTutorialWizard";
@@ -164,7 +164,7 @@ export default function UploadSingleStonePage() {
                 </Button>
               </div>
             </div>
-            <StoneFormContainer initialData={scannedData} showScanButton={false} />
+            <DiamondForm initialData={scannedData} showScanButton={false} />
           </div>
         )}
 

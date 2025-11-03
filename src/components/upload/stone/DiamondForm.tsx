@@ -1,32 +1,38 @@
-import { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Camera } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { UploadSuccessCard } from "./UploadSuccessCard";
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Camera } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { QRCodeScanner } from '@/components/inventory/QRCodeScanner';
+import { UploadSuccessCard } from '../UploadSuccessCard';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { DiamondDetailsSection } from './form/DiamondDetailsSection';
-import { CertificateSection } from './form/CertificateSection';
-import { MeasurementsSection } from './form/MeasurementsSection';
-import { BusinessInfoSection } from './form/BusinessInfoSection';
-import { ImageUploadSection } from './form/ImageUploadSection';
-import { FormActions } from './form/FormActions';
+import { FormActions } from '../form/FormActions';
 import { ApiStatusIndicator } from '@/components/ui/ApiStatusIndicator';
 import { ApiTestButton } from '@/components/ui/ApiTestButton';
-import { useStoneFormSubmit } from '@/hooks/upload/useStoneFormSubmit';
+import { useDiamondFormLogic } from './hooks/useDiamondFormLogic';
 import { mapGiaDataToForm } from '@/utils/diamond/giaDataMapper';
 
-interface StoneFormContainerProps {
+// Refactored form sections
+import { BasicInfoSection } from './sections/BasicInfoSection';
+import { GradingSection } from './sections/GradingSection';
+import { MeasurementsFormSection } from './sections/MeasurementsFormSection';
+import { CertificateFormSection } from './sections/CertificateFormSection';
+import { PricingSection } from './sections/PricingSection';
+import { MediaSection } from './sections/MediaSection';
+
+interface DiamondFormProps {
   initialData?: any;
   showScanButton?: boolean;
   onSuccess?: () => void;
 }
 
+/**
+ * Get default form values with proper typing
+ */
 const getDefaultValues = (initialData?: any): DiamondFormData => {
-  const defaults = {
+  const defaults: DiamondFormData = {
     stockNumber: '',
     carat: 1,
     price: 0,
@@ -76,33 +82,37 @@ const getDefaultValues = (initialData?: any): DiamondFormData => {
   };
 };
 
-export function StoneFormContainer({ 
+/**
+ * Main diamond form component (refactored)
+ * Cleaner architecture with separated sections and validation
+ */
+export function DiamondForm({ 
   initialData, 
   showScanButton = true, 
   onSuccess 
-}: StoneFormContainerProps) {
+}: DiamondFormProps) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isScanning, setIsScanning] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [apiConnected, setApiConnected] = useState(true);
 
   const defaultValues = useMemo(() => getDefaultValues(initialData), [initialData]);
 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
+  const form = useForm<DiamondFormData>({
     defaultValues
   });
 
-  const currentShape = watch('shape');
-  const showCutField = currentShape === 'Round';
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = form;
 
-  const { submitForm, isLoading } = useStoneFormSubmit({
-    showCutField,
-    onSuccess: () => {
-      setUploadSuccess(true);
-      onSuccess?.();
-    },
-    onApiStatusChange: setApiConnected
+  const { 
+    isSubmitting, 
+    uploadSuccess, 
+    setUploadSuccess,
+    handleSubmit: submitForm,
+    handleReset 
+  } = useDiamondFormLogic({
+    form,
+    onSuccess
   });
 
   const handleGiaScanSuccess = useCallback((giaData: any) => {
@@ -114,26 +124,17 @@ export function StoneFormContainer({
     });
   }, [setValue, toast]);
 
-  const handleFormSubmit = useCallback(async (data: DiamondFormData) => {
-    if (isLoading) {
-      console.log('⚠️ Already submitting, ignoring duplicate submit');
-      return;
-    }
+  const onFormSubmit = useCallback(async (data: DiamondFormData) => {
+    await submitForm(data);
     
-    console.log('📝 Submitting diamond form:', data.stockNumber);
-    const success = await submitForm(data);
-    if (success) {
-      // Wait longer to ensure the success card shows, then reset
+    // Reset form after successful submission
+    if (uploadSuccess) {
       setTimeout(() => {
         reset(defaultValues);
         setUploadSuccess(false);
       }, 4000);
     }
-  }, [submitForm, reset, defaultValues, isLoading]);
-
-  const resetForm = useCallback(() => {
-    reset(defaultValues);
-  }, [reset, defaultValues]);
+  }, [submitForm, uploadSuccess, reset, defaultValues, setUploadSuccess]);
 
   // Success screen
   if (uploadSuccess) {
@@ -144,7 +145,7 @@ export function StoneFormContainer({
           description="היהלום נוסף למלאי שלך. אפשר להמשיך ולהוסיף עוד יהלומים."
           onContinue={() => {
             setUploadSuccess(false);
-            resetForm();
+            handleReset();
           }}
           onShare={() => {
             toast({
@@ -191,26 +192,36 @@ export function StoneFormContainer({
         <ApiTestButton />
         <ApiStatusIndicator isConnected={apiConnected} className="mb-2" />
         
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col">
+        <form onSubmit={handleSubmit(onFormSubmit)} className="flex flex-col">
           <div className="space-y-4">
-            <DiamondDetailsSection
+            {/* Basic Information */}
+            <BasicInfoSection
               register={register}
               setValue={setValue}
               watch={watch}
               errors={errors}
             />
 
+            {/* Grading Details */}
             <div className="border-t border-border/20 pt-4">
-              <MeasurementsSection
+              <GradingSection
+                setValue={setValue}
+                watch={watch}
+              />
+            </div>
+
+            {/* Physical Measurements */}
+            <div className="border-t border-border/20 pt-4">
+              <MeasurementsFormSection
                 register={register}
                 watch={watch}
                 errors={errors}
               />
             </div>
 
-            <div className="border-t border-border/20 pt-4 px-3">
-              <h3 className="text-base font-semibold text-foreground mb-3">תעודה</h3>
-              <CertificateSection
+            {/* Certificate Information */}
+            <div className="border-t border-border/20 pt-4">
+              <CertificateFormSection
                 register={register}
                 setValue={setValue}
                 watch={watch}
@@ -218,9 +229,9 @@ export function StoneFormContainer({
               />
             </div>
 
-            <div className="border-t border-border/20 pt-4 px-3">
-              <h3 className="text-base font-semibold text-foreground mb-3">מידע עסקי</h3>
-              <BusinessInfoSection
+            {/* Business / Pricing */}
+            <div className="border-t border-border/20 pt-4">
+              <PricingSection
                 register={register}
                 setValue={setValue}
                 watch={watch}
@@ -228,9 +239,9 @@ export function StoneFormContainer({
               />
             </div>
 
-            <div className="border-t border-border/20 pt-4 px-3">
-              <h3 className="text-base font-semibold text-foreground mb-3">תמונות</h3>
-              <ImageUploadSection
+            {/* Media Uploads */}
+            <div className="border-t border-border/20 pt-4">
+              <MediaSection
                 setValue={setValue}
                 watch={watch}
                 onGiaDataExtracted={handleGiaScanSuccess}
@@ -240,17 +251,19 @@ export function StoneFormContainer({
             <div className="h-20"></div>
           </div>
 
+          {/* Fixed bottom actions */}
           <div className="sticky bottom-0 bg-background border-t border-border/20 safe-area-inset-bottom z-10">
             <div data-tutorial="submit-diamond">
               <FormActions
-                onReset={resetForm}
-                isLoading={isLoading}
+                onReset={handleReset}
+                isLoading={isSubmitting}
               />
             </div>
           </div>
         </form>
       </div>
 
+      {/* QR Scanner Modal */}
       {showScanButton && (
         <QRCodeScanner
           isOpen={isScanning}

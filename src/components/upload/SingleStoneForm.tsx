@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { DiamondDetailsSection } from './form/DiamondDetailsSection';
+import { BasicInfoSection } from '../upload/stone/sections/BasicInfoSection';
 import { CertificateSection } from './form/CertificateSection';
 import { MeasurementsSection } from './form/MeasurementsSection';
 import { DetailedGradingSection } from './form/DetailedGradingSection';
@@ -91,7 +91,7 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      <DiamondDetailsSection
+      <BasicInfoSection
         register={register}
         setValue={setValue}
         watch={watch}
