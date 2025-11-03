@@ -16,11 +16,9 @@ import Index from './pages/Index';
 import { LazyInventory, LazyUpload, LazySettings } from './components/performance/LazyRoute';
 import SimpleDashboard from './pages/SimpleDashboard';
 import CatalogPage from './pages/CatalogPage';
-import UploadSingleStonePage from './pages/UploadSingleStonePage';
 import InsightsPage from './pages/InsightsPage';
 import DiamondAgentsPage from './pages/DiamondAgentsPage';
 import ExecutiveAgentsPage from './pages/ExecutiveAgentsPage';
-import NotificationsPage from './pages/NotificationsPage';
 import NotificationPageFeatureTesting from './pages/NotificationPageFeatureTesting';
 import ProfilePage from './pages/ProfilePage';
 import WishlistPage from './pages/WishlistPage';
@@ -119,17 +117,12 @@ function App() {
                        <LazyUpload />
                      </AuthenticatedRoute>
                    } />
-                  <Route path="/upload/bulk" element={
-                    <AuthenticatedRoute>
-                      <BulkUploadPage />
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/upload-single-stone" element={
-                    <AuthenticatedRoute>
-                      <UploadSingleStonePage />
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/insights" element={
+                   <Route path="/upload/bulk" element={
+                     <AuthenticatedRoute>
+                       <BulkUploadPage />
+                     </AuthenticatedRoute>
+                   } />
+                   <Route path="/insights" element={
                     <AuthenticatedRoute>
                       <InsightsPage />
                     </AuthenticatedRoute>
@@ -146,12 +139,7 @@ function App() {
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />
-          <Route path="/notifications" element={
-            <AuthenticatedRoute>
-              <NotificationsPage />
-            </AuthenticatedRoute>
-          } />
-          <Route path="/notifications-test" element={
+           <Route path="/notifications-test" element={
             <AuthenticatedRoute>
               <NotificationPageFeatureTesting />
             </AuthenticatedRoute>
