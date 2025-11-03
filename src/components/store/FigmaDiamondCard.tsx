@@ -38,7 +38,7 @@ function FigmaDiamondCard({
 
   const handleViewDetails = useCallback(() => {
     impactOccurred('light');
-    navigate(`/diamond/${diamond.stockNumber}`);
+    navigate(`/diamond/${diamond.stockNumber}/immersive`);
   }, [impactOccurred, navigate, diamond.stockNumber]);
 
   const handleContact = useCallback(() => {

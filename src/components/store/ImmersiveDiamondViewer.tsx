@@ -66,6 +66,25 @@ export function ImmersiveDiamondViewer({ diamond, isOwner, onBack }: ImmersiveDi
 
   const hasMotionSupport = isSensorsAvailable && !!webApp?.DeviceOrientation;
 
+  // Auto-start motion control on mount if available
+  useEffect(() => {
+    if (hasMotionSupport && !isOrientationStarted) {
+      // Small delay to ensure sensors are ready
+      const timer = setTimeout(() => {
+        setCalibration({
+          alpha: orientation.alpha,
+          beta: orientation.beta,
+          gamma: orientation.gamma
+        });
+        startOrientation(60);
+        setShowInstructions(false);
+        console.log('🚀 Auto-started DeviceOrientation at 60Hz');
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [hasMotionSupport]);
+
   // Track view session
   useEffect(() => {
     const sessionId = crypto.randomUUID();
