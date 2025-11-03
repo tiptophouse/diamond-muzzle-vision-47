@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { api } from '@/lib/api';
 import { supabase } from '@/integrations/supabase/client';
+import { cachedApiCall, apiCache } from '@/lib/api/cache';
 
 interface SearchResultNotification {
   id: string;
@@ -94,30 +95,34 @@ export function useFastApiNotifications() {
       let isSchemaSeller = true;
       
       try {
-        const timestamp = Date.now();
-        const random = Math.random();
-        const sellerUrl = `/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}&_t=${timestamp}&_r=${random}`;
-        console.log('🔔 Fetching fresh seller notifications:', sellerUrl);
+        const cacheKey = `seller_notifications_${user.id}_${pageNum}`;
+        const sellerUrl = `/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`;
+        console.log('🔔 Fetching seller notifications (with 2min cache):', sellerUrl);
         
-        // Force fresh fetch with no-cache headers
         const fullUrl = `https://api.mazalbot.com${sellerUrl}`;
-        console.log('🔔 Full URL:', fullUrl);
         
-        const rawResponse = await fetch(fullUrl, {
-          method: 'GET',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
+        searchResults = await cachedApiCall(
+          cacheKey,
+          async () => {
+            const rawResponse = await fetch(fullUrl, {
+              method: 'GET',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              }
+            });
+            
+            if (!rawResponse.ok) {
+              throw new Error(`HTTP error! status: ${rawResponse.status}`);
+            }
+            
+            return await rawResponse.json();
+          },
+          2 * 60 * 1000 // 2 minute cache
+        );
         
-        if (!rawResponse.ok) {
-          throw new Error(`HTTP error! status: ${rawResponse.status}`);
-        }
-        
-        searchResults = await rawResponse.json();
-        console.log('✅ Seller notifications fetched:', searchResults?.length, 'results', 'First result:', searchResults?.[0]);
+        console.log('✅ Seller notifications fetched:', searchResults?.length, 'results');
       } catch (sellerError) {
         console.log('⚠️ Seller notifications endpoint failed, falling back to get_search_results:', sellerError);
         isSchemaSeller = false;

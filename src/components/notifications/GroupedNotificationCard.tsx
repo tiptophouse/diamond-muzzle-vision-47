@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,7 @@ interface GroupedNotificationCardProps {
   onMarkAsRead: (notificationIds: string[]) => void;
 }
 
-export function GroupedNotificationCard({
+export const GroupedNotificationCard = memo(function GroupedNotificationCard({
   group,
   onContactBuyer,
   onMarkAsRead,
@@ -224,4 +224,4 @@ export function GroupedNotificationCard({
       />
     </Card>
   );
-}
+});

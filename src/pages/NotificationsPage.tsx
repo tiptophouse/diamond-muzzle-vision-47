@@ -64,7 +64,7 @@ const NotificationsPage = () => {
     }
   });
   
-  // Smart grouping by buyer
+  // Smart grouping by buyer (memoized for performance)
   const groupedNotifications = useMemo(() => {
     const groups = new Map<number, any>();
     
@@ -104,14 +104,36 @@ const NotificationsPage = () => {
     );
   }, [displayNotifications]);
 
-  const unreadCount = displayNotifications.filter(n => !n.read).length;
-  const businessNotifications = displayNotifications.filter(n => 
-    ['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities'].includes(n.type)
+  // Stats calculation (memoized)
+  const stats = useMemo(() => ({
+    unreadCount: displayNotifications.filter(n => !n.read).length,
+    businessCount: displayNotifications.filter(n => 
+      ['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities'].includes(n.type)
+    ).length,
+    groupCount: displayNotifications.filter(n => n.type === 'group_diamond_request').length,
+    diamondMatchCount: displayNotifications.filter(n => n.type === 'diamond_match').length,
+  }), [displayNotifications]);
+
+  const unreadCount = stats.unreadCount;
+  const businessNotifications = useMemo(() => 
+    displayNotifications.filter(n => 
+      ['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities'].includes(n.type)
+    ),
+    [displayNotifications]
   );
-  const groupNotifications = displayNotifications.filter(n => n.type === 'group_diamond_request');
-  const diamondMatches = displayNotifications.filter(n => n.type === 'diamond_match');
-  const otherNotifications = displayNotifications.filter(n => 
-    !['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities', 'group_diamond_request', 'diamond_match'].includes(n.type)
+  const groupNotifications = useMemo(() => 
+    displayNotifications.filter(n => n.type === 'group_diamond_request'),
+    [displayNotifications]
+  );
+  const diamondMatches = useMemo(() => 
+    displayNotifications.filter(n => n.type === 'diamond_match'),
+    [displayNotifications]
+  );
+  const otherNotifications = useMemo(() =>
+    displayNotifications.filter(n => 
+      !['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities', 'group_diamond_request', 'diamond_match'].includes(n.type)
+    ),
+    [displayNotifications]
   );
   
   // Determine empty state type

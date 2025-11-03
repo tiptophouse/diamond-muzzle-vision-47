@@ -148,6 +148,29 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
         console.error('❌ HTTP: Server error text:', errorText);
       }
       
+      // Handle 401 Unauthorized - Session expired
+      if (response.status === 401 && !endpoint.includes('/api/v1/sign-in/')) {
+        toast({
+          title: "🔐 Session Expired",
+          description: "אנא התחבר מחדש | Please sign in again",
+          variant: "destructive",
+        });
+        
+        // Clear the invalid token (attempt to clear from localStorage)
+        try {
+          localStorage.removeItem('backend_auth_token');
+        } catch (e) {
+          console.error('Failed to clear auth token:', e);
+        }
+        
+        // Auto-reload after 2 seconds
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        
+        throw new Error('Session expired');
+      }
+      
       // Show specific error messages for different operations
       if (method === 'DELETE') {
         toast({

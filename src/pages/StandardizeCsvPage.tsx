@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,41 +64,49 @@ export default function StandardizeCsvPage() {
   };
 
   // Configure Main Button based on current step
-  const getMainButtonConfig = () => {
+  const mainButtonConfig = useMemo(() => {
     switch (step) {
       case 'upload':
         return {
           text: 'Choose File',
           isVisible: false,
-          isEnabled: false
+          isActive: false,
+          onClick: undefined
         };
       case 'map':
         return {
           text: 'Process Mapping',
           isVisible: true,
-          isEnabled: Object.keys(columnMappings).length > 0,
+          isActive: Object.keys(columnMappings).length > 0,
           onClick: () => handleColumnMapping(columnMappings)
         };
       case 'preview':
         return {
           text: 'Download CSV',
           isVisible: true,
-          isEnabled: standardizedData.length > 0,
+          isActive: standardizedData.length > 0,
           onClick: downloadStandardizedCsv
         };
       case 'download':
         return {
           text: 'Upload to Inventory',
           isVisible: true,
-          isEnabled: true,
+          isActive: true,
           onClick: () => navigate('/upload')
         };
       default:
-        return { text: '', isVisible: false, isEnabled: false };
+        return { text: '', isVisible: false, isActive: false, onClick: undefined };
     }
-  };
+  }, [step, columnMappings, standardizedData.length, downloadStandardizedCsv, navigate]);
 
-  useTelegramMainButton(getMainButtonConfig());
+  useTelegramMainButton(
+    mainButtonConfig.text,
+    mainButtonConfig.onClick,
+    {
+      isVisible: mainButtonConfig.isVisible,
+      isActive: mainButtonConfig.isActive
+    }
+  );
 
   const handleRefresh = async () => {
     impactOccurred('light');

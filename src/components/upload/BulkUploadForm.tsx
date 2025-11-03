@@ -105,13 +105,15 @@ export function BulkUploadForm() {
   }
 
   // Configure Telegram Main Button for upload
-  useTelegramMainButton({
-    text: processedData ? `Upload ${processedData.validRows.length} Diamonds` : "Select CSV File",
-    isVisible: !!selectedFile,
-    isEnabled: !!processedData && processedData.validRows.length > 0 && !isProcessing,
-    color: "#0088cc",
-    onClick: handleBulkUpload
-  });
+  useTelegramMainButton(
+    processedData ? `Upload ${processedData.validRows.length} Diamonds` : "Select CSV File",
+    handleBulkUpload,
+    {
+      isVisible: !!selectedFile,
+      isActive: !!processedData && processedData.validRows.length > 0 && !isProcessing,
+      backgroundColor: "#0088cc"
+    }
+  );
 
   async function handleFileChange(file: File | null) {
     console.log('🔄 File change triggered:', file?.name);

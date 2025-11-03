@@ -61,12 +61,14 @@ export function TutorialModal() {
       ? (currentLanguage === 'he' ? 'סיום' : 'Finish')
       : (currentLanguage === 'he' ? 'הבא' : 'Next'));
 
-  useTelegramMainButton({
-    text: mainButtonText,
-    isVisible: isActive && !currentStepData?.requireClick,
-    isEnabled: !currentStepData?.requireClick,
-    onClick: handleNext
-  });
+  useTelegramMainButton(
+    mainButtonText,
+    handleNext,
+    {
+      isVisible: isActive && !currentStepData?.requireClick,
+      isActive: !currentStepData?.requireClick
+    }
+  );
 
   useEffect(() => {
     if (isActive) {
