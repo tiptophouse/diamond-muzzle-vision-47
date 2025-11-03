@@ -14,14 +14,11 @@ import {
 } from 'lucide-react';
 import { ReEngagementCampaign } from './ReEngagementCampaign';
 import { AcadiaBulkMessageSender } from './AcadiaBulkMessageSender';
-import GroupMessageSender from './GroupMessageSender';
-import CampaignAnalytics from './CampaignAnalytics';
-import CampaignIdeas from './CampaignIdeas';
 import { useUserDiamondCounts } from '@/hooks/admin/useUserDiamondCounts';
 
 export function CampaignManager() {
   const { stats, loading } = useUserDiamondCounts();
-  const [activeTab, setActiveTab] = useState('ideas');
+  const [activeTab, setActiveTab] = useState('overview');
 
   if (loading) {
     return (
@@ -38,9 +35,9 @@ export function CampaignManager() {
 
   const campaignStats = [
     {
-      title: 'Mini App Users',
+      title: 'Total Users',
       value: stats.totalUsers,
-      description: `${stats.totalUsers} in app (719 total in bot)`,
+      description: 'All registered users',
       icon: Users,
       color: 'text-blue-600'
     },
@@ -100,36 +97,20 @@ export function CampaignManager() {
 
       {/* Campaign Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="ideas" className="flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            Ideas
-          </TabsTrigger>
-          <TabsTrigger value="group" className="flex items-center gap-2">
-            <Send className="h-4 w-4" />
-            Group
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Overview
           </TabsTrigger>
           <TabsTrigger value="reengagement" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
-            Re-engage
+            Re-engagement
           </TabsTrigger>
           <TabsTrigger value="acadia" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
-            Acadia
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Stats
+            Acadia Messages
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="ideas">
-          <CampaignIdeas />
-        </TabsContent>
 
         <TabsContent value="overview" className="space-y-4">
           <Card>
@@ -191,14 +172,6 @@ export function CampaignManager() {
 
         <TabsContent value="acadia">
           <AcadiaBulkMessageSender />
-        </TabsContent>
-
-        <TabsContent value="group">
-          <GroupMessageSender />
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <CampaignAnalytics />
         </TabsContent>
       </Tabs>
     </div>

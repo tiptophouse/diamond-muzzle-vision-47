@@ -43,7 +43,6 @@ import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
-import { ButtonClickTracker } from './components/tracking/ButtonClickTracker';
 
 // Register service worker for offline support in Telegram Mini App
 registerServiceWorker();
@@ -71,7 +70,6 @@ function App() {
                 <InteractiveWizardProvider>
                   <SecureTelegramLayout>
                   <StartParamInitializer />
-                  <ButtonClickTracker />
                   <FloatingUploadButton />
                   <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
