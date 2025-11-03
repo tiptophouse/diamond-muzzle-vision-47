@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
@@ -11,6 +11,8 @@ import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
 import { EnhancedTelegramAdminGuard } from './components/admin/EnhancedTelegramAdminGuard';
 import { registerServiceWorker } from './lib/serviceWorker';
+import { applyTelegramTheme, expandTelegramWebApp } from './lib/telegram-theme';
+import { useTelegramDeepLink } from './hooks/useTelegramDeepLink';
 import Index from './pages/Index';
 // Lazy load heavy components to improve initial loading speed
 import { LazyInventory, LazyUpload, LazySettings } from './components/performance/LazyRoute';
@@ -47,49 +49,30 @@ import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 // Register service worker for offline support in Telegram Mini App
 registerServiceWorker();
 
-function App() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: 1, // Reduce retries for faster failure
-        staleTime: 10 * 60 * 1000, // 10 minutes - cache data longer
-        gcTime: 15 * 60 * 1000, // 15 minutes - keep cached data longer
-        refetchOnWindowFocus: false, // Don't refetch on window focus
-        refetchOnMount: false, // Don't refetch on mount if data exists
-      },
-    },
-  });
-  
+// AppRoutes component with deep linking
+function AppRoutes() {
+  useTelegramDeepLink();
+
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <RTLProvider>
-          <TelegramAuthProvider>
-            <Router>
-              <TutorialProvider>
-                <InteractiveWizardProvider>
-                  <SecureTelegramLayout>
-                  <StartParamInitializer />
-                  <FloatingUploadButton />
-                  <Routes>
-                  {/* Public route - redirects to dashboard if authenticated */}
-                  <Route path="/" element={
-                    <PublicRoute>
-                      <Index />
-                    </PublicRoute>
-                  } />
-                  
-                   {/* All protected routes require JWT authentication - OPTIMIZED: Lazy loaded */}
-                   <Route path="/dashboard" element={
-                     <AuthenticatedRoute>
-                       <SimpleDashboard />
-                     </AuthenticatedRoute>
-                   } />
-                   <Route path="/inventory" element={
-                     <AuthenticatedRoute>
-                       <LazyInventory />
-                     </AuthenticatedRoute>
-                   } />
+    <Routes>
+      {/* Public route - redirects to dashboard if authenticated */}
+      <Route path="/" element={
+        <PublicRoute>
+          <Index />
+        </PublicRoute>
+      } />
+      
+       {/* All protected routes require JWT authentication - OPTIMIZED: Lazy loaded */}
+       <Route path="/dashboard" element={
+         <AuthenticatedRoute>
+           <SimpleDashboard />
+         </AuthenticatedRoute>
+       } />
+       <Route path="/inventory" element={
+         <AuthenticatedRoute>
+           <LazyInventory />
+         </AuthenticatedRoute>
+       } />
                   <Route path="/catalog" element={
                     <AuthenticatedRoute>
                       <CatalogPage />
@@ -243,6 +226,54 @@ function App() {
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+  );
+}
+
+function App() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        staleTime: 10 * 60 * 1000,
+        gcTime: 15 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+      },
+    },
+  });
+
+  useEffect(() => {
+    // Apply Telegram native theme
+    applyTelegramTheme();
+    
+    // Expand mini app to full screen
+    expandTelegramWebApp();
+
+    // Re-apply theme when Telegram theme changes
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.onEvent) {
+      tg.onEvent('themeChanged', applyTelegramTheme);
+    }
+
+    return () => {
+      if (tg?.offEvent) {
+        tg.offEvent('themeChanged', applyTelegramTheme);
+      }
+    };
+  }, []);
+  
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <RTLProvider>
+          <TelegramAuthProvider>
+            <Router>
+              <TutorialProvider>
+                <InteractiveWizardProvider>
+                  <SecureTelegramLayout>
+                  <StartParamInitializer />
+                  <FloatingUploadButton />
+                  <AppRoutes />
                 </SecureTelegramLayout>
               </InteractiveWizardProvider>
             </TutorialProvider>

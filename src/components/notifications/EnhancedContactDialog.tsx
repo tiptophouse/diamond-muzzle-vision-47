@@ -148,12 +148,18 @@ export function EnhancedContactDialog({
         .map(d => d.picture || d.image_url || d.image)
         .filter(pic => pic && (pic.startsWith('http://') || pic.startsWith('https://')));
 
-      // Send message via Telegram bot
+      // Send message via Telegram bot with diamond data for inline buttons
       const { data, error } = await supabase.functions.invoke('send-seller-message', {
         body: {
           telegram_id: notification.buyer.telegram_id,
           message: generatedMessage,
           diamond_images: diamondImages.slice(0, 10), // Max 10 images
+          diamonds_data: selectedDiamondsData.map(d => ({
+            stock: d.stock_number || d.stock,
+            shape: d.shape,
+            weight: d.weight,
+            price: d.price_per_carat ? d.price_per_carat * d.weight : d.price || 0
+          }))
         },
       });
 
