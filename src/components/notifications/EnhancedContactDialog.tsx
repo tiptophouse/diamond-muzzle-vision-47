@@ -48,7 +48,6 @@ export function EnhancedContactDialog({
   const [loading, setLoading] = useState(false);
   const [generatedMessage, setGeneratedMessage] = useState('');
   const [diamonds, setDiamonds] = useState<any[]>([]);
-  const [selectedDiamonds, setSelectedDiamonds] = useState<string[]>([]); // Stock numbers of selected diamonds
   const [selectedTone, setSelectedTone] = useState<'professional' | 'friendly' | 'brief'>('professional');
   const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
 
@@ -57,13 +56,6 @@ export function EnhancedContactDialog({
       fetchDiamondsAndGenerate();
     }
   }, [open, selectedTone]);
-
-  // Select all diamonds by default when data loads
-  useEffect(() => {
-    if (diamonds.length > 0 && selectedDiamonds.length === 0) {
-      setSelectedDiamonds(diamonds.map(d => d.stock_number || d.stock));
-    }
-  }, [diamonds]);
 
   const fetchDiamondsAndGenerate = async () => {
     setLoading(true);
@@ -81,21 +73,16 @@ export function EnhancedContactDialog({
       if (diamondError) throw diamondError;
 
       const fetchedDiamonds = diamondData?.diamonds || notification.matches;
-      console.log('💎 Fetched diamonds:', fetchedDiamonds.length, 'Sample:', fetchedDiamonds[0]);
       setDiamonds(fetchedDiamonds);
 
-      // Generate AI response with only selected diamonds
-      const diamondsToUse = selectedDiamonds.length > 0 
-        ? fetchedDiamonds.filter((d: any) => selectedDiamonds.includes(d.stock_number || d.stock))
-        : fetchedDiamonds;
-
-      console.log('🤖 Generating AI response for', diamondsToUse.length, 'diamonds...');
+      // Generate AI response
+      console.log('🤖 Generating AI response...');
       const { data: aiData, error: aiError } = await supabase.functions.invoke(
         'generate-ai-response',
         {
           body: {
             buyer_name: notification.buyer.name,
-            diamonds: diamondsToUse,
+            diamonds: fetchedDiamonds,
             tone: selectedTone
           }
         }
@@ -138,14 +125,9 @@ export function EnhancedContactDialog({
     try {
       impactOccurred('medium');
 
-      // Filter to only selected diamonds
-      const selectedDiamondsData = diamonds.filter(d => 
-        selectedDiamonds.includes(d.stock_number || d.stock)
-      );
-
-      // Prepare diamond images from selected diamonds only
-      const diamondImages = selectedDiamondsData
-        .map(d => d.picture || d.image_url || d.image)
+      // Prepare diamond images
+      const diamondImages = diamonds
+        .map(d => d.picture || d.image_url)
         .filter(pic => pic && (pic.startsWith('http://') || pic.startsWith('https://')));
 
       // Send message via Telegram bot
@@ -160,19 +142,16 @@ export function EnhancedContactDialog({
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to send');
 
-      // Track the interaction with selected diamonds only
+      // Track the interaction
       await supabase.functions.invoke('track-buyer-contact', {
         body: {
           notification_id: notification.id,
           buyer_telegram_id: notification.buyer.telegram_id,
           buyer_name: notification.buyer.name,
-          diamond_count: selectedDiamondsData.length,
-          total_value: selectedDiamondsData.reduce((sum, d) => {
-            const price = d.price_per_carat ? d.price_per_carat * d.weight : d.price || 0;
-            return sum + price;
-          }, 0),
+          diamond_count: diamonds.length,
+          total_value: notification.totalValue,
           message_preview: generatedMessage,
-          diamonds_data: selectedDiamondsData,
+          diamonds_data: diamonds,
         },
       }).catch(err => console.warn('⚠️ Tracking failed:', err));
 
@@ -198,22 +177,6 @@ export function EnhancedContactDialog({
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const toggleDiamond = (stockNumber: string) => {
-    setSelectedDiamonds(prev => 
-      prev.includes(stockNumber) 
-        ? prev.filter(s => s !== stockNumber)
-        : [...prev, stockNumber]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedDiamonds.length === diamonds.length) {
-      setSelectedDiamonds([]);
-    } else {
-      setSelectedDiamonds(diamonds.map(d => d.stock_number || d.stock));
     }
   };
 
@@ -256,95 +219,65 @@ export function EnhancedContactDialog({
                 </Card>
 
                 {/* Summary Stats */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <Card className="p-3 bg-card border">
                     <div className="flex items-center gap-2 mb-1">
                       <Diamond className="h-4 w-4 text-primary" />
-                      <span className="text-xs text-muted-foreground">נבחרו</span>
+                      <span className="text-xs text-muted-foreground">יהלומים</span>
                     </div>
-                    <p className="text-xl font-bold text-foreground">{selectedDiamonds.length}/{diamonds.length}</p>
+                    <p className="text-xl font-bold text-foreground">{diamonds.length}</p>
                   </Card>
 
-                  <Card className="p-3 bg-card border col-span-2">
+                  <Card className="p-3 bg-card border">
                     <div className="flex items-center gap-2 mb-1">
                       <TrendingUp className="h-4 w-4 text-green-600" />
-                      <span className="text-xs text-muted-foreground">שווי נבחרים</span>
+                      <span className="text-xs text-muted-foreground">שווי</span>
                     </div>
                     <p className="text-xl font-bold text-green-600">
-                      ${(diamonds.filter(d => selectedDiamonds.includes(d.stock_number || d.stock)).reduce((sum, d) => {
-                        const price = d.price_per_carat ? d.price_per_carat * d.weight : d.price || 0;
-                        return sum + price;
-                      }, 0) / 1000).toFixed(1)}K
+                      ${(notification.totalValue / 1000).toFixed(1)}K
                     </p>
                   </Card>
                 </div>
 
-                {/* Select All Button */}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={toggleSelectAll}
-                  className="w-full"
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  {selectedDiamonds.length === diamonds.length ? 'בטל הכל' : 'בחר הכל'}
-                </Button>
-
-                {/* Diamond Selection List */}
-                <div className="max-h-[300px] overflow-y-auto space-y-2">
-                  {diamonds.map((diamond, idx) => {
-                    const stockNumber = diamond.stock_number || diamond.stock;
-                    const isSelected = selectedDiamonds.includes(stockNumber);
-                    const imageUrl = diamond.picture || diamond.image_url || diamond.image;
-                    
-                    return (
-                      <Card 
-                        key={idx} 
-                        className={`p-3 cursor-pointer transition-all ${
-                          isSelected ? 'bg-primary/5 border-primary' : 'bg-card border hover:border-primary/50'
-                        }`}
-                        onClick={() => toggleDiamond(stockNumber)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input 
-                            type="checkbox" 
-                            checked={isSelected}
-                            onChange={() => {}}
-                            className="w-5 h-5 rounded border-2 cursor-pointer"
-                          />
-                          {imageUrl ? (
-                            <div className="w-12 h-12 rounded bg-muted overflow-hidden flex-shrink-0">
-                              <img 
-                                src={imageUrl} 
-                                alt={stockNumber}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  console.error('❌ Image failed to load:', imageUrl);
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-12 h-12 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
-                              <Diamond className="h-6 w-6 text-primary" />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate">
-                              {diamond.shape} {diamond.weight}ct
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {diamond.color} {diamond.clarity} • {stockNumber}
-                            </p>
-                            <p className="text-xs font-semibold text-primary">
-                              ${((diamond.price_per_carat || 0) * (diamond.weight || 0)).toLocaleString()}
-                            </p>
+                {/* Diamond Preview Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {diamonds.slice(0, 4).map((diamond, idx) => (
+                    <Card key={idx} className="p-2 bg-card border">
+                      <div className="flex items-center gap-2">
+                        {diamond.picture ? (
+                          <div className="w-10 h-10 rounded bg-muted overflow-hidden flex-shrink-0">
+                            <img 
+                              src={diamond.picture} 
+                              alt={diamond.stock_number || diamond.stock}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
                           </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <Diamond className="h-5 w-5 text-primary" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-foreground truncate">
+                            {diamond.shape} {diamond.weight}ct
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {diamond.color} {diamond.clarity}
+                          </p>
                         </div>
-                      </Card>
-                    );
-                  })}
+                      </div>
+                    </Card>
+                  ))}
                 </div>
+
+                {diamonds.length > 4 && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    +{diamonds.length - 4} יהלומים נוספים יישלחו
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -374,7 +307,7 @@ export function EnhancedContactDialog({
 
           <Button
             onClick={handleSendMessage}
-            disabled={loading || !generatedMessage || selectedDiamonds.length === 0}
+            disabled={loading || !generatedMessage}
             className="flex-[2] bg-gradient-to-r from-green-600 to-green-700 hover:opacity-90 text-white font-semibold"
           >
             {loading ? (
@@ -385,7 +318,7 @@ export function EnhancedContactDialog({
             ) : (
               <>
                 <Send className="h-4 w-4 mr-2" />
-                שלח {selectedDiamonds.length} יהלומים
+                שלח דרך טלגרם
               </>
             )}
           </Button>
