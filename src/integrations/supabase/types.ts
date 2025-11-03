@@ -841,6 +841,48 @@ export type Database = {
         }
         Relationships: []
       }
+      diamond_story_shares: {
+        Row: {
+          clicks_count: number | null
+          conversions_count: number | null
+          created_at: string
+          deep_link: string
+          diamond_stock_number: string
+          id: string
+          share_type: string
+          shared_by_name: string | null
+          shared_by_telegram_id: number | null
+          updated_at: string
+          views_count: number | null
+        }
+        Insert: {
+          clicks_count?: number | null
+          conversions_count?: number | null
+          created_at?: string
+          deep_link: string
+          diamond_stock_number: string
+          id?: string
+          share_type?: string
+          shared_by_name?: string | null
+          shared_by_telegram_id?: number | null
+          updated_at?: string
+          views_count?: number | null
+        }
+        Update: {
+          clicks_count?: number | null
+          conversions_count?: number | null
+          created_at?: string
+          deep_link?: string
+          diamond_stock_number?: string
+          id?: string
+          share_type?: string
+          shared_by_name?: string | null
+          shared_by_telegram_id?: number | null
+          updated_at?: string
+          views_count?: number | null
+        }
+        Relationships: []
+      }
       diamond_views: {
         Row: {
           device_type: string | null
@@ -1800,6 +1842,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      telegram_button_clicks: {
+        Row: {
+          button_id: string
+          button_label: string
+          clicked_at: string
+          created_at: string
+          id: string
+          session_duration_seconds: number | null
+          target_page: string
+          telegram_user_id: number
+          user_first_name: string | null
+          user_username: string | null
+        }
+        Insert: {
+          button_id: string
+          button_label: string
+          clicked_at?: string
+          created_at?: string
+          id?: string
+          session_duration_seconds?: number | null
+          target_page: string
+          telegram_user_id: number
+          user_first_name?: string | null
+          user_username?: string | null
+        }
+        Update: {
+          button_id?: string
+          button_label?: string
+          clicked_at?: string
+          created_at?: string
+          id?: string
+          session_duration_seconds?: number | null
+          target_page?: string
+          telegram_user_id?: number
+          user_first_name?: string | null
+          user_username?: string | null
+        }
+        Relationships: []
+      }
+      telegram_group_campaigns: {
+        Row: {
+          campaign_name: string
+          created_at: string
+          id: string
+          message_id: number | null
+          message_text: string
+          sent_at: string
+          sent_by_telegram_id: number
+          target_group_id: number
+          total_clicks: number | null
+          unique_users_clicked: number | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_name: string
+          created_at?: string
+          id?: string
+          message_id?: number | null
+          message_text: string
+          sent_at?: string
+          sent_by_telegram_id: number
+          target_group_id: number
+          total_clicks?: number | null
+          unique_users_clicked?: number | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_name?: string
+          created_at?: string
+          id?: string
+          message_id?: number | null
+          message_text?: string
+          sent_at?: string
+          sent_by_telegram_id?: number
+          target_group_id?: number
+          total_clicks?: number | null
+          unique_users_clicked?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       tutorial_analytics: {
         Row: {
