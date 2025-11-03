@@ -82,3 +82,13 @@ verify_jwt = false
 
 [functions.track-buyer-contact]
 verify_jwt = false
+
+[functions.fetch-fastapi-diamonds]
+verify_jwt = false
+
+[functions.generate-ai-response]
+verify_jwt = false
+
+[functions.get-api-token]
+verify_jwt = false
+
