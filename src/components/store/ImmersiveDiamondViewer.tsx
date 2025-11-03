@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { toast } from 'sonner';
+import { UniversalImageHandler } from '@/components/store/UniversalImageHandler';
 
 interface ImmersiveDiamondViewerProps {
   diamond: Diamond;
@@ -427,7 +428,7 @@ Can we discuss this further?`;
         {/* Diamond Image */}
         <div
           ref={imageRef}
-          className="absolute inset-0 flex items-center justify-center"
+          className="absolute inset-0 flex items-center justify-center p-4"
           style={{
             transform: `
               perspective(1200px)
@@ -441,14 +442,19 @@ Can we discuss this further?`;
             willChange: isOrientationStarted ? 'transform' : 'auto',
           }}
         >
-          <img
-            src={diamond.imageUrl}
-            alt={`${diamond.carat}ct ${diamond.shape} diamond`}
-            className="max-w-[85%] max-h-[85%] object-contain drop-shadow-2xl"
+          <div 
+            className="w-full h-full"
             style={{
               filter: `brightness(${1.1 + Math.abs(rotation.y) * 0.002}) contrast(1.1)`,
             }}
-          />
+          >
+            <UniversalImageHandler
+              imageUrl={diamond.imageUrl}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+              className="w-full h-full"
+            />
+          </div>
         </div>
 
         {/* Zoom Level Indicator */}
