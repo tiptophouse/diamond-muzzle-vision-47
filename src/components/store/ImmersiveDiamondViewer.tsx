@@ -25,7 +25,8 @@ import {
   DollarSign,
   Info,
   ArrowLeft,
-  Smartphone
+  Smartphone,
+  Share2
 } from 'lucide-react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { toast } from 'sonner';
@@ -252,6 +253,45 @@ Can we discuss this further?`;
     }
   };
 
+  const handleShareToStory = async () => {
+    haptic?.impact?.('medium');
+
+    if (!webApp?.shareToStory) {
+      toast.error('Story sharing not available on this device');
+      return;
+    }
+
+    try {
+      // Create deep link with stock number for tracking
+      const botUsername = 'BrilliantBot_bot'; // Your bot username
+      const deepLink = `https://t.me/${botUsername}?start=diamond_${diamond.stockNumber}_${user?.id || 'guest'}_story`;
+      
+      // Share to Telegram Story with widget link
+      await webApp.shareToStory(diamond.imageUrl, {
+        text: `💎 ${diamond.carat}ct ${diamond.shape} Diamond - $${diamond.price.toLocaleString()}`,
+        widget_link: {
+          url: deepLink,
+          name: 'View Diamond'
+        }
+      });
+
+      // Track story share in database
+      await supabase.from('diamond_story_shares').insert({
+        diamond_stock_number: diamond.stockNumber,
+        shared_by_telegram_id: user?.id,
+        shared_by_name: `${user?.first_name || ''} ${user?.last_name || ''}`.trim(),
+        deep_link: deepLink,
+        share_type: 'telegram_story'
+      });
+
+      toast.success('🎉 Shared to your story! Watch the engagement roll in!');
+      console.log('📱 Shared to Telegram Story:', deepLink);
+    } catch (error) {
+      console.error('Failed to share to story:', error);
+      toast.error('Failed to share to story');
+    }
+  };
+
   const handleSubmitOffer = async () => {
     if (!offerPrice || parseFloat(offerPrice) <= 0) {
       toast.error('Please enter a valid offer price');
@@ -456,25 +496,39 @@ Can we discuss this further?`;
 
           {/* Action Buttons - Hide if owner */}
           {!isOwner && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-3">
+              {/* Primary Actions */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => setShowOfferDialog(true)}
+                  variant="default"
+                  size="lg"
+                  className="gap-2"
+                >
+                  <DollarSign className="h-5 w-5" />
+                  Make Offer
+                </Button>
+                
+                <Button
+                  onClick={handleContactSeller}
+                  variant="outline"
+                  size="lg"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 gap-2"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Contact
+                </Button>
+              </div>
+
+              {/* Story Share Button - Telegram SDK 2.0 Viral Feature */}
               <Button
-                onClick={() => setShowOfferDialog(true)}
-                variant="default"
-                size="lg"
-                className="gap-2"
-              >
-                <DollarSign className="h-5 w-5" />
-                Make Offer
-              </Button>
-              
-              <Button
-                onClick={handleContactSeller}
+                onClick={handleShareToStory}
                 variant="outline"
                 size="lg"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 gap-2"
+                className="w-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-white hover:from-pink-500/30 hover:to-purple-500/30 gap-2"
               >
-                <MessageCircle className="h-5 w-5" />
-                Contact
+                <Share2 className="h-5 w-5" />
+                Share to Story (Viral 🚀)
               </Button>
             </div>
           )}
