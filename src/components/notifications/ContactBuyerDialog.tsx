@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Send, Diamond, Sparkles, Copy, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 
 interface DiamondInfo {
@@ -51,7 +50,6 @@ export function ContactBuyerDialog({
   const [generatedMessage, setGeneratedMessage] = useState('');
   const [diamondData, setDiamondData] = useState<any[]>([]);
   const [totalValue, setTotalValue] = useState(0);
-  const { webApp } = useTelegramWebApp();
   const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
 
   useEffect(() => {
@@ -118,12 +116,43 @@ export function ContactBuyerDialog({
   };
 
   const handleSendMessage = async () => {
+    if (!generatedMessage) {
+      toast.error('No message generated');
+      return;
+    }
+
+    setLoading(true);
     try {
       impactOccurred('medium');
       
-      console.log('📞 Opening Telegram chat with buyer:', buyerId);
+      console.log('📤 Sending message to buyer via Telegram bot:', buyerId);
       
-      // Track the contact (fire and forget - don't block the user)
+      // Prepare diamond images (filter only valid image URLs)
+      const diamondImages = diamondData
+        .map(d => d.picture)
+        .filter(pic => pic && (pic.startsWith('http://') || pic.startsWith('https://')));
+      
+      console.log('📸 Including diamond images:', diamondImages.length);
+
+      // Send message via Telegram bot
+      const { data, error } = await supabase.functions.invoke('send-seller-message', {
+        body: {
+          telegram_id: buyerId,
+          message: generatedMessage,
+          diamond_images: diamondImages,
+        },
+      });
+
+      if (error) {
+        console.error('❌ Failed to send message:', error);
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to send message');
+      }
+
+      // Track the contact (fire and forget)
       supabase.functions.invoke('track-buyer-contact', {
         body: {
           seller_telegram_id: sellerTelegramId,
@@ -137,24 +166,32 @@ export function ContactBuyerDialog({
         },
       }).catch(err => console.error('⚠️ Failed to track contact:', err));
 
-      // Open Telegram chat - prioritize Telegram SDK
-      const telegramLink = `https://t.me/user?id=${buyerId}`;
-      
-      if (webApp && typeof (webApp as any).openTelegramLink === 'function') {
-        console.log('✅ Opening via Telegram SDK');
-        (webApp as any).openTelegramLink(telegramLink);
-      } else {
-        console.log('⚠️ Telegram SDK not available, using fallback');
-        window.open(telegramLink, '_blank');
-      }
-
+      console.log('✅ Message sent successfully to buyer:', buyerId);
       notificationOccurred('success');
-      toast.success('Opening Telegram chat...');
+      toast.success(`Message sent to ${buyerName}!`, {
+        description: `Sent with ${diamondImages.length} diamond image${diamondImages.length !== 1 ? 's' : ''}`,
+      });
       onOpenChange(false);
       
-    } catch (error) {
-      console.error('❌ Failed to open chat:', error);
-      toast.error('Failed to open Telegram chat');
+    } catch (error: any) {
+      console.error('❌ Failed to send message:', error);
+      
+      // Handle specific errors
+      if (error?.message?.includes('blocked')) {
+        toast.error('Cannot send message', {
+          description: 'The buyer has blocked the bot',
+        });
+      } else if (error?.message?.includes('not found')) {
+        toast.error('Cannot send message', {
+          description: 'Buyer not found',
+        });
+      } else {
+        toast.error('Failed to send message', {
+          description: 'Please try again or contact support',
+        });
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -253,6 +290,7 @@ export function ContactBuyerDialog({
                 <Button
                   variant="outline"
                   onClick={handleCopyMessage}
+                  disabled={loading}
                   className="flex-1"
                 >
                   <Copy className="h-4 w-4 mr-2" />
@@ -260,15 +298,29 @@ export function ContactBuyerDialog({
                 </Button>
                 <Button
                   onClick={handleSendMessage}
+                  disabled={loading}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
-                  <Send className="h-4 w-4 mr-2" />
-                  Send via Telegram
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Send via Telegram
+                    </>
+                  )}
                 </Button>
               </div>
 
               <p className="text-xs text-muted-foreground text-center">
-                This will open Telegram with the buyer and track the contact for analytics
+                {diamondData.filter(d => d.picture).length > 0 ? (
+                  <>Message and {diamondData.filter(d => d.picture).length} diamond image{diamondData.filter(d => d.picture).length !== 1 ? 's' : ''} will be sent via Telegram bot</>
+                ) : (
+                  <>Message will be sent via Telegram bot</>
+                )}
               </p>
             </>
           )}
