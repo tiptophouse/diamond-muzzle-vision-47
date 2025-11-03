@@ -1,6 +1,5 @@
 
-import { memo, useState, useCallback, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { memo, useState, useCallback, useMemo } from "react";
 import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -18,11 +17,8 @@ import { DiamondForm } from "@/components/inventory/DiamondForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { UploadSuccessCard } from "@/components/upload/UploadSuccessCard";
-import { toast } from "sonner";
 
 export default function InventoryPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  
   const {
     loading,
     diamonds,
@@ -85,31 +81,6 @@ export default function InventoryPage() {
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
   const [showAddSuccess, setShowAddSuccess] = useState(false);
   const [viewType, setViewType] = useState<'cards' | 'table'>('cards');
-
-  // Handle deep link from Telegram inline button
-  useEffect(() => {
-    const stockParam = searchParams.get('stock');
-    if (stockParam && displayDiamonds.length > 0) {
-      const diamond = displayDiamonds.find(
-        d => d.stockNumber === stockParam || (d as any).stock === stockParam
-      );
-      
-      if (diamond) {
-        console.log('🔗 Deep link found diamond:', diamond.stockNumber);
-        setSearchQuery(stockParam);
-        toast.success('יהלום נמצא!', {
-          description: `${diamond.shape} ${(diamond as any).weight || diamond.carat}ct`,
-        });
-        // Clear search param after handling
-        setSearchParams({});
-      } else {
-        console.warn('🔗 Deep link diamond not found:', stockParam);
-        toast.error('יהלום לא נמצא', {
-          description: stockParam,
-        });
-      }
-    }
-  }, [searchParams, displayDiamonds, setSearchQuery, setSearchParams]);
 
   const handleEdit = useCallback((diamond: Diamond) => {
     console.log('📝 Edit diamond clicked:', diamond.stockNumber);

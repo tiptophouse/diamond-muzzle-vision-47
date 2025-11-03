@@ -3,19 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Telegram Mini App Native Variables */
-:root {
-  --tg-bg: #ffffff;
-  --tg-text: #000000;
-  --tg-hint: #999999;
-  --tg-button-bg: #3390ec;
-  --tg-button-text: #ffffff;
-  --tg-secondary-bg: #f4f4f5;
-  --tg-accent: #3390ec;
-  --tg-destructive: #e53935;
-  --tg-header-bg: #ffffff;
-}
-
 /* Automatic RTL for Hebrew text only */
 @layer base {
   /* Default is LTR */
