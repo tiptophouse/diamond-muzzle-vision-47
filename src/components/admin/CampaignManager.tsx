@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { ReEngagementCampaign } from './ReEngagementCampaign';
 import { AcadiaBulkMessageSender } from './AcadiaBulkMessageSender';
+import GroupMessageSender from './GroupMessageSender';
+import CampaignAnalytics from './CampaignAnalytics';
 import { useUserDiamondCounts } from '@/hooks/admin/useUserDiamondCounts';
 
 export function CampaignManager() {
@@ -97,7 +99,7 @@ export function CampaignManager() {
 
       {/* Campaign Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
@@ -108,7 +110,15 @@ export function CampaignManager() {
           </TabsTrigger>
           <TabsTrigger value="acadia" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
-            Acadia Messages
+            Acadia
+          </TabsTrigger>
+          <TabsTrigger value="group" className="flex items-center gap-2">
+            <Send className="h-4 w-4" />
+            Group
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Analytics
           </TabsTrigger>
         </TabsList>
 
@@ -172,6 +182,14 @@ export function CampaignManager() {
 
         <TabsContent value="acadia">
           <AcadiaBulkMessageSender />
+        </TabsContent>
+
+        <TabsContent value="group">
+          <GroupMessageSender />
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <CampaignAnalytics />
         </TabsContent>
       </Tabs>
     </div>
