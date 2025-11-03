@@ -108,12 +108,19 @@ serve(async (req) => {
       console.log(`📧 Sending test Acadia message to admin: ${adminTelegramId}`);
       
       try {
+        // Escape Markdown special characters in test message too
+        const escapedTestMessage = message
+          .replace(/\*/g, '\\*')
+          .replace(/_/g, '\\_')
+          .replace(/\[/g, '\\[')
+          .replace(/`/g, '\\`');
+          
         const response = await fetch(`${telegramApiUrl}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: adminTelegramId,
-            text: message,
+            text: escapedTestMessage,
             parse_mode: 'Markdown',
             ...inlineKeyboard
           })
@@ -140,9 +147,16 @@ serve(async (req) => {
       
       for (const user of users) {
         try {
+          // Escape Markdown special characters in user-provided content
+          const escapedMessage = message
+            .replace(/\*/g, '\\*')
+            .replace(/_/g, '\\_')
+            .replace(/\[/g, '\\[')
+            .replace(/`/g, '\\`');
+          
           const personalizedMessage = `שלום ${user.first_name || 'יקר/ה'}! 👋
 
-${message}
+${escapedMessage}
 
 *הודעה זו נשלחה על ידי ${senderName}*`;
           
