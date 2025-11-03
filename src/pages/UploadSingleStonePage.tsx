@@ -1,495 +1,182 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useTelegramSDK2Context } from '@/providers/TelegramSDK2Provider';
-import { api, apiEndpoints } from '@/lib/api';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Diamond, Upload, Loader2 } from 'lucide-react';
-
-interface DiamondFormData {
-  stock: string;
-  shape: string;
-  weight: number;
-  color: string;
-  clarity: string;
-  price_per_carat: number;
-  cut?: string;
-  polish?: string;
-  symmetry?: string;
-  lab?: string;
-  certificate_number?: string;
-  certificate_comment?: string;
-  rapnet?: number;
-  picture?: string;
-}
-
-const SHAPES = [
-  'round brilliant', 'princess', 'cushion', 'oval', 'emerald',
-  'pear', 'marquise', 'asscher', 'radiant', 'heart'
-];
-
-const COLORS = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
-
-const CLARITIES = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'];
-
-const CUTS = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'FAIR', 'POOR'];
-
-const LABS = ['GIA', 'IGI', 'HRD', 'AGS', 'EGL'];
-
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { TelegramLayout } from "@/components/layout/TelegramLayout";
+import { DiamondForm } from "@/components/upload/stone/DiamondForm";
+import { UploadForm } from "@/components/upload/UploadForm";
+import { UploadWizard } from "@/components/upload/UploadWizard";
+import { MobileTutorialWizard } from "@/components/tutorial/MobileTutorialWizard";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
+import { FileText, Camera } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 export default function UploadSingleStonePage() {
-  const { user } = useTelegramAuth();
-  const { webApp } = useTelegramSDK2Context();
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [isScanning, setIsScanning] = useState(false);
+  const [hasScannedCertificate, setHasScannedCertificate] = useState(false);
+  const [scannedData, setScannedData] = useState<any>(null);
+  const [showWizard, setShowWizard] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'he'>('he'); // Default to Hebrew
+  const {
+    toast
+  } = useToast();
+  const {
+    platform,
+    hapticFeedback
+  } = useTelegramWebApp();
 
-  const form = useForm<DiamondFormData>({
-    defaultValues: {
-      stock: '',
-      shape: '',
-      weight: 0,
-      color: '',
-      clarity: '',
-      price_per_carat: 0,
-      cut: '',
-      polish: '',
-      symmetry: '',
-      lab: '',
-      certificate_number: '',
-      certificate_comment: '',
-      rapnet: 0,
-      picture: '',
-    },
-  });
-
-  const watchShape = form.watch('shape');
-
-  const onSubmit = async (data: DiamondFormData) => {
-    if (!user?.id) {
-      toast.error('שגיאה', {
-        description: 'משתמש לא מחובר',
-      });
-      return;
+  // Check URL parameters for actions
+  useEffect(() => {
+    const action = searchParams.get('action');
+    const tutorial = searchParams.get('tutorial');
+    if (action === 'scan') {
+      // Check if it's a mobile platform (iPhone/Android in Telegram)
+      if (platform === 'ios' || platform === 'android' || window.innerWidth < 768) {
+        setShowWizard(true);
+      } else {
+        setIsScanning(true);
+      }
     }
+    if (tutorial === 'true') {
+      setShowTutorial(true);
+    }
+  }, [searchParams, platform]);
+  const handleScanSuccess = (giaData: any) => {
+    hapticFeedback.notification('success');
+    setScannedData(giaData);
+    setHasScannedCertificate(true);
+    setIsScanning(false);
+    toast({
+      title: "✅ Certificate Scanned",
+      description: "Diamond data extracted successfully",
+      duration: 2000
+    });
+  };
+  const handleStartOver = () => {
+    hapticFeedback.impact('light');
+    setHasScannedCertificate(false);
+    setScannedData(null);
+  };
+  const handleWizardComplete = () => {
+    setShowWizard(false);
+    toast({
+      title: language === 'he' ? 'העלאה הושלמה!' : 'Upload Complete!',
+      description: language === 'he' ? 'היהלום שלך נוסף בהצלחה למלאי' : 'Your diamond has been successfully added to inventory'
+    });
+  };
 
-    setIsSubmitting(true);
-    webApp?.HapticFeedback?.impactOccurred('medium');
+  // Show tutorial on mobile if requested
+  if (showTutorial) {
+    return <MobileTutorialWizard isOpen={showTutorial} onClose={() => setShowTutorial(false)} language={language} onLanguageChange={setLanguage} />;
+  }
 
-    try {
-      // Validate required fields
-      if (!data.stock || !data.shape || !data.weight || !data.color || !data.clarity || !data.price_per_carat) {
-        toast.error('שדות חובה חסרים', {
-          description: 'אנא מלא את כל השדות המסומנים בכוכבית',
-        });
-        return;
-      }
-
-      // Convert weight to number
-      const diamondData = {
-        ...data,
-        weight: Number(data.weight),
-        price_per_carat: Number(data.price_per_carat),
-        rapnet: data.rapnet ? Number(data.rapnet) : undefined,
-        certificate_number: data.certificate_number ? Number(data.certificate_number) : undefined,
-      };
-
-      console.log('📤 Submitting diamond:', diamondData);
-
-      const response = await api.post(
-        apiEndpoints.addDiamond(user.id),
-        diamondData
-      );
-
-      if (response.error) {
-        const errorMsg = typeof response.error === 'string' 
-          ? response.error 
-          : (response.error as any)?.message || 'Failed to add diamond';
-        throw new Error(errorMsg);
-      }
-
-      console.log('✅ Diamond added successfully:', response.data);
-
-      webApp?.HapticFeedback?.notificationOccurred('success');
-      
-      toast.success('יהלום נוסף בהצלחה!', {
-        description: `מק"ט ${data.stock} נוסף למלאי`,
-      });
-
-      // Reset form
-      form.reset();
-
-      // Navigate to inventory after a short delay
-      setTimeout(() => {
-        navigate('/inventory');
-      }, 1500);
-
-    } catch (error: any) {
-      console.error('❌ Failed to add diamond:', error);
-      
-      webApp?.HapticFeedback?.notificationOccurred('error');
-      
-      toast.error('שגיאה בהוספת יהלום', {
-        description: error.message || 'נסה שוב מאוחר יותר',
-      });
-    } finally {
-      setIsSubmitting(false);
+  // Show wizard on mobile platforms for better UX
+  if (showWizard) {
+    return <UploadWizard language={language} onLanguageChange={setLanguage} onComplete={handleWizardComplete} />;
+  }
+  const isMobile = platform === 'ios' || platform === 'android' || window.innerWidth < 768;
+  
+  // Hebrew translations
+  const text = {
+    he: {
+      scanCertificate: "סריקת תעודת GIA",
+      scanDesc: "הדרך הכי מהירה להוסיף יהלום - סרקו את התעודה להזנת נתונים מיידית",
+      startScan: "התחלת סריקת תעודה",
+      bulkUpload: "העלאה מרובה CSV",
+      bulkDesc: "העלו מספר יהלומים בבת אחת באמצעות קובץ CSV",
+      scannedSuccess: "התעודה נסרקה בהצלחה",
+      startOver: "התחלה מחדש",
+      instructions: "הוראות שלב אחר שלב:",
+      step1: "1. לחצו על 'התחלת סריקת תעודה'",
+      step2: "2. כוונו את המצלמה לתעודת ה-GIA",
+      step3: "3. המתינו לזיהוי אוטומטי של הנתונים",
+      step4: "4. בדקו ושמרו את הפרטים"
+    },
+    en: {
+      scanCertificate: "Scan GIA Certificate",
+      scanDesc: "Fastest way to add a diamond - scan your certificate for instant data entry",
+      startScan: "Start Certificate Scan",
+      bulkUpload: "Bulk CSV Upload",
+      bulkDesc: "Upload multiple diamonds at once using a CSV file",
+      scannedSuccess: "Certificate scanned successfully",
+      startOver: "Start Over",
+      instructions: "Step by step instructions:",
+      step1: "1. Click 'Start Certificate Scan'",
+      step2: "2. Point camera at GIA certificate",
+      step3: "3. Wait for automatic data recognition",
+      step4: "4. Review and save details"
     }
   };
 
-  return (
-    <TelegramMiniAppLayout>
-      <div className="p-4 pb-20">
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <Diamond className="h-6 w-6 text-primary" />
-              הוסף יהלום יחיד
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {/* Stock Number */}
-                <FormField
-                  control={form.control}
-                  name="stock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        מק״ט <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          placeholder="מק״ט ייחודי"
-                          className="bg-background text-foreground border-border"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+  const t = text[language];
+  
+  return <TelegramLayout>
+      <div className="min-h-screen bg-background pb-safe">
+        {!hasScannedCertificate ? (
+          <div className="px-3 pt-2 space-y-3">
+            {/* Compact Scan Button - Primary Action */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-2 pt-1">
+              <Button 
+                onClick={() => {
+                  hapticFeedback.impact('heavy');
+                  setIsScanning(true);
+                }} 
+                className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg active:scale-95 transition-all"
+              >
+                <Camera className="h-5 w-5 mr-2" />
+                {t.startScan}
+              </Button>
+            </div>
 
-                {/* Shape */}
-                <FormField
-                  control={form.control}
-                  name="shape"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        צורה <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-background text-foreground border-border">
-                            <SelectValue placeholder="בחר צורה" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {SHAPES.map(shape => (
-                            <SelectItem key={shape} value={shape}>
-                              {shape}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Weight/Carat */}
-                <FormField
-                  control={form.control}
-                  name="weight"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        משקל (קראט) <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="number"
-                          step="0.01"
-                          placeholder="1.25"
-                          className="bg-background text-foreground border-border"
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Color */}
-                <FormField
-                  control={form.control}
-                  name="color"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        צבע <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-background text-foreground border-border">
-                            <SelectValue placeholder="בחר צבע" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {COLORS.map(color => (
-                            <SelectItem key={color} value={color}>
-                              {color}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Clarity */}
-                <FormField
-                  control={form.control}
-                  name="clarity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        ניקיון <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-background text-foreground border-border">
-                            <SelectValue placeholder="בחר ניקיון" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {CLARITIES.map(clarity => (
-                            <SelectItem key={clarity} value={clarity}>
-                              {clarity}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Price Per Carat */}
-                <FormField
-                  control={form.control}
-                  name="price_per_carat"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        מחיר לקראט ($) <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="number"
-                          step="0.01"
-                          placeholder="5000"
-                          className="bg-background text-foreground border-border"
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Cut (only for round brilliant) */}
-                {watchShape === 'round brilliant' && (
-                  <FormField
-                    control={form.control}
-                    name="cut"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground">חיתוך</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="bg-background text-foreground border-border">
-                              <SelectValue placeholder="בחר חיתוך" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {CUTS.map(cut => (
-                              <SelectItem key={cut} value={cut}>
-                                {cut}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {/* Polish */}
-                <FormField
-                  control={form.control}
-                  name="polish"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">ליטוש</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-background text-foreground border-border">
-                            <SelectValue placeholder="בחר ליטוש" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {CUTS.map(polish => (
-                            <SelectItem key={polish} value={polish}>
-                              {polish}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Symmetry */}
-                <FormField
-                  control={form.control}
-                  name="symmetry"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">סימטריה</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-background text-foreground border-border">
-                            <SelectValue placeholder="בחר סימטריה" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {CUTS.map(symmetry => (
-                            <SelectItem key={symmetry} value={symmetry}>
-                              {symmetry}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Lab */}
-                <FormField
-                  control={form.control}
-                  name="lab"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">מעבדה</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-background text-foreground border-border">
-                            <SelectValue placeholder="בחר מעבדה" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {LABS.map(lab => (
-                            <SelectItem key={lab} value={lab}>
-                              {lab}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Certificate Number */}
-                <FormField
-                  control={form.control}
-                  name="certificate_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">מספר תעודה</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          placeholder="1234567890"
-                          className="bg-background text-foreground border-border"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Picture URL */}
-                <FormField
-                  control={form.control}
-                  name="picture"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">קישור לתמונה</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="url"
-                          placeholder="https://..."
-                          className="bg-background text-foreground border-border"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Submit Button */}
+            {/* Compact Bulk Upload Card */}
+            <Card className="border-border/40">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="flex items-center gap-2 text-sm text-right">
+                  <FileText className="h-4 w-4" />
+                  {t.bulkUpload}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3">
+                <UploadForm />
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          // Show form after successful scan
+          <div className="px-3 pt-2">
+            <div className="mb-3 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-green-700 dark:text-green-400">
+                    {t.scannedSuccess}
+                  </span>
+                </div>
                 <Button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                  size="lg"
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleStartOver} 
+                  className="text-xs text-muted-foreground hover:text-foreground h-7"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin ml-2" />
-                      מוסיף יהלום...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-5 w-5 ml-2" />
-                      הוסף יהלום
-                    </>
-                  )}
+                  {t.startOver}
                 </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+              </div>
+            </div>
+            <DiamondForm initialData={scannedData} showScanButton={false} />
+          </div>
+        )}
+
+        {/* QR Scanner Modal */}
+        <QRCodeScanner 
+          isOpen={isScanning} 
+          onClose={() => {
+            hapticFeedback.impact('light');
+            setIsScanning(false);
+          }} 
+          onScanSuccess={handleScanSuccess} 
+        />
       </div>
-    </TelegramMiniAppLayout>
-  );
+    </TelegramLayout>;
 }

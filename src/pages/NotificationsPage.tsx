@@ -1,197 +1,193 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
+import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useTelegramSDK2Context } from '@/providers/TelegramSDK2Provider';
-import { api, apiEndpoints } from '@/lib/api';
-import { cachedApiCall, apiCache } from '@/lib/api/cache';
-import { toast } from 'sonner';
-import { Bell, RefreshCw, Users, Diamond, Sparkles, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
+import { useToast } from '@/hooks/use-toast';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { NotificationSkeleton } from '@/components/notifications/NotificationSkeleton';
+import { Bell, RefreshCw, Users, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
-import { formatDistanceToNow } from 'date-fns';
-import { he } from 'date-fns/locale';
+import { MatchNotificationCard } from '@/components/notifications/MatchNotificationCard';
+import { BuyerContactDialog } from '@/components/notifications/BuyerContactDialog';
+import { getCurrentUserId } from '@/lib/api';
 
-interface SellerNotification {
-  id: number;
-  user_id: number;
-  searcher_user_id: number | null;
-  search_query: string;
-  result_type: string;
-  diamonds_data: any[] | null;
-  message_sent: string | null;
-  created_at: string;
-}
-
-interface GroupedBuyerNotifications {
-  buyerId: number;
-  buyerName: string;
-  notifications: SellerNotification[];
-  totalDiamonds: number;
-  totalValue: number;
-  latestTimestamp: string;
-  unread: boolean;
-}
-
-export default function NotificationsPage() {
+const NotificationsPage = () => {
+  const { notifications, isLoading, markAsRead, refetch, loadMore, hasMore } = useFastApiNotifications();
   const { user } = useTelegramAuth();
-  const { webApp, isReady } = useTelegramSDK2Context();
+  const haptic = useTelegramHapticFeedback();
+  const { toast } = useToast();
+  const { webApp } = useTelegramWebApp();
   
-  const [notifications, setNotifications] = useState<SellerNotification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [expandedBuyers, setExpandedBuyers] = useState<Set<number>>(new Set());
-
-  const fetchNotifications = useCallback(async (pageNum: number = 1, forceRefresh: boolean = false) => {
-    if (!user?.id) return;
-
-    try {
-      const offset = (pageNum - 1) * 20;
-      const cacheKey = `notifications_${user.id}_${pageNum}`;
-      
-      if (forceRefresh) {
-        apiCache.clear(cacheKey);
-      }
-
-      const response = await cachedApiCall(
-        cacheKey,
-        () => api.get<SellerNotification[]>(apiEndpoints.sellerNotifications(user.id, 20, offset)),
-        120000 // 2 minutes cache
-      );
-
-      if (response.error) {
-        const errorMsg = typeof response.error === 'string' 
-          ? response.error 
-          : (response.error as any)?.message || 'Failed to fetch notifications';
-        throw new Error(errorMsg);
-      }
-
-      if (response.data) {
-        if (pageNum === 1) {
-          setNotifications(response.data);
-        } else {
-          setNotifications(prev => [...prev, ...response.data]);
+  const [selectedBuyerId, setSelectedBuyerId] = useState<number | null>(null);
+  const [selectedDiamonds, setSelectedDiamonds] = useState<Record<number, Set<string>>>({});
+  
+  // Pull-to-refresh
+  const { isRefreshing, pullDistance, isPulling } = usePullToRefresh({
+    onRefresh: async () => {
+      await refetch();
+    },
+    threshold: 80,
+  });
+  
+  // Group notifications by buyer with diamond_match type only
+  const groupedNotifications = useMemo(() => {
+    const groups = new Map<number, any>();
+    
+    notifications
+      .filter(n => n.type === 'diamond_match' && n.data?.searcher_info?.telegram_id)
+      .forEach(notif => {
+        const buyerId = notif.data.searcher_info.telegram_id;
+        
+        if (!groups.has(buyerId)) {
+          groups.set(buyerId, {
+            buyer: {
+              userId: buyerId,
+              name: notif.data.searcher_info.name || 'Interested Buyer',
+              telegram_username: notif.data.searcher_info.telegram_username,
+              phone: notif.data.searcher_info.phone,
+            },
+            matches: [],
+            searchQuery: notif.data.search_criteria || {},
+            latestTimestamp: notif.created_at,
+            notificationIds: [],
+            read: notif.read,
+          });
         }
-        setHasMore(response.data.length === 20);
-      }
-    } catch (error: any) {
-      console.error('Failed to fetch notifications:', error);
-      toast.error('שגיאה בטעינת התראות', {
-        description: error.message || 'נסה שוב מאוחר יותר',
+        
+        const group = groups.get(buyerId);
+        group.matches.push(...(notif.data.matches || []));
+        group.notificationIds.push(notif.id);
+        
+        // Update to latest timestamp
+        if (new Date(notif.created_at) > new Date(group.latestTimestamp)) {
+          group.latestTimestamp = notif.created_at;
+        }
+        
+        // If any notification is unread, mark group as unread
+        if (!notif.read) {
+          group.read = false;
+        }
       });
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchNotifications(1);
-    }
-  }, [user?.id]);
-
-  const handleRefresh = useCallback(async () => {
-    if (refreshing) return;
     
-    setRefreshing(true);
-    webApp?.HapticFeedback?.impactOccurred('light');
-    
-    await fetchNotifications(1, true);
-    
-    toast.success('התראות עודכנו');
-  }, [refreshing, webApp, fetchNotifications]);
-
-  const handleLoadMore = useCallback(() => {
-    if (!loading && hasMore) {
-      setPage(prev => prev + 1);
-      fetchNotifications(page + 1);
-    }
-  }, [loading, hasMore, page, fetchNotifications]);
-
-  const toggleBuyerExpanded = useCallback((buyerId: number) => {
-    webApp?.HapticFeedback?.impactOccurred('light');
-    setExpandedBuyers(prev => {
-      const next = new Set(prev);
-      if (next.has(buyerId)) {
-        next.delete(buyerId);
-      } else {
-        next.add(buyerId);
-      }
-      return next;
-    });
-  }, [webApp]);
-
-  // Group notifications by buyer
-  const groupedNotifications = useMemo<GroupedBuyerNotifications[]>(() => {
-    const groups = new Map<number, GroupedBuyerNotifications>();
-
-    notifications.forEach(notif => {
-      const buyerId = notif.searcher_user_id || 0;
-      if (buyerId === 0) return;
-
-      if (!groups.has(buyerId)) {
-        groups.set(buyerId, {
-          buyerId,
-          buyerName: `Buyer ${buyerId}`,
-          notifications: [],
-          totalDiamonds: 0,
-          totalValue: 0,
-          latestTimestamp: notif.created_at,
-          unread: !notif.message_sent,
-        });
-      }
-
-      const group = groups.get(buyerId)!;
-      group.notifications.push(notif);
-      
-      if (notif.diamonds_data) {
-        group.totalDiamonds += notif.diamonds_data.length;
-        group.totalValue += notif.diamonds_data.reduce((sum, d) => {
-          return sum + (d.price_per_carat || 0) * (d.weight || 0);
-        }, 0);
-      }
-
-      if (new Date(notif.created_at) > new Date(group.latestTimestamp)) {
-        group.latestTimestamp = notif.created_at;
-      }
-
-      if (!notif.message_sent) {
-        group.unread = true;
-      }
-    });
-
     return Array.from(groups.values()).sort(
       (a, b) => new Date(b.latestTimestamp).getTime() - new Date(a.latestTimestamp).getTime()
     );
   }, [notifications]);
 
-  // Stats
+  // Stats calculation
   const stats = useMemo(() => ({
     totalBuyers: groupedNotifications.length,
-    unreadCount: groupedNotifications.filter(g => g.unread).length,
-    totalDiamonds: groupedNotifications.reduce((sum, g) => sum + g.totalDiamonds, 0),
-    totalValue: groupedNotifications.reduce((sum, g) => sum + g.totalValue, 0),
+    unreadCount: groupedNotifications.filter(g => !g.read).length,
+    totalDiamonds: groupedNotifications.reduce((sum, g) => sum + g.matches.length, 0),
   }), [groupedNotifications]);
 
-  if (loading && notifications.length === 0) {
+  // Handle diamond selection toggle
+  const handleToggleDiamond = useCallback((buyerId: number, stockNumber: string) => {
+    haptic.impactOccurred('light');
+    
+    setSelectedDiamonds(prev => {
+      const buyerSet = new Set(prev[buyerId] || []);
+      
+      if (buyerSet.has(stockNumber)) {
+        buyerSet.delete(stockNumber);
+      } else {
+        buyerSet.add(stockNumber);
+      }
+      
+      return {
+        ...prev,
+        [buyerId]: buyerSet,
+      };
+    });
+  }, [haptic]);
+
+  // Handle select all diamonds for a buyer
+  const handleSelectAll = useCallback((buyerId: number, allStockNumbers: string[]) => {
+    haptic.impactOccurred('medium');
+    
+    setSelectedDiamonds(prev => ({
+      ...prev,
+      [buyerId]: new Set(allStockNumbers),
+    }));
+    
+    toast({
+      title: 'All diamonds selected',
+      description: `Selected ${allStockNumbers.length} diamonds`,
+    });
+  }, [haptic, toast]);
+
+  // Handle clear all selections for a buyer
+  const handleClearSelection = useCallback((buyerId: number) => {
+    haptic.impactOccurred('light');
+    
+    setSelectedDiamonds(prev => {
+      const newState = { ...prev };
+      delete newState[buyerId];
+      return newState;
+    });
+    
+    toast({
+      title: 'Selection cleared',
+    });
+  }, [haptic, toast]);
+
+  // Open contact dialog with selected diamonds
+  const handleContactBuyer = useCallback((buyerId: number) => {
+    const selectedCount = selectedDiamonds[buyerId]?.size || 0;
+    
+    if (selectedCount === 0) {
+      toast({
+        title: 'No diamonds selected',
+        description: 'Please select at least one diamond to send',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    haptic.impactOccurred('medium');
+    setSelectedBuyerId(buyerId);
+  }, [selectedDiamonds, haptic, toast]);
+
+  // Close contact dialog
+  const handleCloseDialog = useCallback(() => {
+    setSelectedBuyerId(null);
+  }, []);
+
+  // Get selected buyer and diamonds
+  const selectedBuyerData = useMemo(() => {
+    if (!selectedBuyerId) return null;
+    
+    const group = groupedNotifications.find(g => g.buyer.userId === selectedBuyerId);
+    if (!group) return null;
+    
+    const selectedStocks = selectedDiamonds[selectedBuyerId] || new Set();
+    const selectedMatches = group.matches.filter(m => selectedStocks.has(m.stock_number));
+    
+    return {
+      ...group,
+      selectedMatches,
+    };
+  }, [selectedBuyerId, groupedNotifications, selectedDiamonds]);
+
+  // Handle successful message send
+  const handleMessageSent = useCallback(() => {
+    if (selectedBuyerId && selectedBuyerData) {
+      // Mark notifications as read
+      selectedBuyerData.notificationIds.forEach(id => markAsRead(id));
+      
+      // Clear selections
+      handleClearSelection(selectedBuyerId);
+    }
+  }, [selectedBuyerId, selectedBuyerData, markAsRead, handleClearSelection]);
+
+  if (isLoading && groupedNotifications.length === 0) {
     return (
       <TelegramMiniAppLayout>
-        <div className="p-4 space-y-4">
-          <Skeleton className="h-16 w-full" />
-          <div className="grid grid-cols-3 gap-2">
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
-          </div>
-          {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-32 w-full" />
-          ))}
+        <div className="p-4 space-y-3">
+          <NotificationSkeleton count={5} />
         </div>
       </TelegramMiniAppLayout>
     );
@@ -199,13 +195,33 @@ export default function NotificationsPage() {
 
   return (
     <TelegramMiniAppLayout>
+      {/* Pull-to-refresh indicator */}
+      {isPulling && (
+        <div 
+          className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-primary/10 transition-all"
+          style={{ 
+            height: `${Math.min(pullDistance, 60)}px`,
+            opacity: pullDistance / 80 
+          }}
+        >
+          <RefreshCw 
+            className={`h-6 w-6 text-primary transition-transform ${
+              isRefreshing ? 'animate-spin' : ''
+            }`}
+            style={{ 
+              transform: `rotate(${pullDistance * 2}deg)` 
+            }}
+          />
+        </div>
+      )}
+      
       <div className="p-4 space-y-4 pb-20">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background pb-3 border-b border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between" dir="rtl">
+            <div className="flex items-center gap-2">
               <div className="relative">
-                <Bell className="h-7 w-7 text-primary" />
+                <Bell className="h-6 w-6 text-primary" />
                 {stats.unreadCount > 0 && (
                   <Badge 
                     variant="destructive" 
@@ -216,246 +232,115 @@ export default function NotificationsPage() {
                 )}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">התראות</h1>
+                <h1 className="text-xl font-bold text-foreground">
+                  התראות התאמה
+                </h1>
                 <p className="text-sm text-muted-foreground">
                   קונים מעוניינים ביהלומים שלך
                 </p>
               </div>
             </div>
             <Button 
-              onClick={handleRefresh} 
+              onClick={refetch} 
               variant="outline" 
               size="icon"
-              disabled={refreshing}
-              className="flex-shrink-0"
+              disabled={isRefreshing}
             >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-2">
-          <Card className="border-border">
-            <CardContent className="p-3">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-card border rounded-lg p-3">
               <div className="flex items-center gap-1 mb-1">
                 <Users className="h-3 w-3 text-primary" />
                 <span className="text-xs text-muted-foreground">קונים</span>
               </div>
-              <div className="text-2xl font-bold text-primary">{stats.totalBuyers}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-border">
-            <CardContent className="p-3">
+              <div className="text-xl font-bold text-primary">{stats.totalBuyers}</div>
+            </div>
+            <div className="bg-card border rounded-lg p-3">
               <div className="flex items-center gap-1 mb-1">
                 <Bell className="h-3 w-3 text-primary" />
                 <span className="text-xs text-muted-foreground">חדשות</span>
               </div>
-              <div className="text-2xl font-bold text-destructive">{stats.unreadCount}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-border">
-            <CardContent className="p-3">
+              <div className="text-xl font-bold text-destructive">{stats.unreadCount}</div>
+            </div>
+            <div className="bg-card border rounded-lg p-3">
               <div className="flex items-center gap-1 mb-1">
-                <Diamond className="h-3 w-3 text-primary" />
+                <Sparkles className="h-3 w-3 text-primary" />
                 <span className="text-xs text-muted-foreground">יהלומים</span>
               </div>
-              <div className="text-2xl font-bold text-primary">{stats.totalDiamonds}</div>
-            </CardContent>
-          </Card>
+              <div className="text-xl font-bold text-primary">{stats.totalDiamonds}</div>
+            </div>
+          </div>
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-auto">
-            <TabsTrigger value="all" className="text-xs py-2">
-              הכל ({groupedNotifications.length})
-            </TabsTrigger>
-            <TabsTrigger value="unread" className="text-xs py-2">
-              חדשות ({stats.unreadCount})
-            </TabsTrigger>
-            <TabsTrigger value="contacted" className="text-xs py-2">
-              יצרתי קשר
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="space-y-3 mt-4">
-            {groupedNotifications.length === 0 ? (
-              <Card className="border-border">
-                <CardContent className="p-8 text-center">
-                  <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    אין התראות
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    כשקונים יחפשו יהלומים שמתאימים למלאי שלך, תקבל התראה כאן
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              groupedNotifications.map(group => (
-                <BuyerNotificationCard
-                  key={group.buyerId}
-                  group={group}
-                  isExpanded={expandedBuyers.has(group.buyerId)}
-                  onToggle={() => toggleBuyerExpanded(group.buyerId)}
-                />
-              ))
-            )}
-          </TabsContent>
-
-          <TabsContent value="unread" className="space-y-3 mt-4">
-            {groupedNotifications.filter(g => g.unread).map(group => (
-              <BuyerNotificationCard
-                key={group.buyerId}
+        {/* Notifications List */}
+        {groupedNotifications.length === 0 ? (
+          <div className="text-center py-12">
+            <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">אין התראות חדשות</h3>
+            <p className="text-sm text-muted-foreground">
+              כשקונים יחפשו יהלומים שמתאימים למלאי שלך, תקבל התראה כאן
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {groupedNotifications.map((group) => (
+              <MatchNotificationCard
+                key={group.buyer.userId}
                 group={group}
-                isExpanded={expandedBuyers.has(group.buyerId)}
-                onToggle={() => toggleBuyerExpanded(group.buyerId)}
+                selectedDiamonds={selectedDiamonds[group.buyer.userId] || new Set()}
+                onToggleDiamond={(stockNumber) => handleToggleDiamond(group.buyer.userId, stockNumber)}
+                onSelectAll={(stockNumbers) => handleSelectAll(group.buyer.userId, stockNumbers)}
+                onClearSelection={() => handleClearSelection(group.buyer.userId)}
+                onContactBuyer={() => handleContactBuyer(group.buyer.userId)}
               />
             ))}
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="contacted" className="space-y-3 mt-4">
-            {groupedNotifications.filter(g => !g.unread).map(group => (
-              <BuyerNotificationCard
-                key={group.buyerId}
-                group={group}
-                isExpanded={expandedBuyers.has(group.buyerId)}
-                onToggle={() => toggleBuyerExpanded(group.buyerId)}
-              />
-            ))}
-          </TabsContent>
-        </Tabs>
-
-        {/* Load More */}
+        {/* Load More Button */}
         {hasMore && groupedNotifications.length > 0 && (
-          <Button
-            onClick={handleLoadMore}
-            variant="outline"
-            disabled={loading}
-            className="w-full"
-          >
-            {loading ? (
-              <>
-                <RefreshCw className="h-4 w-4 animate-spin ml-2" />
-                טוען...
-              </>
-            ) : (
-              'טען עוד התראות'
-            )}
-          </Button>
+          <div className="flex justify-center py-4">
+            <Button
+              onClick={loadMore}
+              variant="outline"
+              disabled={isLoading}
+              className="gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  טוען...
+                </>
+              ) : (
+                <>
+                  טען עוד התראות
+                </>
+              )}
+            </Button>
+          </div>
         )}
       </div>
+
+      {/* Buyer Contact Dialog */}
+      {selectedBuyerData && (
+        <BuyerContactDialog
+          open={!!selectedBuyerId}
+          onOpenChange={handleCloseDialog}
+          buyerId={selectedBuyerData.buyer.userId}
+          buyerName={selectedBuyerData.buyer.name}
+          notificationIds={selectedBuyerData.notificationIds}
+          diamonds={selectedBuyerData.selectedMatches}
+          searchQuery={selectedBuyerData.searchQuery}
+          sellerTelegramId={getCurrentUserId() || 0}
+          onMessageSent={handleMessageSent}
+        />
+      )}
     </TelegramMiniAppLayout>
   );
-}
+};
 
-function BuyerNotificationCard({ 
-  group, 
-  isExpanded, 
-  onToggle 
-}: { 
-  group: GroupedBuyerNotifications;
-  isExpanded: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <Card className={`border-2 ${group.unread ? 'border-primary/40' : 'border-border'}`}>
-      <CardContent className="p-4">
-        {/* Header */}
-        <div className="flex items-start gap-3 mb-3">
-          <Avatar className="h-12 w-12 border-2 border-primary/20">
-            <AvatarFallback className="bg-primary text-primary-foreground font-bold">
-              {group.buyerName[0]}
-            </AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-bold text-base text-foreground truncate">
-                    {group.buyerName}
-                  </p>
-                  {group.unread && (
-                    <Badge variant="destructive" className="text-xs">חדש</Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(group.latestTimestamp), { 
-                    addSuffix: true,
-                    locale: he 
-                  })}
-                </p>
-              </div>
-              <Badge variant="secondary" className="text-sm font-bold bg-primary/10 text-primary">
-                {group.notifications.length}
-              </Badge>
-            </div>
-
-            <div className="flex items-center gap-3 text-sm mt-2">
-              <div className="flex items-center gap-1">
-                <Diamond className="h-3 w-3 text-primary" />
-                <span className="text-foreground font-semibold">{group.totalDiamonds}</span>
-              </div>
-              <span className="text-muted-foreground">•</span>
-              <span className="font-bold text-primary">
-                ${group.totalValue.toLocaleString()}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2 mb-3">
-          <Button 
-            size="sm" 
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-          >
-            <MessageCircle className="h-4 w-4 ml-2" />
-            צור קשר
-          </Button>
-        </div>
-
-        {/* Toggle Details */}
-        <button
-          onClick={onToggle}
-          className="w-full flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors border-t border-border pt-3"
-        >
-          {isExpanded ? (
-            <>
-              <ChevronUp className="h-3 w-3" />
-              הסתר פרטים
-            </>
-          ) : (
-            <>
-              <ChevronDown className="h-3 w-3" />
-              הצג פרטים
-            </>
-          )}
-        </button>
-
-        {/* Expanded Details */}
-        {isExpanded && (
-          <div className="mt-3 space-y-2 border-t border-border pt-3">
-            {group.notifications.map(notif => (
-              <div 
-                key={notif.id}
-                className="p-2 rounded-lg bg-accent/30 text-xs"
-              >
-                <p className="text-foreground font-medium mb-1">
-                  {notif.result_type}
-                </p>
-                <p className="text-muted-foreground">
-                  {notif.diamonds_data?.length || 0} יהלומים נמצאו
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+export default NotificationsPage;
