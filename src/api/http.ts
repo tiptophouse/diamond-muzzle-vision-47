@@ -214,29 +214,8 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
       data = text ? { message: text } : {};
     }
     
-    // Show success messages for write operations
-    if (method === 'DELETE') {
-      console.log('✅ HTTP: Delete successful');
-      toast({
-        title: "✅ נמחק בהצלחה",
-        description: "הפריט נמחק מהמערכת",
-        variant: "default",
-      });
-    } else if (method === 'POST') {
-      console.log('✅ HTTP: Create successful');
-      toast({
-        title: "✅ נוסף בהצלחה",
-        description: "הפריט נוסף למערכת",
-        variant: "default",
-      });
-    } else if (method === 'PUT') {
-      console.log('✅ HTTP: Update successful');
-      toast({
-        title: "✅ עודכן בהצלחה",
-        description: "הפריט עודכן במערכת",
-        variant: "default",
-      });
-    }
+    // Success toasts handled by component-level code for better context
+    console.log(`✅ HTTP: ${method} successful for ${endpoint}`);
     
     console.log('✅ HTTP: Request successful');
     return data;

@@ -115,6 +115,12 @@ export function StoneFormContainer({
   }, [setValue, toast]);
 
   const handleFormSubmit = useCallback(async (data: DiamondFormData) => {
+    if (isLoading) {
+      console.log('⚠️ Already submitting, ignoring duplicate submit');
+      return;
+    }
+    
+    console.log('📝 Submitting diamond form:', data.stockNumber);
     const success = await submitForm(data);
     if (success) {
       // Wait longer to ensure the success card shows, then reset
@@ -123,7 +129,7 @@ export function StoneFormContainer({
         setUploadSuccess(false);
       }, 4000);
     }
-  }, [submitForm, reset, defaultValues]);
+  }, [submitForm, reset, defaultValues, isLoading]);
 
   const resetForm = useCallback(() => {
     reset(defaultValues);
