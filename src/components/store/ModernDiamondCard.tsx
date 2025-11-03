@@ -68,7 +68,7 @@ export function ModernDiamondCard({
 
   const handleViewDetails = () => {
     impactOccurred('light');
-    navigate(`/diamond/${diamond.stockNumber}/immersive`);
+    navigate(`/diamond/${diamond.stockNumber}`);
     toast({
       title: "Opening Diamond Details",
       description: `Viewing details for diamond #${diamond.stockNumber}`
