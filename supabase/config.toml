@@ -82,3 +82,9 @@ verify_jwt = false
 
 [functions.track-buyer-contact]
 verify_jwt = false
+
+[functions.check-subscription-status]
+verify_jwt = false
+
+[functions.customer-retention]
+verify_jwt = false

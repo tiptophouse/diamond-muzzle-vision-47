@@ -41,14 +41,15 @@ export function useBilling() {
   };
 
   /**
-   * Get active subscription status
+   * Get active subscription status via Supabase edge function
    */
-  const getActiveSubscription = async (): Promise<UpdatePaymentMethodResponse | null> => {
+  const getActiveSubscription = async (userId: number): Promise<UpdatePaymentMethodResponse | null> => {
     setLoading(true);
     try {
-      const { data, error } = await api.get<UpdatePaymentMethodResponse>(
-        apiEndpoints.getActiveSubscription()
-      );
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('check-subscription-status', {
+        body: { user_id: userId }
+      });
       
       if (error) {
         console.error('Active subscription error:', error);

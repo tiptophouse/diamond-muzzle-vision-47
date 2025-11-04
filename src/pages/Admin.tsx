@@ -324,6 +324,8 @@ export default function Admin() {
             <WebhookDiagnostics />
           </div>
         );
+      case 'retention':
+        return <CustomerRetentionPanel />;
       default:
         return (
           <div className="text-center py-12">

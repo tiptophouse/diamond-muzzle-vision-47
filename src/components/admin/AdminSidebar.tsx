@@ -12,7 +12,8 @@ import {
   Send,
   TrendingUp,
   Activity,
-  Crown
+  Crown,
+  UserCheck
 } from 'lucide-react';
 import {
   Sidebar,
@@ -56,6 +57,7 @@ const adminMenuItems = [
     title: 'Communications',
     items: [
       { title: 'Campaigns', url: '/admin?tab=campaigns', icon: Send, description: 'Marketing campaigns' },
+      { title: 'Retention', url: '/admin?tab=retention', icon: UserCheck, description: 'Customer retention automation' },
       { title: 'Notifications', url: '/admin?tab=notifications', icon: Bell, description: 'System notifications' },
       { title: 'Bulk Share', url: '/admin?tab=bulk-share', icon: MessageSquare, description: 'Mass messaging tools' },
       { title: 'Group CTA', url: '/admin?tab=group-cta', icon: TrendingUp, description: 'Call-to-action management' },

@@ -1441,6 +1441,42 @@ export type Database = {
           },
         ]
       }
+      retention_campaigns: {
+        Row: {
+          campaign_type: string
+          created_at: string | null
+          days_since_signup: number | null
+          has_inventory: boolean | null
+          id: string
+          is_paying: boolean | null
+          message_content: string
+          sent_at: string | null
+          user_telegram_id: number
+        }
+        Insert: {
+          campaign_type: string
+          created_at?: string | null
+          days_since_signup?: number | null
+          has_inventory?: boolean | null
+          id?: string
+          is_paying?: boolean | null
+          message_content: string
+          sent_at?: string | null
+          user_telegram_id: number
+        }
+        Update: {
+          campaign_type?: string
+          created_at?: string | null
+          days_since_signup?: number | null
+          has_inventory?: boolean | null
+          id?: string
+          is_paying?: boolean | null
+          message_content?: string
+          sent_at?: string | null
+          user_telegram_id?: number
+        }
+        Relationships: []
+      }
       ring_assets: {
         Row: {
           created_at: string
