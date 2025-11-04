@@ -50,6 +50,7 @@ const NotificationsPage = () => {
               phone: notif.data.searcher_info.phone,
             },
             matches: [],
+            matchesMap: new Map(), // Track unique diamonds by stock_number
             searchQuery: notif.data.search_criteria || {},
             latestTimestamp: notif.created_at,
             notificationIds: [],
@@ -58,8 +59,14 @@ const NotificationsPage = () => {
         }
         
         const group = groups.get(buyerId);
-        group.matches.push(...(notif.data.matches || []));
-        group.notificationIds.push(notif.id);
+        
+        // Deduplicate diamonds by stock_number
+        (notif.data.matches || []).forEach(match => {
+          if (!group.matchesMap.has(match.stock_number)) {
+            group.matchesMap.set(match.stock_number, match);
+            group.matches.push(match);
+          }
+        });
         
         // Update to latest timestamp
         if (new Date(notif.created_at) > new Date(group.latestTimestamp)) {
@@ -72,7 +79,13 @@ const NotificationsPage = () => {
         }
       });
     
-    return Array.from(groups.values()).sort(
+    // Clean up temporary matchesMap before returning
+    const groupsArray = Array.from(groups.values()).map(group => {
+      const { matchesMap, ...rest } = group;
+      return rest;
+    });
+    
+    return groupsArray.sort(
       (a, b) => new Date(b.latestTimestamp).getTime() - new Date(a.latestTimestamp).getTime()
     );
   }, [notifications]);
