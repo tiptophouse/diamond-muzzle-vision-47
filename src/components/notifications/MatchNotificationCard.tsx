@@ -62,7 +62,7 @@ export function MatchNotificationCard({
   onClearSelection,
   onContactBuyer,
 }: MatchNotificationCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true); // Default to expanded
   const { impactOccurred } = useTelegramHapticFeedback();
 
   const allStockNumbers = group.matches.map(m => m.stock_number);
@@ -101,31 +101,31 @@ export function MatchNotificationCard({
 
   return (
     <Card className={cn(
-      "overflow-hidden border-2 transition-all",
-      !group.read ? "border-primary/40 shadow-lg" : "border-border shadow-md",
-      selectedCount > 0 && "ring-2 ring-primary/50"
+      "overflow-hidden border transition-all touch-manipulation",
+      !group.read ? "border-primary/50 bg-primary/5" : "border-border",
+      selectedCount > 0 && "border-primary"
     )}>
       {/* Header with buyer info */}
       <div className={cn(
-        "p-4",
-        !group.read ? "bg-gradient-to-r from-primary/10 to-accent/10" : "bg-gradient-to-r from-primary/5 to-accent/5"
+        "p-3",
+        !group.read && "bg-accent/30"
       )}>
-        <div className="flex items-start gap-3">
-          <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-sm flex-shrink-0">
-            <AvatarFallback className="bg-primary text-primary-foreground font-bold text-lg">
+        <div className="flex items-start gap-2">
+          <Avatar className="h-10 w-10 border border-primary/20 flex-shrink-0">
+            <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-base">
               {group.buyer.name[0].toUpperCase()}
             </AvatarFallback>
           </Avatar>
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1">
+            <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-bold text-base text-foreground truncate">
+                <div className="flex items-center gap-1.5">
+                  <p className="font-semibold text-sm text-foreground truncate">
                     {group.buyer.name}
                   </p>
                   {!group.read && (
-                    <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
+                    <Badge variant="destructive" className="text-xs px-1 py-0">
                       חדש
                     </Badge>
                   )}
@@ -136,28 +136,21 @@ export function MatchNotificationCard({
               </div>
               <Badge 
                 variant="secondary" 
-                className="text-sm font-bold px-2 py-1 bg-primary/10 text-primary border-primary/20 flex-shrink-0"
+                className="text-xs font-semibold px-1.5 py-0.5 bg-primary/10 text-primary flex-shrink-0"
               >
                 {group.matches.length}
               </Badge>
-            </div>
-            
-            <div className="flex items-center gap-2 text-xs mt-2">
-              <Diamond className="h-3 w-3 text-primary" />
-              <span className="font-semibold text-foreground">
-                {group.matches.length} יהלומים מתאימים
-              </span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Selection Controls */}
-      <div className="px-4 py-3 bg-accent/20 border-y border-border/50">
+      <div className="px-3 py-2 bg-accent/10 border-y border-border/30">
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={handleSelectAllToggle}
-            className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+            className="flex items-center gap-1.5 text-sm font-medium hover:text-primary transition-colors touch-target min-h-[44px]"
           >
             {allSelected ? (
               <CheckSquare className="h-4 w-4 text-primary" />
@@ -166,17 +159,17 @@ export function MatchNotificationCard({
             ) : (
               <Square className="h-4 w-4" />
             )}
-            <span>
+            <span className="text-xs">
               {allSelected ? 'בטל הכל' : 'בחר הכל'}
             </span>
           </button>
           
           {selectedCount > 0 && (
-            <div className="flex items-center gap-2">
-              <Badge variant="default" className="text-xs">
-                {selectedCount} נבחרו
+            <div className="flex items-center gap-1.5">
+              <Badge variant="default" className="text-xs px-1.5 py-0.5">
+                {selectedCount}
               </Badge>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                 ${totalValue.toLocaleString()}
               </Badge>
             </div>
@@ -184,35 +177,21 @@ export function MatchNotificationCard({
         </div>
       </div>
 
-      {/* Contact Button */}
-      <div className="px-4 py-3">
-        <Button
-          size="lg"
-          onClick={onContactBuyer}
-          disabled={selectedCount === 0}
-          className="w-full h-11 text-sm font-semibold gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md"
-        >
-          <Sparkles className="h-4 w-4" />
-          צור הודעה עם AI
-          {selectedCount > 0 && <Badge variant="secondary" className="mr-2">{selectedCount}</Badge>}
-        </Button>
-      </div>
-
       {/* Toggle Diamond List */}
       <div 
         onClick={handleToggle}
-        className="px-4 py-2 cursor-pointer hover:bg-accent/50 transition-colors border-t border-border/50"
+        className="px-3 py-1.5 cursor-pointer hover:bg-accent/30 transition-colors border-t border-border/30 touch-target"
       >
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-medium">
+        <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground font-medium">
           {expanded ? (
             <>
               <ChevronUp className="h-3 w-3" />
-              הסתר רשימת יהלומים
+              הסתר
             </>
           ) : (
             <>
               <ChevronDown className="h-3 w-3" />
-              הצג רשימת יהלומים
+              הצג רשימה
             </>
           )}
         </div>
@@ -220,32 +199,33 @@ export function MatchNotificationCard({
 
       {/* Expanded Diamond List */}
       {expanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-border/50">
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+        <div className="px-3 pb-3 pt-2 border-t border-border/30">
+          <div className="space-y-1.5 max-h-[400px] overflow-y-auto scrollbar-hide">
             {group.matches.map((match, idx) => {
               const isSelected = selectedDiamonds.has(match.stock_number);
               
               return (
                 <div
                   key={idx}
-                  onClick={() => onToggleDiamond(match.stock_number)}
                   className={cn(
-                    "rounded-lg p-3 border transition-all cursor-pointer",
+                    "rounded-md p-2 border transition-all touch-target",
                     isSelected 
-                      ? "bg-primary/10 border-primary/40 shadow-md" 
-                      : "bg-accent/30 border-border/30 hover:bg-accent/50"
+                      ? "bg-primary/10 border-primary/50" 
+                      : "bg-accent/20 border-border/30"
                   )}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <Checkbox
                       checked={isSelected}
-                      onCheckedChange={() => onToggleDiamond(match.stock_number)}
+                      onCheckedChange={() => {
+                        impactOccurred('light');
+                        onToggleDiamond(match.stock_number);
+                      }}
                       className="flex-shrink-0"
-                      onClick={(e) => e.stopPropagation()}
                     />
                     
                     {match.picture ? (
-                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-accent">
+                      <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 bg-accent">
                         <img 
                           src={match.picture} 
                           alt={match.stock_number}
@@ -256,29 +236,23 @@ export function MatchNotificationCard({
                         />
                       </div>
                     ) : (
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Diamond className="h-6 w-6 text-primary" />
+                      <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Diamond className="h-4 w-4 text-primary" />
                       </div>
                     )}
                     
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-foreground">
+                      <p className="text-xs font-semibold text-foreground truncate">
                         {match.shape} {match.weight}ct
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {match.color} • {match.clarity} {match.cut && `• ${match.cut}`}
-                      </p>
-                      <p className="text-xs text-muted-foreground/70 mt-0.5">
-                        #{match.stock_number}
+                      <p className="text-xs text-muted-foreground truncate">
+                        {match.color} • {match.clarity}
                       </p>
                     </div>
                     
                     <div className="text-right flex-shrink-0">
-                      <p className="font-bold text-sm text-primary">
+                      <p className="font-semibold text-xs text-primary">
                         {formatPrice(match)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        ${match.price_per_carat.toLocaleString()}/ct
                       </p>
                     </div>
                   </div>
