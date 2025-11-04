@@ -42,12 +42,19 @@ const NotificationsPage = () => {
         const buyerId = notif.data.searcher_info.telegram_id;
         
         if (!groups.has(buyerId)) {
+          // Get buyer name with smart fallback chain
+          const searcherInfo = notif.data.searcher_info;
+          const buyerName = searcherInfo.name 
+            || searcherInfo.first_name 
+            || (searcherInfo.telegram_username ? `@${searcherInfo.telegram_username}` : null)
+            || `Buyer ${buyerId}`;
+          
           groups.set(buyerId, {
             buyer: {
               userId: buyerId,
-              name: notif.data.searcher_info.name || 'Interested Buyer',
-              telegram_username: notif.data.searcher_info.telegram_username,
-              phone: notif.data.searcher_info.phone,
+              name: buyerName,
+              telegram_username: searcherInfo.telegram_username,
+              phone: searcherInfo.phone,
             },
             matches: [],
             matchesMap: new Map(), // Track unique diamonds by stock_number

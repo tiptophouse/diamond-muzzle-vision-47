@@ -117,23 +117,29 @@ export function MatchNotificationCard({
             </AvatarFallback>
           </Avatar>
           
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-bold text-base text-foreground truncate">
-                    {group.buyer.name}
-                  </p>
-                  {!group.read && (
-                    <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
-                      חדש
-                    </Badge>
-                  )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-base text-foreground truncate">
+                      {group.buyer.name}
+                    </p>
+                    {!group.read && (
+                      <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
+                        חדש
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{formatDistanceToNow(new Date(group.latestTimestamp), { addSuffix: true })}</span>
+                    {group.buyer.telegram_username && (
+                      <>
+                        <span>•</span>
+                        <span className="truncate">@{group.buyer.telegram_username}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(group.latestTimestamp), { addSuffix: true })}
-                </p>
-              </div>
               <Badge 
                 variant="secondary" 
                 className="text-sm font-bold px-2 py-1 bg-primary/10 text-primary border-primary/20 flex-shrink-0"
