@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
 import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { MatchNotificationCard } from '@/components/notifications/MatchNotificationCard';
 import { BuyerContactDialog } from '@/components/notifications/BuyerContactDialog';
 import { getCurrentUserId } from '@/lib/api';
+import { http } from '@/api/http';
+import { apiEndpoints } from '@/lib/api/endpoints';
 
 const NotificationsPage = () => {
   const { notifications, isLoading, markAsRead, refetch, loadMore, hasMore } = useFastApiNotifications();
@@ -23,6 +25,43 @@ const NotificationsPage = () => {
   
   const [selectedBuyerId, setSelectedBuyerId] = useState<number | null>(null);
   const [selectedDiamonds, setSelectedDiamonds] = useState<Record<number, Set<string>>>({});
+  const [diamondInventory, setDiamondInventory] = useState<Map<string, any>>(new Map());
+  const [loadingInventory, setLoadingInventory] = useState(false);
+  
+  // Fetch all diamonds from inventory
+  useEffect(() => {
+    const fetchInventory = async () => {
+      const userId = getCurrentUserId();
+      if (!userId) return;
+      
+      setLoadingInventory(true);
+      try {
+        const response = await http<{ diamonds: any[] }>(
+          apiEndpoints.getAllStones(userId),
+          { method: 'GET' }
+        );
+        
+        const inventoryMap = new Map();
+        response.diamonds?.forEach((diamond: any) => {
+          // Map by stock_number and diamond_id
+          if (diamond.stock_number) {
+            inventoryMap.set(diamond.stock_number, diamond);
+          }
+          if (diamond.diamond_id) {
+            inventoryMap.set(diamond.diamond_id, diamond);
+          }
+        });
+        
+        setDiamondInventory(inventoryMap);
+      } catch (error) {
+        console.error('Failed to fetch diamond inventory:', error);
+      } finally {
+        setLoadingInventory(false);
+      }
+    };
+    
+    fetchInventory();
+  }, [user]);
   
   // Pull-to-refresh
   const { isRefreshing, pullDistance, isPulling } = usePullToRefresh({
@@ -32,7 +71,7 @@ const NotificationsPage = () => {
     threshold: 80,
   });
   
-  // Group notifications by buyer with diamond_match type only
+  // Group notifications by buyer with diamond_match type only and enhance with inventory data
   const groupedNotifications = useMemo(() => {
     const groups = new Map<number, any>();
     
@@ -67,11 +106,23 @@ const NotificationsPage = () => {
         
         const group = groups.get(buyerId);
         
-        // Deduplicate diamonds by stock_number
+        // Deduplicate diamonds by stock_number and enhance with inventory data
         (notif.data.matches || []).forEach(match => {
           if (!group.matchesMap.has(match.stock_number)) {
-            group.matchesMap.set(match.stock_number, match);
-            group.matches.push(match);
+            // Get full diamond data from inventory
+            const inventoryDiamond = diamondInventory.get(match.stock_number) || 
+                                    diamondInventory.get(match.diamond_id);
+            
+            // Merge notification match with inventory data (prioritize inventory images)
+            const enhancedMatch = {
+              ...match,
+              picture: inventoryDiamond?.picture || inventoryDiamond?.image_url || match.picture,
+              video_url: inventoryDiamond?.video_url || match.video_url,
+              certificate_url: inventoryDiamond?.certificate_url || match.certificate_url,
+            };
+            
+            group.matchesMap.set(match.stock_number, enhancedMatch);
+            group.matches.push(enhancedMatch);
           }
         });
         
@@ -95,7 +146,7 @@ const NotificationsPage = () => {
     return groupsArray.sort(
       (a, b) => new Date(b.latestTimestamp).getTime() - new Date(a.latestTimestamp).getTime()
     );
-  }, [notifications]);
+  }, [notifications, diamondInventory]);
 
   // Stats calculation
   const stats = useMemo(() => ({
