@@ -1,7 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, TrendingUp, Users, Target, CheckCircle2, TrendingDown, Package, PackageX, Zap } from 'lucide-react';
+import { Brain, TrendingUp, Users, Target, CheckCircle2, TrendingDown, Package, PackageX, Zap, DollarSign, UserX, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useUserSegmentation } from '@/hooks/useUserSegmentation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CampaignSegmentsProps {
   stats: {
@@ -15,12 +17,29 @@ interface CampaignSegmentsProps {
 }
 
 export function CampaignSegments({ stats, onRefresh }: CampaignSegmentsProps) {
+  const { segments: realSegments, loading, refetch } = useUserSegmentation();
+
+  const handleRefresh = () => {
+    refetch();
+    onRefresh();
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3, 4].map(i => (
+          <Skeleton key={i} className="h-32 w-full" />
+        ))}
+      </div>
+    );
+  }
+
   const segments = [
     {
       id: 'inactive_no_stock',
       name: 'Inactive Without Stock',
       description: 'Users who haven\'t been active and have no diamonds',
-      count: Math.round(stats.inactiveUsers * 0.4), // Estimate
+      count: realSegments.inactiveWithoutStock,
       icon: TrendingDown,
       color: 'red',
       priority: 'HIGH',
@@ -31,7 +50,7 @@ export function CampaignSegments({ stats, onRefresh }: CampaignSegmentsProps) {
       id: 'inactive_with_stock',
       name: 'Inactive With Stock',
       description: 'Users with diamonds but inactive recently',
-      count: Math.round(stats.inactiveUsers * 0.6), // Estimate
+      count: realSegments.inactiveWithStock,
       icon: Package,
       color: 'orange',
       priority: 'HIGH',
@@ -42,7 +61,7 @@ export function CampaignSegments({ stats, onRefresh }: CampaignSegmentsProps) {
       id: 'active_no_stock',
       name: 'Active Without Stock',
       description: 'Active users but haven\'t uploaded diamonds',
-      count: Math.round(stats.activeUsers * 0.3), // Estimate
+      count: realSegments.activeWithoutStock,
       icon: PackageX,
       color: 'yellow',
       priority: 'MEDIUM',
@@ -53,12 +72,34 @@ export function CampaignSegments({ stats, onRefresh }: CampaignSegmentsProps) {
       id: 'active_with_stock',
       name: 'Active With Stock',
       description: 'Engaged users with active inventory',
-      count: Math.round(stats.activeUsers * 0.7), // Estimate
+      count: realSegments.activeWithStock,
       icon: TrendingUp,
       color: 'green',
       priority: 'LOW',
       action: 'Upsell premium features',
       bgClass: 'bg-green-500/10 border-green-500/30'
+    },
+    {
+      id: 'paying_users',
+      name: 'Paying Users',
+      description: 'Users with active subscriptions',
+      count: realSegments.payingUsers,
+      icon: DollarSign,
+      color: 'blue',
+      priority: 'RETAIN',
+      action: 'Upsell premium features',
+      bgClass: 'bg-blue-500/10 border-blue-500/30'
+    },
+    {
+      id: 'non_paying_users',
+      name: 'Non-Paying Users',
+      description: 'Users without active subscriptions',
+      count: realSegments.nonPayingUsers,
+      icon: UserX,
+      color: 'purple',
+      priority: 'CONVERT',
+      action: 'Show subscription benefits',
+      bgClass: 'bg-purple-500/10 border-purple-500/30'
     }
   ];
 
@@ -66,13 +107,21 @@ export function CampaignSegments({ stats, onRefresh }: CampaignSegmentsProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            User Segments
-          </CardTitle>
-          <CardDescription>
-            AI-powered segmentation for targeted campaigns
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Segments
+              </CardTitle>
+              <CardDescription>
+                Real-time payment status & activity analysis
+              </CardDescription>
+            </div>
+            <Button onClick={handleRefresh} variant="outline" size="sm" className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
@@ -121,20 +170,25 @@ export function CampaignSegments({ stats, onRefresh }: CampaignSegmentsProps) {
       <Card className="border-2 border-primary/20 bg-primary/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-red-500" />
-            Critical Insight
+            <Brain className="h-5 w-5 text-primary" />
+            AI Insights
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-lg mb-4">
-            <strong className="text-red-500">{stats.inactiveUsers}</strong> users are inactive.
-            The AI recommends prioritizing <strong>Inactive With Stock</strong> segment first,
-            as they've already shown interest by uploading diamonds.
-          </p>
-          <Button className="gap-2">
-            <Brain className="h-4 w-4" />
-            Auto-Launch AI Campaign
-          </Button>
+          <div className="space-y-3">
+            <p className="text-sm">
+              <strong className="text-primary">{realSegments.payingUsers}</strong> paying users, 
+              <strong className="text-destructive ms-1">{realSegments.nonPayingUsers}</strong> non-paying
+            </p>
+            <p className="text-sm">
+              <strong className="text-red-500">{realSegments.inactiveWithoutStock + realSegments.inactiveWithStock}</strong> inactive users detected.
+              AI recommends targeting <strong>Inactive With Stock</strong> first - they've shown intent.
+            </p>
+            <Button className="gap-2">
+              <Brain className="h-4 w-4" />
+              Auto-Launch AI Campaign
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
