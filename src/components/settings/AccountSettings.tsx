@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { PhoneAccessButton } from "./PhoneAccessButton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -180,9 +179,6 @@ export function AccountSettings() {
                 placeholder="+1 (555) 123-4567"
                 className="pl-10"
               />
-            </div>
-            <div className="mt-2">
-              <PhoneAccessButton />
             </div>
           </div>
         </div>
