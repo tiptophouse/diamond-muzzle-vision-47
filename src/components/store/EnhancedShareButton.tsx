@@ -13,7 +13,7 @@ import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/utils/numberUtils";
+import { formatPrice } from "@/utils/numberUtils";
 
 interface EnhancedShareButtonProps {
   diamond: Diamond;
@@ -156,7 +156,7 @@ export function EnhancedShareButton({
   const handleTelegramShare = () => {
     impactOccurred('medium');
     
-    const price = diamond.price > 0 ? formatCurrency(diamond.price) : 'צור קשר למחיר';
+    const price = diamond.price > 0 ? formatPrice(diamond.price) : 'צור קשר למחיר';
     const message = `💎 *${diamond.carat} ct ${diamond.shape}*
 
 🎨 צבע: ${diamond.color}
@@ -262,7 +262,7 @@ export function EnhancedShareButton({
                   {diamond.color} • {diamond.clarity} • {diamond.cut}
                 </p>
                 <p className="text-sm font-medium text-purple-700">
-                  {diamond.price > 0 ? formatCurrency(diamond.price) : 'צור קשר למחיר'}
+                  {diamond.price > 0 ? formatPrice(diamond.price) : 'צור קשר למחיר'}
                 </p>
                 <p className="text-xs text-purple-500 mt-1">
                   מק"ט: #{diamond.stockNumber}

@@ -34,13 +34,21 @@ serve(async (req) => {
     }
 
     // Create diamond list for AI prompt
-    const diamondList = diamonds.map((d: Diamond, idx: number) => 
-      `${idx + 1}. ${d.shape} ${d.weight}ct - ${d.color} ${d.clarity}${d.cut ? ` (${d.cut})` : ''} - $${(d.price_per_carat * d.weight).toLocaleString()} (Stock: ${d.stock})`
-    ).join('\n');
+    const diamondList = diamonds.map((d: Diamond, idx: number) => {
+      const totalPrice = d.price_per_carat * d.weight;
+      // If price is negative, it represents a discount percentage
+      const priceDisplay = totalPrice < 0 
+        ? `הנחה ${Math.abs(totalPrice)}%` 
+        : `$${totalPrice.toLocaleString()}`;
+      
+      return `${idx + 1}. ${d.shape} ${d.weight}ct - ${d.color} ${d.clarity}${d.cut ? ` (${d.cut})` : ''} - ${priceDisplay} (מלאי: ${d.stock})`;
+    }).join('\n');
 
-    const totalValue = diamonds.reduce((sum: number, d: Diamond) => 
-      sum + (d.price_per_carat * d.weight), 0
-    );
+    const totalValue = diamonds.reduce((sum: number, d: Diamond) => {
+      const price = d.price_per_carat * d.weight;
+      // Skip negative prices (discounts) in total calculation
+      return price >= 0 ? sum + price : sum;
+    }, 0);
 
     const systemPrompt = `You are a professional diamond dealer assistant. Generate a warm, professional message IN HEBREW to send to a buyer about matched diamonds. The message should be:
 - Professional but friendly, written in HEBREW
@@ -95,15 +103,18 @@ IMPORTANT: Write the entire message in Hebrew. Keep it concise and professional.
     return new Response(
       JSON.stringify({ 
         message: generatedMessage,
-        diamonds: diamonds.map((d: Diamond) => ({
-          stock: d.stock,
-          shape: d.shape,
-          weight: d.weight,
-          color: d.color,
-          clarity: d.clarity,
-          price: d.price_per_carat * d.weight,
-          picture: d.picture
-        })),
+        diamonds: diamonds.map((d: Diamond) => {
+          const totalPrice = d.price_per_carat * d.weight;
+          return {
+            stock: d.stock,
+            shape: d.shape,
+            weight: d.weight,
+            color: d.color,
+            clarity: d.clarity,
+            price: totalPrice,
+            picture: d.picture
+          };
+        }),
         totalValue
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

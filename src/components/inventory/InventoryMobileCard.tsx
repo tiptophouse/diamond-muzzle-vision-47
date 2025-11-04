@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "./InventoryTable";
 import { Edit, Trash } from "lucide-react";
 import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
+import { formatPrice } from "@/utils/numberUtils";
 
 interface InventoryMobileCardProps {
   diamond: Diamond;
@@ -40,7 +41,7 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
           
           <div className="text-right flex-shrink-0">
             <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">
-              ${diamond.price.toLocaleString()}
+              {formatPrice(diamond.price)}
             </p>
             <Badge 
               className={`text-xs ${

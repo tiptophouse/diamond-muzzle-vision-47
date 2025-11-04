@@ -7,6 +7,7 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { EnhancedContactButton } from "./EnhancedContactButton";
 import { OptimizedDiamondImage } from "./OptimizedDiamondImage";
+import { formatPrice } from "@/utils/numberUtils";
 
 interface DiamondCardProps {
   diamond: Diamond;
@@ -55,7 +56,7 @@ export function DiamondCard({ diamond, index }: DiamondCardProps) {
             #{diamond.stockNumber}
           </span>
           <span className="text-lg font-bold text-slate-900">
-            ${diamond.price.toLocaleString()}
+            {formatPrice(diamond.price)}
           </span>
         </div>
 

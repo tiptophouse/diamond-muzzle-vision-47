@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
+import { formatPrice } from '@/utils/numberUtils';
 
 interface DiamondMatch {
   stock_number: string;
@@ -148,8 +149,8 @@ export function BuyerContactDialog({
 
   const handleCopyMessage = () => {
     const fullMessage = `${generatedMessage}\n\n${diamondData.map((d, i) => 
-      `💎 ${i + 1}. ${d.shape} ${d.weight}ct - ${d.color} ${d.clarity} - $${d.price.toLocaleString()} (${d.stock})`
-    ).join('\n')}\n\n💰 Total: $${totalValue.toLocaleString()}`;
+      `💎 ${i + 1}. ${d.shape} ${d.weight}ct - ${d.color} ${d.clarity} - ${formatPrice(d.price)} (${d.stock})`
+    ).join('\n')}\n\n💰 סה"כ: ${formatPrice(totalValue)}`;
 
     navigator.clipboard.writeText(fullMessage);
     notificationOccurred('success');
@@ -313,7 +314,7 @@ export function BuyerContactDialog({
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-sm text-primary">
-                            ${diamond.price.toLocaleString()}
+                            {formatPrice(diamond.price)}
                           </p>
                         </div>
                       </div>
@@ -327,7 +328,7 @@ export function BuyerContactDialog({
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-sm">ערך כולל:</p>
                   <p className="font-bold text-lg text-primary">
-                    ${totalValue.toLocaleString()}
+                    {formatPrice(totalValue)}
                   </p>
                 </div>
               </Card>

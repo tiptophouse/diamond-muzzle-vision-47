@@ -7,6 +7,7 @@ import { Edit, Trash } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
 import { UserImageUpload } from "./UserImageUpload";
 import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
+import { formatPrice } from "@/utils/numberUtils";
 
 interface InventoryTableRowProps {
   diamond: Diamond & { store_visible?: boolean; picture?: string };
@@ -62,7 +63,7 @@ export const InventoryTableRow = memo(function InventoryTableRow({ diamond, onEd
         </Badge>
       </TableCell>
       <TableCell className="text-right font-bold text-slate-900 dark:text-slate-100">
-        ${diamond.price.toLocaleString()}
+        {formatPrice(diamond.price)}
       </TableCell>
       <TableCell>
         <Badge 

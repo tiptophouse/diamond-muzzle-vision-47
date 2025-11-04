@@ -10,6 +10,24 @@ export const safeParseNumber = (value: any): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 
+// Format price - if negative, show as discount percentage
+export const formatPrice = (amount: number | string): string => {
+  const numAmount = safeParseNumber(amount);
+  
+  // If negative, it's a discount percentage
+  if (numAmount < 0) {
+    return `${Math.abs(numAmount)}%`;
+  }
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(numAmount);
+};
+
+// Legacy function for non-price currency formatting
 export const formatCurrency = (amount: number | string): string => {
   const numAmount = safeParseNumber(amount);
   

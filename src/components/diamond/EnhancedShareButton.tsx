@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Share2, Send, Users, TestTube, Image, MessageSquare } from 'lucide-react';
 import { useEnhancedDiamondSharing, DiamondShareData } from '@/hooks/useEnhancedDiamondSharing';
+import { formatPrice } from '@/utils/numberUtils';
 
 interface EnhancedShareButtonProps {
   diamond: DiamondShareData;
@@ -77,7 +78,7 @@ export function EnhancedShareButton({ diamond, className, variant = 'default' }:
                 {diamond.carat}ct {diamond.shape} {diamond.color}/{diamond.clarity}
               </p>
               <p className="text-xs text-muted-foreground">
-                {diamond.price ? `$${diamond.price.toLocaleString()}` : 'צור קשר למחיר'}
+                {diamond.price ? formatPrice(diamond.price) : 'צור קשר למחיר'}
               </p>
             </div>
 

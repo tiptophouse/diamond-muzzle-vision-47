@@ -1,5 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatPrice } from "@/utils/numberUtils";
 
 interface Diamond {
   carat: number;
@@ -37,10 +38,10 @@ export function PremiumCollection({ premiumDiamonds }: PremiumCollectionProps) {
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-blue-600">
-                  ${(diamond.price || 0).toLocaleString()}
+                  {formatPrice(diamond.price || 0)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  ${Math.round((diamond.price || 0) / (diamond.carat || 1)).toLocaleString()}/ct
+                  {diamond.price >= 0 ? `$${Math.round((diamond.price || 0) / (diamond.carat || 1)).toLocaleString()}/ct` : 'Discount'}
                 </p>
               </div>
             </div>
