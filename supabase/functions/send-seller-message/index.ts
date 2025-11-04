@@ -24,38 +24,17 @@ serve(async (req) => {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
     }
 
-    // Send message via Telegram Bot API
-    const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-    
-    const telegramResponse = await fetch(telegramApiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: telegram_id,
-        text: message,
-        parse_mode: 'HTML'
-      }),
-    });
+    let result;
 
-    if (!telegramResponse.ok) {
-      const errorData = await telegramResponse.json();
-      console.error('❌ Telegram API error:', errorData);
-      throw new Error(`Telegram API error: ${errorData.description || 'Unknown error'}`);
-    }
-
-    const result = await telegramResponse.json();
-    console.log('✅ Message sent successfully:', result);
-
-    // If there are diamond images, send them as media group
+    // If there are diamond images, send them as media group with message caption
     if (diamond_images && diamond_images.length > 0) {
-      console.log('📸 Sending diamond images:', diamond_images.length);
+      console.log('📸 Sending diamond images with message caption:', diamond_images.length);
       
       const mediaGroup = diamond_images.slice(0, 10).map((url: string, index: number) => ({
         type: 'photo',
         media: url,
-        caption: index === 0 ? 'יהלומים תואמים 💎' : undefined
+        caption: index === 0 ? message : undefined,
+        parse_mode: index === 0 ? 'HTML' : undefined
       }));
 
       const mediaGroupUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMediaGroup`;
@@ -71,11 +50,69 @@ serve(async (req) => {
         }),
       });
 
-      if (mediaResponse.ok) {
-        console.log('✅ Diamond images sent successfully');
-      } else {
-        console.error('⚠️ Failed to send diamond images, but message was sent');
+      if (!mediaResponse.ok) {
+        const errorData = await mediaResponse.json();
+        console.error('❌ Failed to send diamond images:', errorData);
+        throw new Error(`Failed to send images: ${errorData.description || 'Unknown error'}`);
       }
+
+      const mediaResult = await mediaResponse.json();
+      console.log('✅ Diamond images sent successfully');
+      result = mediaResult;
+    } else {
+      // No images - send as regular message
+      const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+      
+      const telegramResponse = await fetch(telegramApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: telegram_id,
+          text: message,
+          parse_mode: 'HTML'
+        }),
+      });
+
+      if (!telegramResponse.ok) {
+        const errorData = await telegramResponse.json();
+        console.error('❌ Telegram API error:', errorData);
+        throw new Error(`Telegram API error: ${errorData.description || 'Unknown error'}`);
+      }
+
+      result = await telegramResponse.json();
+      console.log('✅ Message sent successfully');
+    }
+
+    // Send inline keyboard buttons
+    const buttonUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    
+    const buttonResponse = await fetch(buttonUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: telegram_id,
+        text: '💎 בחר פעולה:',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '📞 צור קשר עם המוכר', url: 'https://t.me/BrilliantBot' }
+            ],
+            [
+              { text: '🔍 חפש יהלומים נוספים', url: 'https://t.me/BrilliantBot/app' }
+            ]
+          ]
+        }
+      }),
+    });
+
+    if (buttonResponse.ok) {
+      console.log('✅ Action buttons sent successfully');
+    } else {
+      console.error('⚠️ Failed to send action buttons, but message was delivered');
     }
 
     return new Response(
