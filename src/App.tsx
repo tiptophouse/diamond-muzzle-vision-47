@@ -36,6 +36,7 @@ import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
+import CampaignsPage from "./pages/CampaignsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 import AdminStatsPage from './pages/AdminStatsPage';
 import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
@@ -210,16 +211,23 @@ function App() {
                       <StandardizeCsvPage />
                     </AuthenticatedRoute>
                   } />
-                  <Route path="/analytics" element={
+                   <Route path="/analytics" element={
                     <AuthenticatedRoute>
-                      <AnalyticsPage />
+                       <AnalyticsPage />
                     </AuthenticatedRoute>
-                  } />
-                  <Route path="/demo/notifications" element={
+                   } />
+                   
+                   <Route path="/campaigns" element={
                     <AuthenticatedRoute>
-                      <TelegramNotificationsDemo />
+                       <CampaignsPage />
                     </AuthenticatedRoute>
-                  } />
+                   } />
+                   
+                   <Route path="/demo/notifications" element={
+                    <AuthenticatedRoute>
+                       <TelegramNotificationsDemo />
+                    </AuthenticatedRoute>
+                   } />
                   
                   <Route path="/shared-diamond/:stockNumber" element={
                     <AuthenticatedRoute>
