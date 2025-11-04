@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Settings } from 'lucide-react';
 import { useAllUsers } from '@/hooks/useAllUsers';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
+import { usePaymentStatuses } from '@/hooks/usePaymentStatuses';
 import { UserDetailsModal } from './UserDetailsModal';
 import { AddUserModal } from './AddUserModal';
 import { EditUserModal } from './EditUserModal';
@@ -24,6 +25,10 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   const { isUserBlocked, blockUser, unblockUser, blockedUsers } = useBlockedUsers();
   const { toast } = useToast();
   
+  // Fetch payment statuses for all users
+  const userIds = useMemo(() => allUsers.map(u => u.telegram_id), [allUsers]);
+  const { paymentStatuses, isLoading: isLoadingPayments } = usePaymentStatuses(userIds);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
@@ -37,8 +42,26 @@ export function AdminUserManager({}: AdminUserManagerProps) {
 
   console.log(`👥 AdminUserManager: Total users loaded: ${allUsers.length}`);
   console.log(`📊 User stats:`, stats);
+  console.log(`💳 Payment statuses loaded:`, Object.keys(paymentStatuses).length);
 
-  const filteredUsers = allUsers.filter(user => {
+  // Enhance users with payment status and sort (paying users first)
+  const enhancedUsers = useMemo(() => {
+    return allUsers.map(user => ({
+      ...user,
+      paymentStatus: paymentStatuses[user.telegram_id] || { is_active: false, subscription_type: 'none' }
+    })).sort((a, b) => {
+      // Sort by payment status (active first)
+      if (a.paymentStatus.is_active && !b.paymentStatus.is_active) return -1;
+      if (!a.paymentStatus.is_active && b.paymentStatus.is_active) return 1;
+      
+      // Then by last active
+      const aTime = a.last_active ? new Date(a.last_active).getTime() : 0;
+      const bTime = b.last_active ? new Date(b.last_active).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [allUsers, paymentStatuses]);
+
+  const filteredUsers = enhancedUsers.filter(user => {
     // Create a comprehensive search that includes real names
     const searchLower = searchTerm.toLowerCase();
     
@@ -255,9 +278,11 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     );
   }
 
-  const averageEngagement = allUsers.length > 0 
-    ? Math.round(allUsers.reduce((sum, u) => sum + getUserEngagementScore(u), 0) / allUsers.length)
+  const averageEngagement = enhancedUsers.length > 0 
+    ? Math.round(enhancedUsers.reduce((sum, u) => sum + getUserEngagementScore(u), 0) / enhancedUsers.length)
     : 0;
+
+  const payingUsersCount = enhancedUsers.filter(u => u.paymentStatus.is_active).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -271,8 +296,10 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           >
             Delete All Mock Data
           </button>
-          <div className="text-sm text-gray-600 flex items-center">
-            📊 Showing {allUsers.length} total users from database
+          <div className="text-sm text-gray-600 flex items-center gap-4">
+            <span>📊 {enhancedUsers.length} total users</span>
+            <span className="text-green-600 font-semibold">💳 {payingUsersCount} paying</span>
+            {isLoadingPayments && <span className="text-blue-600">Loading payment statuses...</span>}
           </div>
         </div>
 
