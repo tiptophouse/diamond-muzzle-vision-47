@@ -72,7 +72,8 @@ export const apiEndpoints = {
   cancelSubscription: () => `/api/v1/billing/cancel-subscription`,
   updatePaymentMethod: () => `/api/v1/billing/update-payment-method`,
   trialSubscribe: () => `/api/v1/billing/trial-subscribe`,
-  getActiveSubscription: () => `/api/v1/user/active-subscription`,
+  getActiveSubscription: (userId: number) => `/api/v1/user/active-subscription`,
+  checkSubscriptionStatus: (userId: number) => `/api/v1/user/active-subscription`, // POST endpoint
   
   // Client and admin endpoints
   getAllClients: () => `/api/v1/clients`,

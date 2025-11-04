@@ -42,6 +42,7 @@ import { DashboardRecentActivity } from '@/components/admin/DashboardRecentActiv
 import { DashboardMiniAnalytics } from '@/components/admin/DashboardMiniAnalytics';
 import { DashboardCampaignSummary } from '@/components/admin/DashboardCampaignSummary';
 import { DashboardSystemHealth } from '@/components/admin/DashboardSystemHealth';
+import { CustomerRetentionPanel } from '@/components/admin/CustomerRetentionPanel';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
