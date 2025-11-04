@@ -42,6 +42,8 @@ import { DashboardRecentActivity } from '@/components/admin/DashboardRecentActiv
 import { DashboardMiniAnalytics } from '@/components/admin/DashboardMiniAnalytics';
 import { DashboardCampaignSummary } from '@/components/admin/DashboardCampaignSummary';
 import { DashboardSystemHealth } from '@/components/admin/DashboardSystemHealth';
+import { PaymentStatusDashboard } from '@/components/admin/PaymentStatusDashboard';
+import { RetentionAutomationPanel } from '@/components/admin/RetentionAutomationPanel';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -314,6 +316,10 @@ export default function Admin() {
         );
       case 'payments':
         return <PaymentManagement />;
+      case 'payment-status':
+        return <PaymentStatusDashboard />;
+      case 'retention':
+        return <RetentionAutomationPanel />;
       case 'diagnostics':
         return <AuthDiagnostics />;
       case 'webhook-test':
