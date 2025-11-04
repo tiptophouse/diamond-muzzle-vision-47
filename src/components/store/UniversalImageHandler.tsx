@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { AlertTriangle, ExternalLink, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SegomaViewer } from './SegomaViewer';
+import { V360Viewer } from './V360Viewer';
+import { Gem360Viewer } from './Gem360Viewer';
+import { AWSS3HTMLViewer } from './AWSS3HTMLViewer';
 import { OptimizedDiamondImage } from './OptimizedDiamondImage';
 
 interface UniversalImageHandlerProps {
@@ -152,47 +156,60 @@ export function UniversalImageHandler({
       );
     }
 
-    // For 360 viewers, just show the URL instead of embedding
-    if (provider === 'segoma' || provider === 'v360' || provider === 'aws_s3_html' || provider === 'aws_s3_image' || provider === 'generic_360') {
-      return (
-        <div className={`flex flex-col items-center justify-center h-full bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-6 ${className}`}>
-          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-            <ExternalLink className="h-8 w-8 text-purple-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">360° View Available</h3>
-          <Badge variant="secondary" className="mb-3 text-xs">
-            {provider.toUpperCase()}
-          </Badge>
-          <div className="w-full max-w-md p-3 bg-white rounded border border-gray-200 mb-4">
-            <a 
-              href={imageUrl} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-xs text-blue-600 hover:text-blue-800 break-all"
-            >
-              {imageUrl}
-            </a>
-          </div>
-          <Button 
-            size="sm" 
-            onClick={() => window.open(imageUrl, '_blank')}
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Open 360° View
-          </Button>
-        </div>
-      );
+    // Route to appropriate viewer component based on provider
+    switch (provider) {
+      case 'segoma':
+        return (
+          <SegomaViewer 
+            segomaUrl={imageUrl}
+            stockNumber={stockNumber}
+            isInline={isInline}
+            className={className}
+          />
+        );
+        
+      case 'v360':
+        return (
+          <V360Viewer 
+            v360Url={imageUrl}
+            stockNumber={stockNumber}
+            isInline={isInline}
+            className={className}
+          />
+        );
+        
+      case 'aws_s3_html':
+        return (
+          <AWSS3HTMLViewer 
+            htmlUrl={imageUrl}
+            stockNumber={stockNumber}
+            isInline={isInline}
+            className={className}
+          />
+        );
+        
+      case 'aws_s3_image':
+      case 'generic_360':
+        return (
+          <Gem360Viewer 
+            gem360Url={imageUrl}
+            stockNumber={stockNumber}
+            isInline={isInline}
+            className={className}
+          />
+        );
+        
+      case 'static_image':
+      default:
+        return (
+          <OptimizedDiamondImage
+            imageUrl={imageUrl}
+            stockNumber={stockNumber}
+            shape="round"
+            className={className}
+          />
+        );
     }
-
-    // For static images, show the image
-    return (
-      <OptimizedDiamondImage
-        imageUrl={imageUrl}
-        stockNumber={stockNumber}
-        shape="round"
-        className={className}
-      />
-    );
   };
 
   return (

@@ -1,6 +1,6 @@
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Heart, Eye, MessageCircle, Gem, Sparkles } from "lucide-react";
+import { Heart, Eye, MessageCircle, Gem, Share2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
@@ -9,6 +9,9 @@ import { useSecureDiamondSharing } from "@/hooks/useSecureDiamondSharing";
 import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
 import { P2PShareButton } from "./P2PShareButton";
 import { toast } from 'sonner';
+import { Gem360Viewer } from "./Gem360Viewer";
+import { V360Viewer } from "./V360Viewer";
+import { SegomaViewer } from "./SegomaViewer";
 import { formatCurrency } from "@/utils/numberUtils";
 import { 
   detectFancyColor, 
@@ -183,31 +186,44 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
     >
       {has360 && isVisible ? (
-        <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-          <div className="text-center space-y-3">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto">
-              <Sparkles className="h-8 w-8 text-blue-600" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">{diamond.carat} ct {diamond.shape}</h3>
-              <Badge className="bg-purple-500 text-white border-0 px-3 py-1 text-xs font-medium">
-                360° View Available
-              </Badge>
-              <div className="mt-3 p-2 bg-white rounded border border-gray-200">
-                <a 
-                  href={diamond.gem360Url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-600 hover:text-blue-800 break-all"
-                >
-                  {diamond.gem360Url}
-                </a>
-              </div>
-            </div>
-          </div>
+        <div className="relative aspect-square">
+          {isSegoma ? (
+            <SegomaViewer 
+              segomaUrl={diamond.gem360Url!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+              className="w-full h-full"
+            />
+          ) : isV360 ? (
+            <V360Viewer 
+              v360Url={diamond.gem360Url!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+            />
+          ) : (
+            <Gem360Viewer 
+              gem360Url={diamond.gem360Url!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+            />
+          )}
           <div className="absolute top-2 left-2">
             <MediaPriorityBadge hasGem360={true} hasImage={false} />
           </div>
+          {isSegoma && (
+            <div className="absolute top-2 right-2">
+              <Badge className="bg-purple-500 text-white border-0 px-2 py-1 text-xs font-medium">
+                Segoma
+              </Badge>
+            </div>
+          )}
+          {isMy360Fab && (
+            <div className="absolute top-2 right-2">
+              <Badge className="bg-purple-500 text-white border-0 px-2 py-1 text-xs font-medium">
+                my360.fab
+              </Badge>
+            </div>
+          )}
         </div>
       ) : hasValidImage && isVisible ? (
         <div className="relative aspect-square bg-gray-50 overflow-hidden">
