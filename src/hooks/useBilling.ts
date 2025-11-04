@@ -41,7 +41,48 @@ export function useBilling() {
   };
 
   /**
-   * Get active subscription status via Supabase edge function
+   * Check active subscription status directly from FastAPI
+   * Returns: { user_id, expiration_date, is_renewable, is_active, subscription_type }
+   */
+  const checkSubscriptionStatus = async (userId: number) => {
+    setLoading(true);
+    try {
+      console.log('🔍 Checking subscription status for user:', userId);
+      
+      const { data, error } = await api.post<any>(
+        apiEndpoints.checkSubscriptionStatus(userId),
+        { user_id: userId }
+      );
+      
+      if (error) {
+        console.error('❌ Subscription check error:', error);
+        toast.error('Failed to check subscription status');
+        return null;
+      }
+
+      console.log('✅ Subscription data:', data);
+      
+      if (data) {
+        toast.success(
+          data.is_active 
+            ? `Active ${data.subscription_type} subscription` 
+            : 'No active subscription'
+        );
+        return data;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ Subscription check exception:', error);
+      toast.error('Failed to check subscription');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Get active subscription status via Supabase edge function (DEPRECATED - use checkSubscriptionStatus)
    */
   const getActiveSubscription = async (userId: number): Promise<UpdatePaymentMethodResponse | null> => {
     setLoading(true);
@@ -137,6 +178,7 @@ export function useBilling() {
     loading,
     billingData,
     getBillingDetails,
+    checkSubscriptionStatus,
     getActiveSubscription,
     createPaymentUrl,
     cancelSubscription,
