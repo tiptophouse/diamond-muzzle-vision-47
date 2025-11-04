@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Gem360Viewer } from "./Gem360Viewer";
 import { V360Viewer } from "./V360Viewer";
 import { SegomaViewer } from "./SegomaViewer";
+import { TelegramOptimizedImage } from "@/components/ui/TelegramOptimizedImage";
 import { formatCurrency } from "@/utils/numberUtils";
 import { 
   detectFancyColor, 
@@ -227,46 +228,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         </div>
       ) : hasValidImage && isVisible ? (
         <div className="relative aspect-square bg-gray-50 overflow-hidden">
-          {!imageLoaded && !imageError && (
-            <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
-          
-          {/* Show fallback if image failed to load */}
-          {imageError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-              <div className="text-center p-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Gem className="h-8 w-8 text-blue-600" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{diamond.carat} ct</h3>
-                  <p className="text-sm text-gray-600">{diamond.shape}</p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <img 
-            ref={imgRef}
-            src={diamond.imageUrl} 
-            alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
-            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
-              imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{
-              imageRendering: 'crisp-edges',
-              transform: 'translateZ(0)',
-              display: imageError ? 'none' : 'block'
-            }}
+          <TelegramOptimizedImage
+            stockNumber={diamond.stockNumber}
+            src={diamond.imageUrl}
+            alt={`${diamond.carat} ct ${diamond.shape} Diamond`}
+            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+            priority={index < 6 ? 'high' : 'medium'}
             onLoad={handleImageLoad}
-            onError={handleImageError}
-            loading="lazy"
-            decoding="async"
+            onError={() => handleImageError({} as React.SyntheticEvent<HTMLImageElement>)}
           />
           
-          <div className="absolute top-2 left-2">
+          <div className="absolute top-2 left-2 z-10">
             <MediaPriorityBadge hasGem360={false} hasImage={true} />
           </div>
         </div>
