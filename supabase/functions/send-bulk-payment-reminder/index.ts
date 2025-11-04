@@ -33,12 +33,8 @@ serve(async (req) => {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
     }
 
-    const backendToken = Deno.env.get('FASTAPI_BEARER_TOKEN') || Deno.env.get('BACKEND_ACCESS_TOKEN');
-    const backendUrl = Deno.env.get('BACKEND_URL') || 'https://api.mazalbot.com';
-
     let eligibleUsers: UserProfile[] = [];
     let blockedCount = 0;
-    let paidUsersSkipped = 0;
     
     if (testMode) {
       // In test mode, get only admin users
@@ -100,31 +96,6 @@ serve(async (req) => {
     // Send messages in batches to avoid rate limits
     for (const user of eligibleUsers) {
       try {
-        // Check subscription status before sending
-        if (backendToken) {
-          try {
-            const subResponse = await fetch(`${backendUrl}/api/v1/user/active-subscription`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${backendToken}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ user_id: user.telegram_id })
-            });
-
-            if (subResponse.ok) {
-              const subData = await subResponse.json();
-              if (subData.is_active) {
-                console.log(`⏭️ Skipping paid user ${user.telegram_id} (${subData.subscription_type})`);
-                paidUsersSkipped++;
-                continue; // Skip paid users
-              }
-            }
-          } catch (subError) {
-            console.warn(`⚠️ Could not check subscription for ${user.telegram_id}, will send message`);
-          }
-        }
-
         const firstName = user.first_name || 'User';
         
         const message = `היי ${firstName}! 💎
@@ -207,12 +178,11 @@ serve(async (req) => {
         success: successCount,
         failed: failureCount,
         blocked_excluded: blockedCount,
-        paid_users_skipped: paidUsersSkipped,
         test_mode: testMode
       }
     });
 
-    console.log(`📊 Campaign complete: ${successCount} sent, ${failureCount} failed, ${paidUsersSkipped} paid users skipped`);
+    console.log(`📊 Campaign complete: ${successCount} sent, ${failureCount} failed`);
 
     return new Response(
       JSON.stringify({
@@ -222,8 +192,6 @@ serve(async (req) => {
           messages_sent: successCount,
           messages_failed: failureCount,
           blocked_users_excluded: blockedCount,
-          paid_users_skipped: paidUsersSkipped,
-          unpaid_users_targeted: successCount,
           start_link: startLink
         },
         errors: errors.slice(0, 10) // Return first 10 errors

@@ -66,23 +66,31 @@ export function BuyerContactDialog({
   const fetchDiamondsAndGenerate = async () => {
     setLoading(true);
     try {
-      console.log('🤖 Using enhanced diamond data with images from inventory');
+      console.log('🔍 Fetching full diamond data from FastAPI...');
       
-      // Use the diamonds prop which already has enhanced data with images from inventory
-      const selectedDiamonds = diamonds.map(match => ({
-        stock: match.stock_number,
-        shape: match.shape,
-        weight: match.weight,
-        color: match.color,
-        clarity: match.clarity,
-        cut: match.cut,
-        price: match.total_price || match.price_per_carat * match.weight,
-        picture: match.picture, // Already has the correct image URL from inventory
-      }));
+      const userId = getCurrentUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Fetch full diamond details from FastAPI
+      const { data: allDiamonds, error } = await api.get<any[]>(
+        apiEndpoints.getAllStones(userId)
+      );
+
+      if (error || !allDiamonds) {
+        throw new Error('Failed to fetch diamonds');
+      }
+
+      // Filter to get only selected diamonds with full data
+      const selectedDiamonds = diamonds.map(match => {
+        const fullDiamond = allDiamonds.find(d => d.stock === match.stock_number);
+        return fullDiamond || match;
+      });
 
       console.log('📸 Selected diamonds with images:', selectedDiamonds);
 
-      // Extract image URLs - these are already from the inventory
+      // Extract image URLs
       const images = selectedDiamonds
         .map(d => d.picture)
         .filter(pic => pic && (pic.startsWith('http://') || pic.startsWith('https://')));
