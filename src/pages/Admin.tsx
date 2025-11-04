@@ -43,6 +43,7 @@ import { DashboardMiniAnalytics } from '@/components/admin/DashboardMiniAnalytic
 import { DashboardCampaignSummary } from '@/components/admin/DashboardCampaignSummary';
 import { DashboardSystemHealth } from '@/components/admin/DashboardSystemHealth';
 import { CustomerRetentionPanel } from '@/components/admin/CustomerRetentionPanel';
+import { PaymentStatusDashboard } from '@/components/admin/PaymentStatusDashboard';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -314,7 +315,12 @@ export default function Admin() {
           </div>
         );
       case 'payments':
-        return <PaymentManagement />;
+        return (
+          <div className="space-y-6">
+            <PaymentStatusDashboard />
+            <PaymentManagement />
+          </div>
+        );
       case 'diagnostics':
         return <AuthDiagnostics />;
       case 'webhook-test':
