@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { CreditCard, Users, DollarSign, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BACKEND_URL } from '@/lib/config';
 
 interface UserPaymentStatus {
   telegram_id: number;
@@ -48,19 +47,15 @@ export function PaymentStatusDashboard() {
       const nonPaying: UserPaymentStatus[] = [];
       let expiringSoonCount = 0;
 
-      // Check subscription status for each user via FastAPI
+      // Check subscription status for each user
       for (const user of users || []) {
         try {
-          const response = await fetch(`${BACKEND_URL}/api/v1/user/active-subscription`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ user_id: user.telegram_id })
+          const { data: subData, error: subError } = await supabase.functions.invoke('check-subscription-status', {
+            body: { user_id: user.telegram_id }
           });
 
-          if (!response.ok) {
-            console.error(`Error checking subscription for user ${user.telegram_id}:`, response.statusText);
+          if (subError) {
+            console.error(`Error checking subscription for user ${user.telegram_id}:`, subError);
             nonPaying.push({
               ...user,
               is_active: false,
@@ -68,8 +63,6 @@ export function PaymentStatusDashboard() {
             });
             continue;
           }
-
-          const subData = await response.json();
 
           const userStatus: UserPaymentStatus = {
             telegram_id: user.telegram_id,
@@ -97,7 +90,7 @@ export function PaymentStatusDashboard() {
           }
 
           // Small delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 50));
         } catch (error) {
           console.error(`Error processing user ${user.telegram_id}:`, error);
           nonPaying.push({

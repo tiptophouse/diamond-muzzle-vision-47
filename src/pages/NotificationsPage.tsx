@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
 import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
-import { useTelegramMainButton } from '@/hooks/useTelegramMainButton';
 import { useToast } from '@/hooks/use-toast';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
@@ -21,20 +20,6 @@ const NotificationsPage = () => {
   const haptic = useTelegramHapticFeedback();
   const { toast } = useToast();
   const { webApp } = useTelegramWebApp();
-  
-  // Telegram SDK 2.0 optimizations
-  useEffect(() => {
-    if (webApp) {
-      // Expand to full height
-      if (typeof webApp.expand === 'function') {
-        webApp.expand();
-      }
-      // Set header color to match theme
-      if (typeof webApp.setHeaderColor === 'function') {
-        webApp.setHeaderColor('bg_color');
-      }
-    }
-  }, [webApp]);
   
   const [selectedBuyerId, setSelectedBuyerId] = useState<number | null>(null);
   const [selectedDiamonds, setSelectedDiamonds] = useState<Record<number, Set<string>>>({});
@@ -101,6 +86,8 @@ const NotificationsPage = () => {
 
   // Handle diamond selection toggle
   const handleToggleDiamond = useCallback((buyerId: number, stockNumber: string) => {
+    haptic.impactOccurred('light');
+    
     setSelectedDiamonds(prev => {
       const buyerSet = new Set(prev[buyerId] || []);
       
@@ -115,7 +102,7 @@ const NotificationsPage = () => {
         [buyerId]: buyerSet,
       };
     });
-  }, []);
+  }, [haptic]);
 
   // Handle select all diamonds for a buyer
   const handleSelectAll = useCallback((buyerId: number, allStockNumbers: string[]) => {
@@ -265,26 +252,26 @@ const NotificationsPage = () => {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-card border rounded-lg p-2">
+            <div className="bg-card border rounded-lg p-3">
               <div className="flex items-center gap-1 mb-1">
                 <Users className="h-3 w-3 text-primary" />
                 <span className="text-xs text-muted-foreground">קונים</span>
               </div>
-              <div className="text-lg font-bold text-primary">{stats.totalBuyers}</div>
+              <div className="text-xl font-bold text-primary">{stats.totalBuyers}</div>
             </div>
-            <div className="bg-card border rounded-lg p-2">
+            <div className="bg-card border rounded-lg p-3">
               <div className="flex items-center gap-1 mb-1">
                 <Bell className="h-3 w-3 text-primary" />
                 <span className="text-xs text-muted-foreground">חדשות</span>
               </div>
-              <div className="text-lg font-bold text-destructive">{stats.unreadCount}</div>
+              <div className="text-xl font-bold text-destructive">{stats.unreadCount}</div>
             </div>
-            <div className="bg-card border rounded-lg p-2">
+            <div className="bg-card border rounded-lg p-3">
               <div className="flex items-center gap-1 mb-1">
                 <Sparkles className="h-3 w-3 text-primary" />
                 <span className="text-xs text-muted-foreground">יהלומים</span>
               </div>
-              <div className="text-lg font-bold text-primary">{stats.totalDiamonds}</div>
+              <div className="text-xl font-bold text-primary">{stats.totalDiamonds}</div>
             </div>
           </div>
         </div>

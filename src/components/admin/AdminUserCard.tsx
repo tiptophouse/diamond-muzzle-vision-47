@@ -2,7 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Star, Phone, Shield, AlertCircle, Globe, CreditCard, Clock } from 'lucide-react';
+import { Star, Phone, Shield, AlertCircle, Globe } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { AdminUserActions } from './AdminUserActions';
 
@@ -102,25 +102,8 @@ export function AdminUserCard({
     }
   };
 
-  // Format payment expiration date
-  const formatExpirationDate = (dateString?: string) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    const daysLeft = Math.floor((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-    
-    if (daysLeft < 0) return 'Expired';
-    if (daysLeft === 0) return 'Expires today';
-    if (daysLeft === 1) return 'Expires tomorrow';
-    if (daysLeft <= 7) return `${daysLeft} days left`;
-    return formatDistanceToNow(date, { addSuffix: true });
-  };
-
-  const paymentStatus = user.paymentStatus || { is_active: false };
-  const isPaying = paymentStatus.is_active;
-  const expirationText = formatExpirationDate(paymentStatus.expiration_date);
-
   return (
-    <div className={`p-4 hover:bg-gray-50 transition-colors ${isBlocked ? 'bg-red-50' : ''} ${isPaying ? 'bg-green-50 border-l-4 border-green-500' : ''}`}>
+    <div className={`p-4 hover:bg-gray-50 transition-colors ${isBlocked ? 'bg-red-50' : ''}`}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <Avatar className="h-12 w-12 border-2 border-gray-200">
@@ -135,7 +118,6 @@ export function AdminUserCard({
               <span className="font-semibold text-gray-900 text-sm sm:text-base">
                 {getDisplayName()}
               </span>
-              {isPaying && <CreditCard className="h-4 w-4 text-green-600" />}
               <div className="flex items-center gap-1">
                 {countryCode ? (
                   <span className="text-lg" title={countryName || countryCode}>
@@ -170,31 +152,12 @@ export function AdminUserCard({
               <Badge className={statusColor()}>
                 {getUserStatus()}
               </Badge>
-              
-              {/* Payment Status Badges */}
-              {isPaying ? (
-                <>
-                  <Badge className="bg-green-600 text-white">
-                    💳 {paymentStatus.subscription_type || 'Paid'}
-                  </Badge>
-                  {expirationText && (
-                    <Badge variant="outline" className={`border-orange-500 text-orange-700 ${expirationText.includes('Expires') || expirationText.includes('Expired') ? 'bg-orange-50' : ''}`}>
-                      <Clock className="h-3 w-3 mr-1" />
-                      {expirationText}
-                    </Badge>
-                  )}
-                  {paymentStatus.is_renewable && (
-                    <Badge variant="outline" className="border-blue-500 text-blue-700">
-                      Auto-renew
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <Badge variant="secondary" className="bg-gray-200 text-gray-700">
-                  Free
-                </Badge>
-              )}
-              
+              <Badge 
+                variant={user.subscription_status === 'premium' ? 'default' : 'secondary'}
+                className={user.subscription_status === 'premium' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}
+              >
+                {user.subscription_status || 'free'}
+              </Badge>
               {!isRealUserData() && (
                 <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">
                   Mock Data
