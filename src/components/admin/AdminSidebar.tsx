@@ -65,13 +65,6 @@ const adminMenuItems = [
     title: 'Financial',
     items: [
       { title: 'Payments', url: '/admin?tab=payments', icon: CreditCard, description: 'Payment processing' },
-      { title: 'Payment Status', url: '/admin?tab=payment-status', icon: TrendingUp, description: 'User payment tracking' },
-    ]
-  },
-  {
-    title: 'Automation',
-    items: [
-      { title: 'Retention System', url: '/admin?tab=retention', icon: Bell, description: 'Automated retention campaigns' },
     ]
   },
   {
