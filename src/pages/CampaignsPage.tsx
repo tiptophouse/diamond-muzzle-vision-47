@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Users, Target, Brain, Zap, BarChart3, Send } from 'lucide-react';
+import { TrendingUp, Users, Target, Brain, Zap, BarChart3, Send, ExternalLink } from 'lucide-react';
 import { CampaignSegments } from '@/components/campaigns/CampaignSegments';
 import { CampaignAnalytics } from '@/components/campaigns/CampaignAnalytics';
 import { AILearningDashboard } from '@/components/campaigns/AILearningDashboard';
 import { CampaignCreator } from '@/components/campaigns/CampaignCreator';
 import { ActiveCampaigns } from '@/components/campaigns/ActiveCampaigns';
+import { DeepLinkGenerator } from '@/components/campaigns/DeepLinkGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -132,7 +133,7 @@ export default function CampaignsPage() {
 
         {/* Main Content */}
         <Tabs defaultValue="segments" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="segments" className="gap-2">
               <Target className="h-4 w-4" />
               Segments
@@ -148,6 +149,10 @@ export default function CampaignsPage() {
             <TabsTrigger value="ai" className="gap-2">
               <Brain className="h-4 w-4" />
               AI Learning
+            </TabsTrigger>
+            <TabsTrigger value="deeplinks" className="gap-2">
+              <ExternalLink className="h-4 w-4" />
+              Deep Links
             </TabsTrigger>
             <TabsTrigger value="create" className="gap-2">
               <Zap className="h-4 w-4" />
@@ -169,6 +174,10 @@ export default function CampaignsPage() {
 
           <TabsContent value="ai" className="space-y-6">
             <AILearningDashboard />
+          </TabsContent>
+
+          <TabsContent value="deeplinks" className="space-y-6">
+            <DeepLinkGenerator />
           </TabsContent>
 
           <TabsContent value="create" className="space-y-6">

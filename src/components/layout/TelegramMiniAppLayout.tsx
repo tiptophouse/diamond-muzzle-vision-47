@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Home, Package, Store, MessageCircle, BarChart3 } from 'lucide-react';
+import { Home, Package, Store, MessageCircle, BarChart3, Megaphone } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useTelegramPerformance } from '@/hooks/useTelegramPerformance';
 import { cn } from '@/lib/utils';
@@ -32,10 +32,10 @@ const navigationItems = [
     activePattern: /^\/store|catalog/
   },
   {
-    to: '/chat',
-    icon: MessageCircle,
-    label: 'Chat',
-    activePattern: /^\/chat/
+    to: '/campaigns',
+    icon: Megaphone,
+    label: 'Campaigns',
+    activePattern: /^\/campaigns/
   },
   {
     to: '/insights',
