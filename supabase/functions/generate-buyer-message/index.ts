@@ -42,22 +42,23 @@ serve(async (req) => {
       sum + (d.price_per_carat * d.weight), 0
     );
 
-    const systemPrompt = `You are a professional diamond dealer assistant. Generate a warm, professional message to send to a buyer about matched diamonds. The message should be:
-- Professional but friendly
+    const systemPrompt = `You are a professional diamond dealer assistant. Generate a warm, professional message IN HEBREW to send to a buyer about matched diamonds. The message should be:
+- Professional but friendly, written in HEBREW
 - Brief and to the point (2-3 sentences max)
 - Mention the total number of diamonds and approximate total value
 - Express willingness to discuss details
-- Use appropriate diamond industry terminology
-- DO NOT include greetings or signatures - just the message body`;
+- Use appropriate diamond industry terminology in Hebrew
+- DO NOT include greetings or signatures - just the message body
+- IMPORTANT: Write ONLY in Hebrew language`;
 
-    const userPrompt = `Generate a message for buyer "${buyerName || 'valued client'}" about these ${diamonds.length} matched diamonds:
+    const userPrompt = `Generate a message IN HEBREW for buyer "${buyerName || 'לקוח יקר'}" about these ${diamonds.length} matched diamonds:
 
 ${diamondList}
 
 Total Value: $${totalValue.toLocaleString()}
 ${searchQuery ? `Their search: "${searchQuery}"` : ''}
 
-Keep it concise and professional.`;
+IMPORTANT: Write the entire message in Hebrew. Keep it concise and professional.`;
 
     console.log('🤖 Generating message with AI...');
     
