@@ -31,39 +31,35 @@ serve(async (req) => {
 
     let result;
 
-    // If there are diamond images, send them as media group with message caption
+    // Send diamond card with image and message
     if (diamond_images && diamond_images.length > 0) {
-      console.log('📸 Sending diamond images with message caption:', diamond_images.length);
+      console.log('📸 Sending diamond card with image:', diamond_images[0]);
       
-      const mediaGroup = diamond_images.slice(0, 10).map((url: string, index: number) => ({
-        type: 'photo',
-        media: url,
-        caption: index === 0 ? message : undefined,
-        parse_mode: index === 0 ? 'HTML' : undefined
-      }));
-
-      const mediaGroupUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMediaGroup`;
+      // Use sendPhoto for the first image with message as caption (better UX than media group)
+      const photoUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
       
-      const mediaResponse = await fetch(mediaGroupUrl, {
+      const photoResponse = await fetch(photoUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           chat_id: telegram_id,
-          media: mediaGroup
+          photo: diamond_images[0],
+          caption: message,
+          parse_mode: 'HTML'
         }),
       });
 
-      if (!mediaResponse.ok) {
-        const errorData = await mediaResponse.json();
-        console.error('❌ Failed to send diamond images:', errorData);
-        throw new Error(`Failed to send images: ${errorData.description || 'Unknown error'}`);
+      if (!photoResponse.ok) {
+        const errorData = await photoResponse.json();
+        console.error('❌ Failed to send diamond card:', errorData);
+        throw new Error(`Failed to send image: ${errorData.description || 'Unknown error'}`);
       }
 
-      const mediaResult = await mediaResponse.json();
-      console.log('✅ Diamond images sent successfully');
-      result = mediaResult;
+      const photoResult = await photoResponse.json();
+      console.log('✅ Diamond card sent successfully');
+      result = photoResult;
     } else {
       // No images - send as regular message
       const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -90,11 +86,13 @@ serve(async (req) => {
       console.log('✅ Message sent successfully');
     }
 
-    // Create web_app buttons for each diamond to open in Mini App
+    // Always send inline web_app buttons for diamonds (open in Mini App)
     if (diamond_stocks && diamond_stocks.length > 0) {
+      console.log('💎 Sending inline web_app buttons for diamonds:', diamond_stocks.length);
+      
       const diamondButtons = diamond_stocks.slice(0, 4).map((stock: string) => ({
-        text: `💎 ${stock}`,
-        web_app: { url: `${MINI_APP_URL}/diamond/${stock}` }
+        text: `💎 צפה במלאי ${stock}`,
+        web_app: { url: `${MINI_APP_URL}/diamond/${stock}?src=tgmsg` }
       }));
 
       // Arrange buttons in rows of 2
@@ -105,7 +103,7 @@ serve(async (req) => {
 
       // Add "View All" button
       buttonRows.push([
-        { text: '🏪 לכל המלאי', web_app: { url: `${MINI_APP_URL}/store` } }
+        { text: '🏪 לכל המלאי', web_app: { url: `${MINI_APP_URL}/store?src=tgmsg` } }
       ]);
 
       const buttonUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -117,15 +115,16 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           chat_id: telegram_id,
-          text: '💎 לחץ לצפייה ביהלומים:',
+          text: '💎 לחץ לצפייה ביהלומים במערכת:',
           reply_markup: { inline_keyboard: buttonRows }
         }),
       });
 
-      if (buttonResponse.ok) {
-        console.log('✅ Web app buttons sent successfully');
+      if (!buttonResponse.ok) {
+        const errorData = await buttonResponse.json();
+        console.error('⚠️ Failed to send web app buttons:', errorData);
       } else {
-        console.error('⚠️ Failed to send web app buttons');
+        console.log('✅ Inline web_app buttons sent successfully');
       }
     }
 

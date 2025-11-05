@@ -168,14 +168,25 @@ export function BuyerContactDialog({
       impactOccurred('medium');
       
       console.log('📤 Sending diamond card message to buyer:', buyerId);
-      console.log(`📸 Including ${diamondImages.length} diamond images`);
+      
+      // Recompute diamondImages from enriched diamondData at send-time
+      const currentDiamondImages = diamondData
+        .map(d => d.picture)
+        .filter((u) => u && (u.startsWith('http://') || u.startsWith('https://')));
+      
+      // Compute diamondStocks from diamondData
+      const diamondStocks = diamondData.map((d) => d.stock);
+      
+      console.log(`📸 Including ${currentDiamondImages.length} diamond images`);
+      console.log(`💎 Including ${diamondStocks.length} diamond stock numbers`);
 
-      // Send message with diamond cards via Telegram bot
+      // Send message with diamond cards and inline buttons via Telegram bot
       const { data, error } = await supabase.functions.invoke('send-seller-message', {
         body: {
           telegram_id: buyerId,
           message: generatedMessage,
-          diamond_images: diamondImages,
+          diamond_images: currentDiamondImages,
+          diamond_stocks: diamondStocks,
         },
       });
 
@@ -204,8 +215,8 @@ export function BuyerContactDialog({
 
       console.log('✅ Message sent successfully to buyer:', buyerId);
       notificationOccurred('success');
-      toast.success(`ההודעה נשלחה ל-${buyerName}!`, {
-        description: `נשלח עם ${diamondImages.length} תמונות יהלומים`,
+      toast.success('ההודעה נשלחה בהצלחה!', {
+        description: `נשלח עם ${diamondData.length} יהלומים`,
       });
       
       if (onMessageSent) {
