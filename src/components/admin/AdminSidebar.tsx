@@ -14,7 +14,8 @@ import {
   Activity,
   Crown,
   UserCheck,
-  Database
+  Database,
+  UserPlus
 } from 'lucide-react';
 import {
   Sidebar,
@@ -46,6 +47,7 @@ const adminMenuItems = [
       { title: 'Blocked Users', url: '/admin?tab=blocked-users', icon: Shield, description: 'User restrictions' },
       { title: 'Sessions', url: '/admin?tab=sessions', icon: Activity, description: 'Active user sessions' },
       { title: 'User Sync', url: '/admin?tab=user-sync', icon: Database, description: 'Backend to Frontend sync' },
+      { title: 'Bulk Import', url: '/admin?tab=bulk-import', icon: UserPlus, description: 'Import users from CSV' },
     ]
   },
   {

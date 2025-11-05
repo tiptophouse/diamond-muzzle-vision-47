@@ -45,6 +45,7 @@ import { DashboardSystemHealth } from '@/components/admin/DashboardSystemHealth'
 import { CustomerRetentionPanel } from '@/components/admin/CustomerRetentionPanel';
 import { PaymentStatusDashboard } from '@/components/admin/PaymentStatusDashboard';
 import { UserSyncAnalysis } from '@/components/admin/UserSyncAnalysis';
+import { BulkUserImporter } from '@/components/admin/BulkUserImporter';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -293,6 +294,8 @@ export default function Admin() {
         return <UserUploadAnalysis />;
       case 'user-sync':
         return <UserSyncAnalysis />;
+      case 'bulk-import':
+        return <BulkUserImporter />;
       case 'campaigns':
         return (
           <div className="space-y-6">
