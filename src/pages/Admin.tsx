@@ -44,6 +44,7 @@ import { DashboardCampaignSummary } from '@/components/admin/DashboardCampaignSu
 import { DashboardSystemHealth } from '@/components/admin/DashboardSystemHealth';
 import { CustomerRetentionPanel } from '@/components/admin/CustomerRetentionPanel';
 import { PaymentStatusDashboard } from '@/components/admin/PaymentStatusDashboard';
+import { UserSyncAnalysis } from '@/components/admin/UserSyncAnalysis';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -290,6 +291,8 @@ export default function Admin() {
         return <OptimizedUserDiamondCounts />;
       case 'upload-analysis':
         return <UserUploadAnalysis />;
+      case 'user-sync':
+        return <UserSyncAnalysis />;
       case 'campaigns':
         return (
           <div className="space-y-6">
