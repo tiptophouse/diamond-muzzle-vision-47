@@ -1918,6 +1918,36 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_diamond_views: {
+        Row: {
+          created_at: string | null
+          diamond_stock_number: string
+          id: string
+          referrer_data: Json | null
+          source: string | null
+          viewed_at: string | null
+          viewer_telegram_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          diamond_stock_number: string
+          id?: string
+          referrer_data?: Json | null
+          source?: string | null
+          viewed_at?: string | null
+          viewer_telegram_id: number
+        }
+        Update: {
+          created_at?: string | null
+          diamond_stock_number?: string
+          id?: string
+          referrer_data?: Json | null
+          source?: string | null
+          viewed_at?: string | null
+          viewer_telegram_id?: number
+        }
+        Relationships: []
+      }
       telegram_group_campaigns: {
         Row: {
           campaign_name: string
@@ -2639,6 +2669,16 @@ export type Database = {
       }
     }
     Views: {
+      diamond_view_analytics: {
+        Row: {
+          diamond_stock_number: string | null
+          last_viewed_at: string | null
+          total_views: number | null
+          unique_viewers: number | null
+          view_date: string | null
+        }
+        Relationships: []
+      }
       recent_user_logins: {
         Row: {
           first_login: string | null

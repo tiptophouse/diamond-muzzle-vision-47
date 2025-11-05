@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { useTelegramDiamondViewTracking } from "@/hooks/useTelegramDiamondViewTracking";
 import { TelegramShareButton } from '@/components/store/TelegramShareButton';
 import { OptimizedDiamondImage } from '@/components/store/OptimizedDiamondImage';
 import { Diamond } from "@/components/inventory/InventoryTable";
@@ -22,9 +23,17 @@ function DiamondDetailPage() {
   const { diamonds, loading, refetch } = useStoreData();
   const { user, isAuthenticated } = useTelegramAuth();
   const { toast } = useToast();
+  const { autoTrackView } = useTelegramDiamondViewTracking();
   const [isContactLoading, setIsContactLoading] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
+
+  // Track diamond view when opened from Telegram
+  useEffect(() => {
+    if (diamondId) {
+      autoTrackView(diamondId);
+    }
+  }, [diamondId, autoTrackView]);
 
   // Simple navigation without haptic feedback to prevent loops
   const handleGoBack = useCallback(() => {
