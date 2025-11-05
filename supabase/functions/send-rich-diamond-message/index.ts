@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 
@@ -45,6 +46,7 @@ serve(async (req) => {
     }
 
     const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
+    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
 
     // Step 1: Send the AI-generated message first
     if (message && message.trim()) {
@@ -75,53 +77,87 @@ serve(async (req) => {
 
     for (const diamond of diamonds) {
       try {
+        // Validate and fix image URL
+        let imageUrl = diamond.picture;
+        
+        if (imageUrl) {
+          // Convert .html URLs to actual image URLs if needed
+          if (imageUrl.includes('.html')) {
+            imageUrl = `https://s3.eu-west-1.amazonaws.com/my360.fab/${diamond.stock_number}.jpg`;
+          }
+          
+          // Ensure HTTPS for Telegram compatibility
+          if (imageUrl.startsWith('http://')) {
+            imageUrl = imageUrl.replace('http://', 'https://');
+          }
+          
+          // Validate image URL format for Telegram
+          if (!imageUrl.match(/\.(jpg|jpeg|png|webp)$/i)) {
+            console.warn(`⚠️ Invalid image format for ${diamond.stock_number}, sending text only`);
+            imageUrl = null;
+          }
+        }
+        
         // Format diamond message with emojis and structure
         const diamondMessage = formatDiamondMessage(diamond);
         
-        // Create inline keyboard buttons
+        // Create inline keyboard with proper Telegram deep links
         const inlineKeyboard = [
           [
             {
-              text: '💎 פרטים מלאים',
-              web_app: { url: `${MINI_APP_URL}/diamond/${diamond.stock_number}` }
+              text: '💎 פרטים מלאים + תמונות HD',
+              url: `${telegramBotUrl}?startapp=diamond_${diamond.stock_number}`
             }
           ],
           [
             {
               text: '🏪 כל היהלומים',
-              web_app: { url: `${MINI_APP_URL}/store` }
+              url: `${telegramBotUrl}?startapp=store`
             }
           ]
         ];
 
         // Try to send with photo first
-        if (diamond.picture) {
-          const photoResponse = await fetch(`${telegramApiUrl}/sendPhoto`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: telegram_id,
-              photo: diamond.picture,
-              caption: diamondMessage,
-              parse_mode: 'Markdown',
-              reply_markup: {
-                inline_keyboard: inlineKeyboard
-              }
-            }),
-          });
+        if (imageUrl) {
+          console.log(`📸 Attempting to send diamond ${diamond.stock_number} with image`);
+          
+          try {
+            const photoResponse = await fetch(`${telegramApiUrl}/sendPhoto`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: telegram_id,
+                photo: imageUrl,
+                caption: diamondMessage,
+                parse_mode: 'Markdown',
+                reply_markup: {
+                  inline_keyboard: inlineKeyboard
+                }
+              }),
+            });
 
-          if (!photoResponse.ok) {
-            const errorData = await photoResponse.text();
-            console.error(`Failed to send photo for diamond ${diamond.stock_number}:`, errorData);
+            const photoResult = await photoResponse.json();
             
-            // Fallback: Send as text message
+            if (!photoResponse.ok || !photoResult.ok) {
+              console.warn(`📸 Photo send failed for ${diamond.stock_number}, falling back to text:`, photoResult.description);
+              
+              // Fallback to text message
+              await sendDiamondAsText(telegramApiUrl, telegram_id, diamondMessage, inlineKeyboard);
+              sentDiamonds.push(diamond.stock_number);
+            } else {
+              console.log(`✅ Diamond ${diamond.stock_number} sent with photo`);
+              sentDiamonds.push(diamond.stock_number);
+            }
+          } catch (photoError) {
+            console.warn(`📸 Photo send error for ${diamond.stock_number}, falling back to text:`, photoError);
+            
+            // Fallback to text message
             await sendDiamondAsText(telegramApiUrl, telegram_id, diamondMessage, inlineKeyboard);
-          } else {
-            console.log(`✅ Diamond ${diamond.stock_number} sent with photo`);
             sentDiamonds.push(diamond.stock_number);
           }
         } else {
           // No image available, send as text
+          console.log(`📝 Sending diamond ${diamond.stock_number} as text (no image available)`);
           await sendDiamondAsText(telegramApiUrl, telegram_id, diamondMessage, inlineKeyboard);
           sentDiamonds.push(diamond.stock_number);
         }
@@ -171,29 +207,27 @@ serve(async (req) => {
 
 function formatDiamondMessage(diamond: DiamondData): string {
   const shapeEmoji = getShapeEmoji(diamond.shape);
-  const priceFormatted = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(diamond.price);
+  const priceFormatted = diamond.price > 0
+    ? `💰 $${diamond.price.toLocaleString()}`
+    : '💰 צור קשר למחיר';
 
-  return `✨${shapeEmoji} ${diamond.shape.toUpperCase()} ${diamond.carat}ct BRILLIANT ✨
+  return `✨${shapeEmoji} **${diamond.carat}ct ${diamond.shape.toUpperCase()} BRILLIANT** ${shapeEmoji}✨
 
-🏆 *Premium Diamond Available Now!*
+🏆 **יהלום פרמיום זמין עכשיו!**
+*${diamond.color} צבע • ${diamond.clarity} ניקיון • ${diamond.cut} חיתוך*
 
-💎 *Specifications:*
-• Shape: ${diamond.shape}
-• Weight: ${diamond.carat} Carat
-• Color: ${diamond.color}
-• Clarity: ${diamond.clarity}
-• Cut: ${diamond.cut}
+💎 **${priceFormatted}**
 
-💰 *Price:* ${priceFormatted}
+🔥 **למה הלקוח יבחר ביהלום הזה?**
+• ✨ איכות פרמיום עם תעודת ${diamond.cut === 'EXCELLENT' ? 'מעולה' : diamond.cut}
+• 📊 מדדי איכות מושלמים
+• 🎯 מחיר תחרותי במיוחד
+• ⚡ זמין לאספקה מיידית
+• 🔒 אחריות מלאה ותעודה
 
-📋 *Stock #:* \`${diamond.stock_number}\`
+📋 **מק"ט:** \`${diamond.stock_number}\`
 
-👇 *Click buttons below for more details!*`;
+🎯 **רוצה לראות עוד פרטים? לחץ על הכפתורים למטה! 👇**`;
 }
 
 async function sendDiamondAsText(
@@ -207,7 +241,7 @@ async function sendDiamondAsText(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       chat_id: chatId,
-      text: message,
+      text: `${message}\n\n🖼️ [תמונת היהלום זמינה במערכת]`,
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: inlineKeyboard
