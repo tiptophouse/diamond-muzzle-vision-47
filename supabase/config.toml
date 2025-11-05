@@ -84,3 +84,6 @@ verify_jwt = false
 
 [functions.customer-retention]
 verify_jwt = false
+
+[functions.send-miniapp-campaign]
+verify_jwt = false
