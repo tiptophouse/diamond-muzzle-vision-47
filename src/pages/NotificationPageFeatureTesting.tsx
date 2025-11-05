@@ -130,14 +130,28 @@ export default function NotificationPageFeatureTesting() {
     haptics.heavy();
 
     const messageToSend = customMessage || selectedMessage;
-    const diamondImages = selectedDiamonds
+    
+    // Extract full diamond data for selected diamonds
+    const diamondsToSend = selectedDiamonds
       .map(stockNum => {
         const diamond = selectedNotification.data?.matches?.find((d: any) => d.stock_number === stockNum);
-        return diamond?.picture || diamond?.certificate_url;
+        if (!diamond) return null;
+        
+        return {
+          stock_number: diamond.stock_number,
+          shape: diamond.shape || 'ROUND',
+          carat: diamond.carat || diamond.weight || 1.0,
+          color: diamond.color || 'D',
+          clarity: diamond.clarity || 'VVS1',
+          cut: diamond.cut || 'Excellent',
+          price: diamond.price || (diamond.price_per_carat * (diamond.carat || diamond.weight || 1.0)),
+          picture: diamond.picture,
+          certificate_url: diamond.certificate_url
+        };
       })
       .filter(Boolean);
 
-    const success = await sendMessageToBuyer(buyerTelegramId, messageToSend, diamondImages);
+    const success = await sendMessageToBuyer(buyerTelegramId, messageToSend, diamondsToSend);
 
     if (success) {
       haptics.success();

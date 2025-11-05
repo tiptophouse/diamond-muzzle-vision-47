@@ -73,6 +73,9 @@ verify_jwt = false
 [functions.send-seller-message]
 verify_jwt = false
 
+[functions.send-rich-diamond-message]
+verify_jwt = false
+
 [functions.generate-buyer-message]
 verify_jwt = false
 

@@ -9,6 +9,18 @@ export interface GeneratedMessage {
   includedDiamonds: string[];
 }
 
+export interface DiamondShareData {
+  stock_number: string;
+  shape: string;
+  carat: number;
+  color: string;
+  clarity: string;
+  cut: string;
+  price: number;
+  picture?: string;
+  certificate_url?: string;
+}
+
 export interface MessageGenerationOptions {
   buyerName: string;
   buyerTelegramId: number;
@@ -64,17 +76,17 @@ export function useSellerMessageGeneration() {
   const sendMessageToBuyer = async (
     buyerTelegramId: number,
     message: string,
-    diamondImages?: string[]
+    diamonds?: DiamondShareData[]
   ): Promise<boolean> => {
     setIsSending(true);
     try {
-      console.log('📤 Sending message to buyer:', buyerTelegramId);
+      console.log('📤 Sending rich message to buyer:', buyerTelegramId, 'with', diamonds?.length || 0, 'diamonds');
 
-      const { data, error } = await supabase.functions.invoke('send-seller-message', {
+      const { data, error } = await supabase.functions.invoke('send-rich-diamond-message', {
         body: {
           telegram_id: buyerTelegramId,
           message,
-          diamond_images: diamondImages || [],
+          diamonds: diamonds || [],
         },
       });
 
@@ -84,7 +96,7 @@ export function useSellerMessageGeneration() {
       }
 
       toast.success('הודעה נשלחה בהצלחה!', {
-        description: 'הלקוח יקבל את ההודעה שלך',
+        description: 'הלקוח יקבל את ההודעה שלך עם כל פרטי היהלומים',
       });
 
       return true;
