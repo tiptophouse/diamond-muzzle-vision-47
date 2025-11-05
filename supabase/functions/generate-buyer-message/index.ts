@@ -33,8 +33,40 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
+    const BACKEND_URL = Deno.env.get('BACKEND_URL');
+    const BACKEND_TOKEN = Deno.env.get('FASTAPI_BEARER_TOKEN');
+    
+    // Fetch complete diamond details from FastAPI including images
+    const enrichedDiamonds = await Promise.all(
+      diamonds.map(async (d: Diamond) => {
+        try {
+          if (BACKEND_URL && BACKEND_TOKEN) {
+            const response = await fetch(`${BACKEND_URL}/api/v1/get_all_stones?stock_number=${d.stock}`, {
+              headers: {
+                'Authorization': `Bearer ${BACKEND_TOKEN}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              if (data && data.length > 0) {
+                // Use the picture from FastAPI response
+                return { ...d, picture: data[0].picture || d.picture };
+              }
+            }
+          }
+        } catch (err) {
+          console.error(`⚠️ Failed to fetch image for ${d.stock}:`, err);
+        }
+        return d;
+      })
+    );
+
+    console.log('📸 Enriched diamonds with images:', enrichedDiamonds.filter(d => d.picture).length);
+
     // Create diamond list for AI prompt
-    const diamondList = diamonds.map((d: Diamond, idx: number) => {
+    const diamondList = enrichedDiamonds.map((d: Diamond, idx: number) => {
       const totalPrice = d.price_per_carat * d.weight;
       // If price is negative, it represents a discount percentage
       const priceDisplay = totalPrice < 0 
@@ -44,7 +76,7 @@ serve(async (req) => {
       return `${idx + 1}. ${d.shape} ${d.weight}ct - ${d.color} ${d.clarity}${d.cut ? ` (${d.cut})` : ''} - ${priceDisplay} (מלאי: ${d.stock})`;
     }).join('\n');
 
-    const totalValue = diamonds.reduce((sum: number, d: Diamond) => {
+    const totalValue = enrichedDiamonds.reduce((sum: number, d: Diamond) => {
       const price = d.price_per_carat * d.weight;
       // Skip negative prices (discounts) in total calculation
       return price >= 0 ? sum + price : sum;
@@ -60,7 +92,7 @@ serve(async (req) => {
 - DO NOT include seller perspective or "I'm sending you" - speak directly to the buyer
 - IMPORTANT: Write ONLY in Hebrew language`;
 
-    const userPrompt = `Generate a message IN HEBREW directly to buyer "${buyerName || 'לקוח יקר'}" about ${diamonds.length} diamonds you found for them:
+    const userPrompt = `Generate a message IN HEBREW directly to buyer "${buyerName || 'לקוח יקר'}" about ${enrichedDiamonds.length} diamonds you found for them:
 
 ${diamondList}
 
@@ -103,7 +135,7 @@ IMPORTANT: Write directly to the buyer in Hebrew. Make them feel you found somet
     return new Response(
       JSON.stringify({ 
         message: generatedMessage,
-        diamonds: diamonds.map((d: Diamond) => {
+        diamonds: enrichedDiamonds.map((d: Diamond) => {
           const totalPrice = d.price_per_carat * d.weight;
           return {
             stock: d.stock,
