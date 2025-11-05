@@ -4,14 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Upload, Download, AlertTriangle, CheckCircle, Users, Database } from 'lucide-react';
-import { analyzeSyncStatus, downloadAnalysisReport, type SyncAnalysisResult } from '@/utils/userSyncAnalysis';
+import { Upload, Download, AlertTriangle, CheckCircle, Users, Database, UserPlus } from 'lucide-react';
+import { analyzeSyncStatus, downloadAnalysisReport, type SyncAnalysisResult, type BackendUser } from '@/utils/userSyncAnalysis';
 
 export function UserSyncAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
   const [analysisResult, setAnalysisResult] = useState<SyncAnalysisResult | null>(null);
+  const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null);
   const { toast } = useToast();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,6 +62,81 @@ export function UserSyncAnalysis() {
       title: 'Report Downloaded',
       description: 'Missing users report has been downloaded',
     });
+  };
+
+  const handleImportUsers = async () => {
+    if (!analysisResult || analysisResult.missingInFrontend.length === 0) return;
+
+    setIsImporting(true);
+    setImportProgress(0);
+    setImportResult(null);
+
+    let successCount = 0;
+    let failedCount = 0;
+    const totalUsers = analysisResult.missingInFrontend.length;
+
+    try {
+      // Process users in batches of 50
+      const batchSize = 50;
+      for (let i = 0; i < totalUsers; i += batchSize) {
+        const batch = analysisResult.missingInFrontend.slice(i, i + batchSize);
+        
+        const usersToInsert = batch.map((user: BackendUser) => ({
+          telegram_id: parseInt(user.telegram_id),
+          first_name: user.first_name || 'User',
+          last_name: user.last_name || null,
+          phone_number: user.phone_number || null,
+          language_code: user.language_code || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .insert(usersToInsert)
+          .select();
+
+        if (error) {
+          console.error('Batch import error:', error);
+          failedCount += batch.length;
+        } else {
+          successCount += data?.length || 0;
+        }
+
+        // Update progress
+        const progress = ((i + batch.length) / totalUsers) * 100;
+        setImportProgress(Math.min(progress, 100));
+      }
+
+      setImportResult({ success: successCount, failed: failedCount });
+
+      if (successCount > 0) {
+        toast({
+          title: 'Import Complete',
+          description: `Successfully imported ${successCount} users${failedCount > 0 ? `, ${failedCount} failed` : ''}`,
+        });
+
+        // Refresh analysis
+        if (successCount === totalUsers) {
+          setAnalysisResult(null);
+        }
+      } else {
+        toast({
+          title: 'Import Failed',
+          description: 'No users were imported successfully',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error importing users:', error);
+      toast({
+        title: 'Import Error',
+        description: error.message || 'Failed to import users',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   return (
@@ -144,12 +223,41 @@ export function UserSyncAnalysis() {
                 </AlertDescription>
               </Alert>
 
+              {isImporting && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Importing users...</span>
+                    <span>{Math.round(importProgress)}%</span>
+                  </div>
+                  <Progress value={importProgress} />
+                </div>
+              )}
+
+              {importResult && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Import Complete:</strong> {importResult.success} users imported successfully
+                    {importResult.failed > 0 && `, ${importResult.failed} failed`}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Missing Users ({analysisResult.missingCount})</h3>
-                <Button onClick={handleDownloadReport} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Report
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleImportUsers} 
+                    disabled={isImporting || analysisResult.missingCount === 0}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    {isImporting ? 'Importing...' : 'Import All Users'}
+                  </Button>
+                  <Button onClick={handleDownloadReport} variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Report
+                  </Button>
+                </div>
               </div>
 
               <ScrollArea className="h-[400px] border rounded-md">
