@@ -41,14 +41,10 @@ verify_jwt = false
 [functions.send-telegram-message]
 verify_jwt = false
 
-[functions.user-engagement]
-verify_jwt = false
 
 [functions.openai-csv-enhancer]
 verify_jwt = false
 
-[functions.diamond-agents]
-verify_jwt = false
 
 [functions.send-diamond-to-group]
 verify_jwt = false
