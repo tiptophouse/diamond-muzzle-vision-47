@@ -50,23 +50,23 @@ serve(async (req) => {
       return price >= 0 ? sum + price : sum;
     }, 0);
 
-    const systemPrompt = `You are a professional diamond dealer assistant. Generate a warm, professional message IN HEBREW to send to a buyer about matched diamonds. The message should be:
-- Professional but friendly, written in HEBREW
-- Brief and to the point (2-3 sentences max)
-- Mention the total number of diamonds and approximate total value
-- Express willingness to discuss details
-- Use appropriate diamond industry terminology in Hebrew
-- DO NOT include greetings or signatures - just the message body
+    const systemPrompt = `You are a professional diamond dealer assistant. Generate a warm, helpful message IN HEBREW directly to a buyer about diamonds that match their search. The message should be:
+- Warm and customer-focused, written in HEBREW
+- Address the buyer directly (use "שלום" or mention their name)
+- Brief (2-3 sentences max)
+- Mention what you found for them based on their search
+- Invite them to view details and contact for more information
+- Use friendly, professional tone in Hebrew
+- DO NOT include seller perspective or "I'm sending you" - speak directly to the buyer
 - IMPORTANT: Write ONLY in Hebrew language`;
 
-    const userPrompt = `Generate a message IN HEBREW for buyer "${buyerName || 'לקוח יקר'}" about these ${diamonds.length} matched diamonds:
+    const userPrompt = `Generate a message IN HEBREW directly to buyer "${buyerName || 'לקוח יקר'}" about ${diamonds.length} diamonds you found for them:
 
 ${diamondList}
 
-Total Value: $${totalValue.toLocaleString()}
-${searchQuery ? `Their search: "${searchQuery}"` : ''}
+${searchQuery ? `They searched for: "${searchQuery}"` : 'Based on their preferences'}
 
-IMPORTANT: Write the entire message in Hebrew. Keep it concise and professional.`;
+IMPORTANT: Write directly to the buyer in Hebrew. Make them feel you found something special for them.`;
 
     console.log('🤖 Generating message with AI...');
     

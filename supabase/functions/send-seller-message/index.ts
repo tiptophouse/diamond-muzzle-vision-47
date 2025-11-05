@@ -95,14 +95,15 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         chat_id: telegram_id,
-        text: '💎 בחר פעולה:',
+        text: '💎 מה תרצה לעשות?',
         reply_markup: {
           inline_keyboard: [
             [
-              { text: '📞 צור קשר עם המוכר', url: 'https://t.me/BrilliantBot' }
+              { text: '📞 צור קשר למידע נוסף', callback_data: 'contact_for_info' }
             ],
             [
-              { text: '🔍 חפש יהלומים נוספים', url: 'https://t.me/BrilliantBot/app' }
+              { text: '📋 פרטים נוספים', callback_data: 'more_details' },
+              { text: '🔍 חפש עוד', callback_data: 'search_more' }
             ]
           ]
         }
