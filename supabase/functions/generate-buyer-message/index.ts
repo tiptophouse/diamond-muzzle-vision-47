@@ -147,7 +147,8 @@ IMPORTANT: Write directly to the buyer in Hebrew. Make them feel you found somet
             picture: d.picture
           };
         }),
-        totalValue
+        totalValue,
+        stockNumbers: enrichedDiamonds.map((d: Diamond) => d.stock)
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

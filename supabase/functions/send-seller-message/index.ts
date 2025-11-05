@@ -11,18 +11,23 @@ serve(async (req) => {
   }
 
   try {
-    const { telegram_id, message, diamond_images } = await req.json();
+    const { telegram_id, message, diamond_images, diamond_stocks } = await req.json();
 
     console.log('📤 Sending message to buyer:', {
       telegram_id,
       message_length: message?.length,
-      images_count: diamond_images?.length || 0
+      images_count: diamond_images?.length || 0,
+      stocks_count: diamond_stocks?.length || 0
     });
 
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    const MINI_APP_URL = Deno.env.get('MINI_APP_URL') || 'https://uhhljqgxhdhbbhpohxll.lovableproject.com';
+    
     if (!TELEGRAM_BOT_TOKEN) {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
     }
+    
+    console.log('📱 Mini App URL:', MINI_APP_URL);
 
     let result;
 
@@ -85,35 +90,43 @@ serve(async (req) => {
       console.log('✅ Message sent successfully');
     }
 
-    // Send inline keyboard buttons
-    const buttonUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-    
-    const buttonResponse = await fetch(buttonUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: telegram_id,
-        text: '💎 מה תרצה לעשות?',
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: '📞 צור קשר למידע נוסף', callback_data: 'contact_for_info' }
-            ],
-            [
-              { text: '📋 פרטים נוספים', callback_data: 'more_details' },
-              { text: '🔍 חפש עוד', callback_data: 'search_more' }
-            ]
-          ]
-        }
-      }),
-    });
+    // Create web_app buttons for each diamond to open in Mini App
+    if (diamond_stocks && diamond_stocks.length > 0) {
+      const diamondButtons = diamond_stocks.slice(0, 4).map((stock: string) => ({
+        text: `💎 ${stock}`,
+        web_app: { url: `${MINI_APP_URL}/diamond/${stock}` }
+      }));
 
-    if (buttonResponse.ok) {
-      console.log('✅ Action buttons sent successfully');
-    } else {
-      console.error('⚠️ Failed to send action buttons, but message was delivered');
+      // Arrange buttons in rows of 2
+      const buttonRows = [];
+      for (let i = 0; i < diamondButtons.length; i += 2) {
+        buttonRows.push(diamondButtons.slice(i, i + 2));
+      }
+
+      // Add "View All" button
+      buttonRows.push([
+        { text: '🏪 לכל המלאי', web_app: { url: `${MINI_APP_URL}/store` } }
+      ]);
+
+      const buttonUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+      
+      const buttonResponse = await fetch(buttonUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: telegram_id,
+          text: '💎 לחץ לצפייה ביהלומים:',
+          reply_markup: { inline_keyboard: buttonRows }
+        }),
+      });
+
+      if (buttonResponse.ok) {
+        console.log('✅ Web app buttons sent successfully');
+      } else {
+        console.error('⚠️ Failed to send web app buttons');
+      }
     }
 
     return new Response(

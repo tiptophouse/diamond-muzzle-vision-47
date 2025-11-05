@@ -50,6 +50,7 @@ export function ContactBuyerDialog({
   const [generatedMessage, setGeneratedMessage] = useState('');
   const [diamondData, setDiamondData] = useState<any[]>([]);
   const [totalValue, setTotalValue] = useState(0);
+  const [stockNumbers, setStockNumbers] = useState<string[]>([]);
   const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
 
   useEffect(() => {
@@ -84,6 +85,7 @@ export function ContactBuyerDialog({
       setGeneratedMessage(data.message);
       setDiamondData(data.diamonds);
       setTotalValue(data.totalValue);
+      setStockNumbers(data.stockNumbers || []);
       impactOccurred('light');
       toast.success('Message generated successfully!');
       
@@ -140,6 +142,7 @@ export function ContactBuyerDialog({
           telegram_id: buyerId,
           message: generatedMessage,
           diamond_images: diamondImages,
+          diamond_stocks: stockNumbers,
         },
       });
 
