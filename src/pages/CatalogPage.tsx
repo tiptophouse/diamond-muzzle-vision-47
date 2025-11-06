@@ -12,7 +12,7 @@ import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useTelegramNavigation } from "@/hooks/useTelegramNavigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Filter, SortAsc, AlertCircle, Search, Sparkles } from "lucide-react";
+import { Plus, Filter, SortAsc, AlertCircle, Search } from "lucide-react";
 import { toast } from 'sonner';
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
@@ -20,6 +20,9 @@ import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 import { preloadDiamondImages, clearImageCache } from "@/utils/telegramImageOptimizer";
+import { CampaignCard } from "@/components/campaigns/CampaignCard";
+import { useCampaignEngine } from "@/hooks/useCampaignEngine";
+import { Sparkles, Upload, BookOpen, TrendingUp, CreditCard } from "lucide-react";
 
 // Telegram memory management
 const tg = getTelegramWebApp();
@@ -63,6 +66,7 @@ function CatalogPage() {
     enableHapticFeedback: true
   });
   const navigate = useNavigate();
+  const { campaign, loading: campaignLoading, dismissCampaign } = useCampaignEngine();
 
   // Telegram memory optimization with image cleanup
   useEffect(() => {
@@ -283,6 +287,22 @@ function CatalogPage() {
     return { with3D, withImages, infoOnly };
   }, [sortedDiamonds, getMediaPriority]);
 
+  // Get campaign icon based on type
+  const getCampaignIcon = (type: string) => {
+    switch (type) {
+      case 'paid_no_stock':
+        return <Upload className="h-5 w-5 text-primary" />;
+      case 'tutorial_no_upload':
+        return <BookOpen className="h-5 w-5 text-primary" />;
+      case 'paid_has_stock':
+        return <TrendingUp className="h-5 w-5 text-primary" />;
+      case 'has_stock_not_paying':
+        return <CreditCard className="h-5 w-5 text-primary" />;
+      default:
+        return <Sparkles className="h-5 w-5 text-primary" />;
+    }
+  };
+
   // Render catalog content
   const renderCatalogContent = useMemo(() => {
     if (loading && currentPage === 1) {
@@ -406,6 +426,20 @@ function CatalogPage() {
             </div>
           </div>
         </div>
+
+        {/* Campaign Card - Show at top of store */}
+        {!campaignLoading && campaign && (
+          <div className="px-4 pt-3 pb-2">
+            <CampaignCard
+              title={campaign.title}
+              description={campaign.description}
+              buttons={campaign.buttons}
+              icon={getCampaignIcon(campaign.segment.type)}
+              onDismiss={() => dismissCampaign(campaign.segment.id)}
+              language="he"
+            />
+          </div>
+        )}
 
         {/* Enhanced Diamond Grid with Media Priority */}
         <div className="py-3">
