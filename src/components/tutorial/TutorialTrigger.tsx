@@ -5,7 +5,11 @@ import { useTutorial } from '@/contexts/TutorialContext';
 import { HelpCircle, RotateCcw, Globe } from 'lucide-react';
 
 export function TutorialTrigger() {
-  const { startTutorial, restartTutorial, hasSeenTutorial, currentLanguage, setLanguage } = useTutorial();
+  const tutorial = useTutorial();
+  
+  if (!tutorial) return null;
+  
+  const { startTutorial, restartTutorial, hasSeenTutorial, currentLanguage, setLanguage } = tutorial;
 
   const handleClick = () => {
     if (hasSeenTutorial) {
@@ -17,6 +21,7 @@ export function TutorialTrigger() {
 
   const toggleLanguage = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setLanguage(currentLanguage === 'en' ? 'he' : 'en');
   };
 

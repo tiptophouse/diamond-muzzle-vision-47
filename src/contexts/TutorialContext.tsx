@@ -245,7 +245,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Detect language from Telegram user data, default to Hebrew
+  // Detect language from Telegram user data, default to Hebrew (run once only)
   useEffect(() => {
     const savedLang = localStorage.getItem('tutorial-language') as 'en' | 'he' | null;
     
@@ -257,7 +257,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
       setCurrentLanguage(detectedLang);
       localStorage.setItem('tutorial-language', detectedLang);
     }
-  }, [user]);
+  }, []); // Only run on mount, not when user changes
 
   useEffect(() => {
     const seen = localStorage.getItem(`tutorial-completed-${currentLanguage}`);
