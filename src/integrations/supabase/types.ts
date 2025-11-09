@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      acadia_sftp_analytics: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          telegram_id: number
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          telegram_id: number
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          telegram_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acadia_sftp_analytics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_audit_log: {
         Row: {
           action: string
@@ -396,6 +431,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      campaign_button_clicks: {
+        Row: {
+          button_text: string
+          button_url: string | null
+          clicked_at: string
+          id: string
+          metadata: Json | null
+          notification_id: string | null
+          telegram_id: number
+        }
+        Insert: {
+          button_text: string
+          button_url?: string | null
+          clicked_at?: string
+          id?: string
+          metadata?: Json | null
+          notification_id?: string | null
+          telegram_id: number
+        }
+        Update: {
+          button_text?: string
+          button_url?: string | null
+          clicked_at?: string
+          id?: string
+          metadata?: Json | null
+          notification_id?: string | null
+          telegram_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_button_clicks_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_conversation_messages: {
         Row: {

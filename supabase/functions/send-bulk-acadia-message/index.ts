@@ -7,12 +7,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface MessageButton {
+  text: string;
+  url: string;
+}
+
 interface BulkMessageRequest {
   message: string;
   senderName: string;
   senderId: number;
   users: any[];
   testMode: boolean;
+  buttons?: MessageButton[];
 }
 
 serve(async (req) => {
@@ -23,7 +29,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, senderName, senderId, users, testMode }: BulkMessageRequest = await req.json();
+    const { message, senderName, senderId, users, testMode, buttons }: BulkMessageRequest = await req.json();
     
     console.log('📥 Request data:', { 
       senderName,
@@ -79,20 +85,18 @@ serve(async (req) => {
 
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
 
-    // Create inline keyboard for easy access
-    const inlineKeyboard = {
+    // Create inline keyboard from provided buttons or use default
+    const inlineKeyboard = buttons && buttons.length > 0 ? {
+      reply_markup: {
+        inline_keyboard: [buttons.map(btn => ({ text: btn.text, url: btn.url }))]
+      }
+    } : {
       reply_markup: {
         inline_keyboard: [
           [
             {
               text: '🔗 התחבר ל-BrilliantBot',
               url: 'https://t.me/diamondmazalbot'
-            }
-          ],
-          [
-            {
-              text: '📋 Generate SFTP',
-              callback_data: 'generate_sftp_connection'
             }
           ]
         ]
