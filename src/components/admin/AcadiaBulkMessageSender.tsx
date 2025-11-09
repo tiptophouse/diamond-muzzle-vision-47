@@ -59,7 +59,13 @@ export function AcadiaBulkMessageSender() {
           senderName: user.first_name || 'Admin',
           senderId: user.id,
           users: userCounts,
-          testMode: false
+          testMode: false,
+          buttons: [
+            {
+              text: "🔗 Generate SFTP Credentials",
+              url: "https://t.me/diamondmazalbot?text=/provide_sftp"
+            }
+          ]
         }
       });
 
@@ -107,7 +113,13 @@ ${message.trim()}
           senderName: user.first_name || 'Admin',
           senderId: user.id,
           users: [], // Empty for test mode
-          testMode: true
+          testMode: true,
+          buttons: [
+            {
+              text: "🔗 Generate SFTP Credentials",
+              url: "https://t.me/diamondmazalbot?text=/provide_sftp"
+            }
+          ]
         }
       });
 
