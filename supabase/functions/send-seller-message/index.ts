@@ -21,13 +21,18 @@ serve(async (req) => {
     });
 
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-    const MINI_APP_URL = Deno.env.get('MINI_APP_URL') || 'https://uhhljqgxhdhbbhpohxll.lovableproject.com';
+    const TELEGRAM_BOT_USERNAME = Deno.env.get('TELEGRAM_BOT_USERNAME');
     
     if (!TELEGRAM_BOT_TOKEN) {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
     }
     
-    console.log('📱 Mini App URL:', MINI_APP_URL);
+    if (!TELEGRAM_BOT_USERNAME) {
+      throw new Error('TELEGRAM_BOT_USERNAME not configured');
+    }
+    
+    const telegramBotUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
+    console.log('📱 Telegram Bot URL:', telegramBotUrl);
 
     let result;
 
@@ -86,13 +91,13 @@ serve(async (req) => {
       console.log('✅ Message sent successfully');
     }
 
-    // Always send inline web_app buttons for diamonds (open in Mini App)
+    // Always send inline buttons with Telegram deep links (open in Mini App)
     if (diamond_stocks && diamond_stocks.length > 0) {
-      console.log('💎 Sending inline web_app buttons for diamonds:', diamond_stocks.length);
+      console.log('💎 Sending inline buttons for diamonds:', diamond_stocks.length);
       
       const diamondButtons = diamond_stocks.slice(0, 4).map((stock: string) => ({
         text: `💎 צפה במלאי ${stock}`,
-        web_app: { url: `${MINI_APP_URL}/diamond/${stock}?src=tgmsg` }
+        url: `${telegramBotUrl}?startapp=diamond_${stock}`
       }));
 
       // Arrange buttons in rows of 2
@@ -103,7 +108,7 @@ serve(async (req) => {
 
       // Add "View All" button
       buttonRows.push([
-        { text: '🏪 לכל המלאי', web_app: { url: `${MINI_APP_URL}/store?src=tgmsg` } }
+        { text: '🏪 לכל המלאי', url: `${telegramBotUrl}?startapp=store` }
       ]);
 
       const buttonUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
