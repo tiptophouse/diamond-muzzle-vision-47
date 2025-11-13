@@ -41,6 +41,7 @@ import AdminStatsPage from './pages/AdminStatsPage';
 import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
 import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import TestInlineButtons from './pages/TestInlineButtons';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
@@ -152,6 +153,11 @@ function App() {
           <Route path="/notifications-test" element={
             <AuthenticatedRoute>
               <NotificationPageFeatureTesting />
+            </AuthenticatedRoute>
+          } />
+          <Route path="/test-inline-buttons" element={
+            <AuthenticatedRoute>
+              <TestInlineButtons />
             </AuthenticatedRoute>
           } />
                   <Route path="/profile" element={
