@@ -43,6 +43,7 @@ import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TestInlineButtons from './pages/TestInlineButtons';
 import PublicAuctionPage from './pages/PublicAuctionPage';
+import AuctionsListPage from './pages/AuctionsListPage';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
@@ -101,6 +102,12 @@ function App() {
                     <AuthenticatedRoute>
                       <CatalogPage />
                     </AuthenticatedRoute>
+                  } />
+                  
+                  <Route path="/auctions" element={
+                    <PublicRoute>
+                      <AuctionsListPage />
+                    </PublicRoute>
                   } />
                   
                   {/* Public diamond sharing - no JWT required */}
