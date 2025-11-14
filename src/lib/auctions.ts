@@ -1,7 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { AuctionSchema, AuctionBidSchema, AuctionCreateRequest } from '@/types/fastapi-models';
 
-export async function createAuction(request: AuctionCreateRequest): Promise<AuctionSchema> {
+export async function createAuction(
+  request: AuctionCreateRequest & { seller_telegram_id: number }
+): Promise<AuctionSchema> {
   const endsAt = new Date();
   endsAt.setHours(endsAt.getHours() + request.duration_hours);
 
@@ -14,11 +16,17 @@ export async function createAuction(request: AuctionCreateRequest): Promise<Auct
       min_increment: request.min_increment,
       currency: request.currency || 'USD',
       ends_at: endsAt.toISOString(),
+      seller_telegram_id: request.seller_telegram_id,
     }] as any)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Failed to create auction:', error);
+    throw error;
+  }
+  
+  console.log('✅ Auction created successfully:', data);
   return data as any;
 }
 
