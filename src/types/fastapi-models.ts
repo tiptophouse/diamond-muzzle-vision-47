@@ -278,3 +278,55 @@ export interface ValidationError {
 export interface HTTPValidationError {
   detail?: ValidationError[];
 }
+
+// Auction Types
+export interface AuctionSchema {
+  id: string;
+  stock_number: string;
+  seller_telegram_id: number;
+  starting_price: number;
+  current_price: number;
+  min_increment: number;
+  currency: string;
+  status: 'active' | 'ended' | 'cancelled' | 'sold';
+  starts_at: string;
+  ends_at: string;
+  winner_telegram_id?: number;
+  created_at: string;
+  updated_at: string;
+  
+  // Joined data
+  diamond?: DiamondDataSchema;
+  bid_count?: number;
+  latest_bids?: AuctionBidSchema[];
+}
+
+export interface AuctionBidSchema {
+  id: string;
+  auction_id: string;
+  bidder_telegram_id: number;
+  bidder_name?: string;
+  bid_amount: number;
+  created_at: string;
+}
+
+export interface AuctionCreateRequest {
+  stock_number: string;
+  starting_price: number;
+  min_increment: number;
+  duration_hours: number;
+  currency?: string;
+}
+
+export interface PlaceBidRequest {
+  bid_amount?: number;
+}
+
+export interface AuctionDetailResponse extends AuctionSchema {
+  diamond: DiamondDataSchema;
+  bids: AuctionBidSchema[];
+  bid_count: number;
+  time_remaining_seconds: number;
+  is_seller: boolean;
+  user_highest_bid?: AuctionBidSchema;
+}
