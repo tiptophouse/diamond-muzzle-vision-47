@@ -6,12 +6,25 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { createAuction } from '@/lib/auctions';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { supabase } from '@/integrations/supabase/client';
+
+interface DiamondData {
+  stockNumber: string;
+  carat: number;
+  shape: string;
+  color: string;
+  clarity: string;
+  cut: string;
+  price: number;
+  picture?: string;
+}
 
 interface CreateAuctionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   stockNumber: string;
   diamondName: string;
+  diamond: DiamondData;
   onSuccess?: (auctionId: string) => void;
 }
 
@@ -20,6 +33,7 @@ export function CreateAuctionModal({
   onOpenChange,
   stockNumber,
   diamondName,
+  diamond,
   onSuccess,
 }: CreateAuctionModalProps) {
   const [startingPrice, setStartingPrice] = useState('');
@@ -39,6 +53,7 @@ export function CreateAuctionModal({
     hapticFeedback.impact('light');
 
     try {
+      // Step 1: Create auction
       const auction = await createAuction({
         stock_number: stockNumber,
         starting_price: Number(startingPrice),
@@ -46,11 +61,55 @@ export function CreateAuctionModal({
         duration_hours: Number(durationHours),
       });
 
-      hapticFeedback.notification('success');
-      toast({ 
-        title: '✅ המכרז נוצר בהצלחה!', 
-        description: 'ניתן כעת לשתף אותו בטלגרם' 
-      });
+      console.log('✅ Auction created:', auction.id);
+
+      // Step 2: Send message to test group
+      try {
+        const endsAt = new Date();
+        endsAt.setHours(endsAt.getHours() + Number(durationHours));
+
+        const diamondDescription = `💎 ${diamond.carat}ct ${diamond.shape}
+🎨 Color: ${diamond.color} | Clarity: ${diamond.clarity}
+✨ Cut: ${diamond.cut}
+📦 Stock: ${diamond.stockNumber}`;
+
+        const { error: sendError } = await supabase.functions.invoke('send-auction-message', {
+          body: {
+            auction_id: auction.id,
+            stock_number: stockNumber,
+            diamond_description: diamondDescription,
+            current_price: Number(startingPrice),
+            min_increment: Number(minIncrement),
+            currency: 'USD',
+            ends_at: endsAt.toISOString(),
+            image_url: diamond.picture || undefined,
+          }
+        });
+
+        if (sendError) {
+          console.error('Failed to send auction message:', sendError);
+          toast({ 
+            title: '⚠️ המכרז נוצר', 
+            description: 'אך השיתוף לקבוצה נכשל. ניתן לשתף ידנית.',
+            variant: 'default'
+          });
+        } else {
+          console.log('✅ Auction message sent to group');
+          hapticFeedback.notification('success');
+          toast({ 
+            title: '✅ המכרז נוצר ושותף בהצלחה!', 
+            description: 'המכרז נשלח לקבוצת הבדיקה' 
+          });
+        }
+      } catch (shareError) {
+        console.error('Error sharing auction:', shareError);
+        toast({ 
+          title: '⚠️ המכרז נוצר', 
+          description: 'אך השיתוף לקבוצה נכשל',
+          variant: 'default'
+        });
+      }
+
       onOpenChange(false);
       onSuccess?.(auction.id);
     } catch (error) {
