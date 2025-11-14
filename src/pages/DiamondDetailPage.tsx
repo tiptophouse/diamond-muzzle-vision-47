@@ -548,7 +548,10 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
                         size="lg" 
                         variant="outline"
                         className="w-full border-2 border-amber-500/50 bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 text-amber-900 hover:border-amber-500 shadow-md hover:shadow-lg transition-all duration-200"
-                        onClick={() => setShowAuctionModal(true)}
+                        onClick={() => {
+                          console.log('🔨 Auction button clicked');
+                          setShowAuctionModal(true);
+                        }}
                       >
                         <Gavel className="h-4 w-4 mr-2" />
                         צור מכרז
@@ -557,19 +560,17 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
                   </div>
                 </CardContent>
               </Card>
-              
-              {/* Auction Modal */}
-              {showAuctionModal && (
-                <CreateAuctionModal
-                  open={showAuctionModal}
-                  onOpenChange={setShowAuctionModal}
-                  stockNumber={diamond.stockNumber}
-                  diamondName={`${diamond.carat}ct ${diamond.shape}`}
-                />
-              )}
             </div>
           </div>
         </div>
+        
+        {/* Auction Modal - Moved outside nested structure */}
+        <CreateAuctionModal
+          open={showAuctionModal}
+          onOpenChange={setShowAuctionModal}
+          stockNumber={diamond.stockNumber}
+          diamondName={`${diamond.carat}ct ${diamond.shape}`}
+        />
       </div>
     </>
   );
