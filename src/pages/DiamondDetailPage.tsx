@@ -570,6 +570,16 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
           onOpenChange={setShowAuctionModal}
           stockNumber={diamond.stockNumber}
           diamondName={`${diamond.carat}ct ${diamond.shape}`}
+          diamond={{
+            stockNumber: diamond.stockNumber,
+            carat: diamond.carat,
+            shape: diamond.shape,
+            color: diamond.color,
+            clarity: diamond.clarity,
+            cut: diamond.cut,
+            price: diamond.price,
+            picture: diamond.picture,
+          }}
         />
       </div>
     </>
