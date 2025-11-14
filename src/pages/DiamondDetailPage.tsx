@@ -10,7 +10,8 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Share2, ExternalLink, Camera, Award, Gem, Palette, Eye, MessageSquare, Upload, X, Sparkles } from "lucide-react";
+import { ArrowLeft, Share2, ExternalLink, Camera, Award, Gem, Palette, Eye, MessageSquare, Upload, X, Sparkles, Gavel } from "lucide-react";
+import { CreateAuctionModal } from '@/components/auction/CreateAuctionModal';
 import { V360Viewer } from "@/components/store/V360Viewer";
 import { Gem360Viewer } from "@/components/store/Gem360Viewer";
 import { UniversalImageHandler } from "@/components/store/UniversalImageHandler";
@@ -27,6 +28,7 @@ function DiamondDetailPage() {
   const [isContactLoading, setIsContactLoading] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const [showAuctionModal, setShowAuctionModal] = useState(false);
 
   // Track diamond view when opened from Telegram
   useEffect(() => {
@@ -521,27 +523,50 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
                   <p className="text-muted-foreground mb-4">
                     Contact us for more information, additional images, or to schedule a viewing.
                   </p>
-                  <div className="flex gap-3">
-                    <Button 
-                      size="lg" 
-                      className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-200" 
-                      onClick={handleContact}
-                      disabled={isContactLoading}
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      {isContactLoading ? "Sending..." : "Contact Us"}
-                    </Button>
-                    <Button 
-                      onClick={handleShare} 
-                      size="lg"
-                      variant="outline"
-                      className="px-4 border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 shadow-md hover:shadow-lg transition-all duration-200"
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </Button>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex gap-3">
+                      <Button 
+                        size="lg" 
+                        className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-200" 
+                        onClick={handleContact}
+                        disabled={isContactLoading}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        {isContactLoading ? "Sending..." : "Contact Us"}
+                      </Button>
+                      <Button 
+                        onClick={handleShare} 
+                        size="lg"
+                        variant="outline"
+                        className="px-4 border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 shadow-md hover:shadow-lg transition-all duration-200"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {isAdmin && (
+                      <Button 
+                        size="lg" 
+                        variant="outline"
+                        className="w-full border-2 border-amber-500/50 bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 text-amber-900 hover:border-amber-500 shadow-md hover:shadow-lg transition-all duration-200"
+                        onClick={() => setShowAuctionModal(true)}
+                      >
+                        <Gavel className="h-4 w-4 mr-2" />
+                        צור מכרז
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
+              
+              {/* Auction Modal */}
+              {showAuctionModal && (
+                <CreateAuctionModal
+                  open={showAuctionModal}
+                  onOpenChange={setShowAuctionModal}
+                  stockNumber={diamond.stockNumber}
+                  diamondName={`${diamond.carat}ct ${diamond.shape}`}
+                />
+              )}
             </div>
           </div>
         </div>

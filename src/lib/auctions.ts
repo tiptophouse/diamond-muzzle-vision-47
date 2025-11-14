@@ -5,7 +5,7 @@ export async function createAuction(request: AuctionCreateRequest): Promise<Auct
   const endsAt = new Date();
   endsAt.setHours(endsAt.getHours() + request.duration_hours);
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('auctions')
     .insert([{
       stock_number: request.stock_number,
@@ -24,7 +24,7 @@ export async function createAuction(request: AuctionCreateRequest): Promise<Auct
 
 export async function getAuctionById(auctionId: string) {
   const { data: auction, error } = await supabase
-    .from('auctions')
+    .from('auctions' as any)
     .select('*')
     .eq('id', auctionId)
     .single();
@@ -33,21 +33,21 @@ export async function getAuctionById(auctionId: string) {
 
   // Get diamond separately
   const { data: diamond } = await supabase
-    .from('inventory')
+    .from('inventory' as any)
     .select('*')
-    .eq('stock_number', auction.stock_number)
+    .eq('stock_number', (auction as any).stock_number)
     .single();
 
   // Get bids
   const { data: bids } = await supabase
-    .from('auction_bids')
+    .from('auction_bids' as any)
     .select('*')
     .eq('auction_id', auctionId)
     .order('created_at', { ascending: false })
     .limit(10);
 
   return {
-    ...auction,
+    ...(auction as any),
     diamond: diamond || null,
     bids: bids || [],
     bid_count: bids?.length || 0,
@@ -57,18 +57,18 @@ export async function getAuctionById(auctionId: string) {
 export async function placeBid(auctionId: string, bidAmount?: number) {
   // Get auction first
   const { data: auction } = await supabase
-    .from('auctions')
+    .from('auctions' as any)
     .select('current_price, min_increment')
     .eq('id', auctionId)
     .single();
 
   if (!auction) throw new Error('Auction not found');
 
-  const nextBid = bidAmount || auction.current_price + auction.min_increment;
+  const nextBid = bidAmount || (auction as any).current_price + (auction as any).min_increment;
 
   // Insert bid
   const { data: bid, error: bidError } = await supabase
-    .from('auction_bids')
+    .from('auction_bids' as any)
     .insert([{
       auction_id: auctionId,
       bid_amount: nextBid,
@@ -80,8 +80,8 @@ export async function placeBid(auctionId: string, bidAmount?: number) {
 
   // Update auction current price
   const { error: updateError } = await supabase
-    .from('auctions')
-    .update({ current_price: nextBid })
+    .from('auctions' as any)
+    .update({ current_price: nextBid } as any)
     .eq('id', auctionId);
 
   if (updateError) throw updateError;
