@@ -431,11 +431,11 @@ async function ensureUserProfileExists(user: any) {
     console.log(`👤 Ensuring user profile exists for ${user.first_name} (${user.id})`);
     
     // Check if user already exists
-    const { data: existingUser, error: fetchError } = await supabase
+    const { data: existingUser } = await supabase
       .from('user_profiles')
       .select('telegram_id')
       .eq('telegram_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (existingUser) {
       console.log(`✅ User profile already exists for ${user.id}`);
