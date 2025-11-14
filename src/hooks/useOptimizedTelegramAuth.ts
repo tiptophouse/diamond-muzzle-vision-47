@@ -41,6 +41,17 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       
       console.log('⚡ AUTH: Instant load from cache with valid initData');
       setCurrentUserId(cachedAuth.userId);
+      
+      // Set session context for RLS (non-blocking, fire-and-forget)
+      void (async () => {
+        try {
+          await supabase.rpc('set_user_context', { telegram_id: cachedAuth.userId });
+          console.log('✅ Set session context from cache');
+        } catch (err) {
+          console.warn('⚠️ Failed to set session context:', err);
+        }
+      })();
+      
       return {
         user: cachedAuth.user,
         isLoading: false,
@@ -107,6 +118,16 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         
         setCurrentUserId(mockUser.id);
         
+        // Set session context for RLS (non-blocking, fire-and-forget)
+        void (async () => {
+          try {
+            await supabase.rpc('set_user_context', { telegram_id: mockUser.id });
+            console.log('✅ Set session context in dev mode');
+          } catch (err) {
+            console.warn('⚠️ Failed to set session context:', err);
+          }
+        })();
+        
         updateState({
           user: mockUser,
           isAuthenticated: true,
@@ -171,9 +192,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       
       // Set telegram_id in Supabase session context for RLS
       try {
-        await supabase.rpc('set_session_context', {
-          key: 'app.current_user_id',
-          value: userData.id.toString()
+        await supabase.rpc('set_user_context', {
+          telegram_id: userData.id
         });
         console.log('✅ AUTH: Set Supabase session context for RLS');
       } catch (error) {

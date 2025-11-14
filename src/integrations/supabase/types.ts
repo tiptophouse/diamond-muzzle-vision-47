@@ -2981,6 +2981,7 @@ export type Database = {
         Args: { key: string; value: string }
         Returns: undefined
       }
+      set_user_context: { Args: { telegram_id: number }; Returns: undefined }
       update_ai_learning_pattern: {
         Args: {
           p_pattern_data: Json
