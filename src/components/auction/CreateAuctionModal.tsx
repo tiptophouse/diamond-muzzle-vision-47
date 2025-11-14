@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { createAuction } from '@/lib/auctions';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DiamondData {
@@ -42,13 +43,23 @@ export function CreateAuctionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { hapticFeedback } = useTelegramWebApp();
+  const { user } = useTelegramAuth();
 
   const handleCreateAuction = async () => {
     if (!startingPrice || Number(startingPrice) <= 0) {
       toast({ title: 'שגיאה', description: 'נא להזין מחיר התחלתי תקין', variant: 'destructive' });
+      hapticFeedback.notification('error');
       return;
     }
 
+    const userId = user?.id;
+    if (!userId) {
+      toast({ title: 'שגיאה', description: 'לא ניתן לזהות משתמש', variant: 'destructive' });
+      hapticFeedback.notification('error');
+      return;
+    }
+
+    console.log('🔨 Creating auction with seller_telegram_id:', userId);
     setIsSubmitting(true);
     hapticFeedback.impact('light');
 
@@ -59,6 +70,7 @@ export function CreateAuctionModal({
         starting_price: Number(startingPrice),
         min_increment: Number(minIncrement),
         duration_hours: Number(durationHours),
+        seller_telegram_id: userId,
       });
 
       console.log('✅ Auction created:', auction.id);
