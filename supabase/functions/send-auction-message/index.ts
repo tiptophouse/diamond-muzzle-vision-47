@@ -3,9 +3,10 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 const TELEGRAM_BOT_USERNAME = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'Brilliantteatbot';
+const TEST_GROUP_ID = -1002178695748; // Test group ID
 
 interface AuctionMessagePayload {
-  chat_id: string | number;
+  chat_id?: string | number;
   auction_id: string;
   stock_number: string;
   diamond_description: string;
@@ -25,7 +26,7 @@ serve(async (req) => {
     const payload: AuctionMessagePayload = await req.json();
     
     const {
-      chat_id,
+      chat_id: providedChatId,
       auction_id,
       stock_number,
       diamond_description,
@@ -35,6 +36,9 @@ serve(async (req) => {
       ends_at,
       image_url,
     } = payload;
+
+    // Use test group as default if no chat_id provided
+    const chat_id = providedChatId || TEST_GROUP_ID;
 
     if (!TELEGRAM_BOT_TOKEN) {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
