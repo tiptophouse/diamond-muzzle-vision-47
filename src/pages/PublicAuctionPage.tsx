@@ -37,7 +37,7 @@ export default function PublicAuctionPage() {
     
     const updateTime = () => {
       const now = new Date();
-      const end = new Date(auction.ends_at);
+      const end = new Date((auction as any).ends_at);
       const diff = end.getTime() - now.getTime();
       
       if (diff <= 0) {
@@ -79,8 +79,8 @@ export default function PublicAuctionPage() {
     
     if (navigator.share) {
       navigator.share({
-        title: `מכרז: ${auction?.stock_number || auction?.diamond?.stock_number}`,
-        text: `💎 מכרז יהלום - מחיר נוכחי: $${auction?.current_price}`,
+        title: `מכרז: ${(auction as any)?.stock_number || (auction as any)?.diamond?.stock_number}`,
+        text: `💎 מכרז יהלום - מחיר נוכחי: $${(auction as any)?.current_price}`,
         url: deepLink,
       });
     } else {
@@ -98,9 +98,9 @@ export default function PublicAuctionPage() {
     return <div className="flex items-center justify-center min-h-screen">מכרז לא נמצא</div>;
   }
 
-  const isSeller = user?.id === auction.seller_telegram_id;
-  const isActive = auction.status === 'active';
-  const nextBidAmount = auction.current_price + auction.min_increment;
+  const isSeller = user?.id === (auction as any).seller_telegram_id;
+  const isActive = (auction as any).status === 'active';
+  const nextBidAmount = (auction as any).current_price + (auction as any).min_increment;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
@@ -109,32 +109,32 @@ export default function PublicAuctionPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">🔨 מכרז</h1>
           <Badge variant={isActive ? 'default' : 'secondary'}>
-            {auction.status === 'active' ? 'פעיל' : 'הסתיים'}
+            {(auction as any).status === 'active' ? 'פעיל' : 'הסתיים'}
           </Badge>
         </div>
 
         {/* Diamond Info */}
-        {auction.diamond && (
+        {(auction as any).diamond && (
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold">{auction.diamond.stock_number || auction.stock_number}</h2>
+            <h2 className="text-xl font-semibold">{(auction as any).diamond.stock_number || (auction as any).stock_number}</h2>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>צורה: {auction.diamond.shape}</div>
-              <div>משקל: {auction.diamond.weight} ct</div>
-              <div>צבע: {auction.diamond.color}</div>
-              <div>ניקיון: {auction.diamond.clarity}</div>
+              <div>צורה: {(auction as any).diamond.shape}</div>
+              <div>משקל: {(auction as any).diamond.weight} ct</div>
+              <div>צבע: {(auction as any).diamond.color}</div>
+              <div>ניקיון: {(auction as any).diamond.clarity}</div>
             </div>
           </div>
         )}
-        {!auction.diamond && (
+        {!(auction as any).diamond && (
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold">{auction.stock_number}</h2>
+            <h2 className="text-xl font-semibold">{(auction as any).stock_number}</h2>
           </div>
         )}
 
         {/* Current Price */}
         <div className="bg-primary/10 rounded-lg p-4">
           <div className="text-sm text-muted-foreground">מחיר נוכחי</div>
-          <div className="text-3xl font-bold">${auction.current_price}</div>
+          <div className="text-3xl font-bold">${(auction as any).current_price}</div>
           {isActive && (
             <div className="text-sm text-muted-foreground mt-1">
               הצעה הבאה: ${nextBidAmount}
@@ -153,15 +153,15 @@ export default function PublicAuctionPage() {
         {/* Bid Stats */}
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-bold">{auction.bid_count}</div>
+            <div className="text-2xl font-bold">{(auction as any).bid_count}</div>
             <div className="text-xs text-muted-foreground">הצעות</div>
           </div>
           <div>
-            <div className="text-2xl font-bold">${auction.starting_price}</div>
+            <div className="text-2xl font-bold">${(auction as any).starting_price}</div>
             <div className="text-xs text-muted-foreground">מחיר התחלתי</div>
           </div>
           <div>
-            <div className="text-2xl font-bold">${auction.min_increment}</div>
+            <div className="text-2xl font-bold">${(auction as any).min_increment}</div>
             <div className="text-xs text-muted-foreground">הפרש מינימלי</div>
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function PublicAuctionPage() {
               <Share2 className="w-4 h-4 mr-2" />
               שתף
             </Button>
-            <Button variant="outline" onClick={() => window.open(`/diamond/${auction.stock_number}`, '_blank')}>
+            <Button variant="outline" onClick={() => window.open(`/diamond/${(auction as any).stock_number}`, '_blank')}>
               <Eye className="w-4 h-4 mr-2" />
               צפה ביהלום
             </Button>
@@ -194,14 +194,14 @@ export default function PublicAuctionPage() {
         </div>
 
         {/* Latest Bids */}
-        {auction.bids && auction.bids.length > 0 && (
+        {(auction as any).bids && (auction as any).bids.length > 0 && (
           <div className="space-y-2">
             <h3 className="font-semibold flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               הצעות אחרונות
             </h3>
             <div className="space-y-1">
-              {auction.bids.slice(0, 5).map((bid) => (
+              {(auction as any).bids.slice(0, 5).map((bid: any) => (
                 <div key={bid.id} className="flex justify-between items-center text-sm p-2 bg-muted rounded">
                   <span>{bid.bidder_name || 'משתמש'}</span>
                   <span className="font-semibold">${bid.bid_amount}</span>
