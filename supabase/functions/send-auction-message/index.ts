@@ -3,7 +3,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 const TELEGRAM_BOT_USERNAME = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'Brilliantteatbot';
-const TEST_GROUP_ID = -1002178695748; // Test group ID
+const TEST_GROUP_ID = -1001009290613; // Test group ID
 
 interface AuctionMessagePayload {
   chat_id?: string | number;
