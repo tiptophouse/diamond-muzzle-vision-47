@@ -137,6 +137,9 @@ serve(async (req) => {
 
     console.log('📱 Processing message from B2B group:', message.text);
 
+    // Ensure user profile exists for the message sender
+    await ensureUserProfileExists(message.from);
+
     // Save incoming message to chatbot_messages table
     await saveIncomingMessage(message);
 
@@ -420,6 +423,57 @@ async function generateDiamondPostFromPayment(message: any) {
     }
   } catch (error) {
     console.error('❌ Error in generateDiamondPostFromPayment:', error);
+  }
+}
+
+async function ensureUserProfileExists(user: any) {
+  try {
+    console.log(`👤 Ensuring user profile exists for ${user.first_name} (${user.id})`);
+    
+    // Check if user already exists
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('user_profiles')
+      .select('telegram_id')
+      .eq('telegram_id', user.id)
+      .single();
+
+    if (existingUser) {
+      console.log(`✅ User profile already exists for ${user.id}`);
+      return;
+    }
+
+    // User doesn't exist, create profile
+    const { error: insertError } = await supabase
+      .from('user_profiles')
+      .insert([{
+        telegram_id: user.id,
+        first_name: user.first_name || 'Unknown',
+        last_name: user.last_name || null,
+        username: user.username || null,
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }]);
+
+    if (insertError && insertError.code !== '23505') { // Ignore duplicate key errors
+      console.error('❌ Error creating user profile:', insertError);
+    } else {
+      console.log(`✅ Created user profile for ${user.first_name} (${user.id})`);
+      
+      // Initialize user analytics
+      await supabase
+        .from('user_analytics')
+        .upsert({
+          telegram_id: user.id,
+          total_visits: 1,
+          last_active: new Date().toISOString(),
+          subscription_status: 'free'
+        }, {
+          onConflict: 'telegram_id'
+        });
+    }
+  } catch (error) {
+    console.error('❌ Error in ensureUserProfileExists:', error);
   }
 }
 
