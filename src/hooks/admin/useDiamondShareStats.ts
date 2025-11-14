@@ -32,36 +32,51 @@ export function useDiamondShareStats() {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      // Fetch diamond share analytics
-      const { data: analytics, error: analyticsError } = await supabase
-        .from('diamond_share_analytics')
-        .select('viewer_telegram_id, time_spent_seconds, viewed_other_diamonds')
-        .gte('view_timestamp', sevenDaysAgo.toISOString());
-
-      if (analyticsError) throw analyticsError;
-
-      // Fetch diamond shares
-      const { data: shares, error: sharesError } = await supabase
-        .from('diamond_shares')
-        .select('id')
+      // Try multiple data sources to get analytics
+      
+      // 1. Check store_item_analytics (preferred)
+      const { data: storeAnalytics } = await supabase
+        .from('store_item_analytics')
+        .select('user_telegram_id, view_duration_seconds, event_type')
         .gte('created_at', sevenDaysAgo.toISOString());
 
-      if (sharesError) throw sharesError;
+      // 2. Check store_item_shares
+      const { data: storeShares } = await supabase
+        .from('store_item_shares')
+        .select('id, owner_telegram_id')
+        .gte('created_at', sevenDaysAgo.toISOString());
 
-      // Fetch diamond views
-      const { data: views, error: viewsError } = await supabase
-        .from('diamond_views')
-        .select('viewer_telegram_id, total_view_time, reshared')
-        .gte('view_start', sevenDaysAgo.toISOString());
+      // 3. Check user_analytics for active users
+      const { data: userAnalytics } = await supabase
+        .from('user_analytics')
+        .select('telegram_id, total_visits, total_time_spent')
+        .gte('last_active', sevenDaysAgo.toISOString());
 
-      if (viewsError) throw viewsError;
+      // 4. Fallback: check diamond_share_analytics
+      const { data: diamondAnalytics } = await supabase
+        .from('diamond_share_analytics')
+        .select('viewer_telegram_id, time_spent_seconds')
+        .gte('view_timestamp', sevenDaysAgo.toISOString());
 
-      const totalViews = analytics?.length || 0;
-      const uniqueViewers = new Set(analytics?.map(a => a.viewer_telegram_id).filter(Boolean) || []).size;
-      const totalViewTime = analytics?.reduce((sum, a) => sum + (a.time_spent_seconds || 0), 0) || 0;
+      // Calculate stats from available data
+      const allViews = [
+        ...(storeAnalytics || []).map(a => ({ 
+          viewer: a.user_telegram_id, 
+          time: a.view_duration_seconds || 0 
+        })),
+        ...(diamondAnalytics || []).map(a => ({ 
+          viewer: a.viewer_telegram_id, 
+          time: a.time_spent_seconds || 0 
+        }))
+      ];
+
+      const totalViews = allViews.length;
+      const uniqueViewers = new Set(allViews.map(v => v.viewer).filter(Boolean)).size;
+      const totalViewTime = allViews.reduce((sum, v) => sum + v.time, 0);
       const avgViewTime = totalViews > 0 ? Math.round(totalViewTime / totalViews) : 0;
-      const totalShares = shares?.length || 0;
-      const reshares = views?.filter(v => v.reshared).length || 0;
+      
+      const totalShares = (storeShares?.length || 0);
+      const reshares = storeShares?.filter(s => s.owner_telegram_id).length || 0;
       const clickRate = totalShares > 0 ? Math.round((totalViews / totalShares) * 100) : 0;
 
       setShareStats({
@@ -74,6 +89,7 @@ export function useDiamondShareStats() {
       });
     } catch (error) {
       console.error('Error fetching share stats:', error);
+      // Keep zero stats on error
     } finally {
       setIsLoading(false);
     }
