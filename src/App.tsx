@@ -42,6 +42,7 @@ import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
 import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TestInlineButtons from './pages/TestInlineButtons';
+import PublicAuctionPage from './pages/PublicAuctionPage';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
@@ -104,6 +105,9 @@ function App() {
                   
                   {/* Public diamond sharing - no JWT required */}
                   <Route path="/public/diamond/:stockNumber" element={<PublicDiamondPage />} />
+                  
+                  {/* Public auction page - no JWT required */}
+                  <Route path="/public/auction/:auctionId" element={<PublicAuctionPage />} />
                   
                   {/* Privacy Policy - public page for BotFather */}
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />

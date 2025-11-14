@@ -47,18 +47,34 @@ export function useStartParamRouter() {
             webApp.HapticFeedback.impactOccurred('light');
           }
         }
-      } else if (startParam.startsWith('store_')) {
-        // Pattern: store_<ownerTelegramId>
-        const ownerId = startParam.replace('store_', '');
+      } else if (startParam.startsWith('story_')) {
+        // Pattern: story_<stockNumber>
+        const stockNumber = startParam.replace('story_', '');
         
-        console.log('🏪 Routing to store:', { ownerId });
+        console.log('📖 Routing to story view:', { stockNumber });
         
-        // Route to catalog with seller filter
+        // Route to public diamond page with story indicator
         const queryParams = new URLSearchParams();
-        queryParams.set('seller', ownerId);
+        queryParams.set('shared', 'true');
+        queryParams.set('from', 'story');
+        
+        navigate(`/public/diamond/${stockNumber}?${queryParams.toString()}`);
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
+      } else if (startParam.startsWith('auction_')) {
+        // Pattern: auction_<auctionId>
+        const auctionId = startParam.replace('auction_', '');
+        
+        console.log('🔨 Routing to auction:', { auctionId });
+        
+        // Route to public auction page
+        const queryParams = new URLSearchParams();
         queryParams.set('shared', 'true');
         
-        navigate(`/?${queryParams.toString()}`);
+        navigate(`/public/auction/${auctionId}?${queryParams.toString()}`);
         
         // Haptic feedback
         if (webApp.HapticFeedback) {

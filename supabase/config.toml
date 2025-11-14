@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.test-inline-buttons]
 verify_jwt = false
+
+[functions.send-auction-message]
+verify_jwt = false
