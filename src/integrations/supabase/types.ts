@@ -321,6 +321,97 @@ export type Database = {
         }
         Relationships: []
       }
+      auction_bids: {
+        Row: {
+          auction_id: string
+          bid_amount: number
+          bidder_name: string | null
+          bidder_telegram_id: number
+          created_at: string
+          id: string
+        }
+        Insert: {
+          auction_id: string
+          bid_amount: number
+          bidder_name?: string | null
+          bidder_telegram_id: number
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          auction_id?: string
+          bid_amount?: number
+          bidder_name?: string | null
+          bidder_telegram_id?: number
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auctions: {
+        Row: {
+          created_at: string
+          currency: string
+          current_price: number
+          ends_at: string
+          id: string
+          min_increment: number
+          seller_telegram_id: number
+          starting_price: number
+          starts_at: string
+          status: string
+          stock_number: string
+          updated_at: string
+          winner_telegram_id: number | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          current_price: number
+          ends_at: string
+          id?: string
+          min_increment?: number
+          seller_telegram_id: number
+          starting_price: number
+          starts_at?: string
+          status?: string
+          stock_number: string
+          updated_at?: string
+          winner_telegram_id?: number | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          current_price?: number
+          ends_at?: string
+          id?: string
+          min_increment?: number
+          seller_telegram_id?: number
+          starting_price?: number
+          starts_at?: string
+          status?: string
+          stock_number?: string
+          updated_at?: string
+          winner_telegram_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_auction_diamond"
+            columns: ["stock_number"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["stock_number"]
+          },
+        ]
+      }
       blocked_users: {
         Row: {
           blocked_by_telegram_id: number
@@ -2809,6 +2900,7 @@ export type Database = {
         Args: { p_user_id: number }
         Returns: number
       }
+      expire_auctions: { Args: never; Returns: number }
       expire_keshett_agreements: { Args: never; Returns: number }
       get_ai_recommendations: {
         Args: { p_context_type?: string; p_user_telegram_id: number }
