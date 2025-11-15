@@ -38,6 +38,7 @@ import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 import AdminStatsPage from './pages/AdminStatsPage';
+import WeeklyKPIPage from './pages/WeeklyKPIPage';
 import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
 import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -204,6 +205,13 @@ function App() {
                      <AuthenticatedRoute>
                        <EnhancedTelegramAdminGuard>
                          <AdminStatsPage />
+                       </EnhancedTelegramAdminGuard>
+                     </AuthenticatedRoute>
+                   } />
+                   <Route path="/weekly-kpi" element={
+                     <AuthenticatedRoute>
+                       <EnhancedTelegramAdminGuard>
+                         <WeeklyKPIPage />
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />
