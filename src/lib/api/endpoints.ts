@@ -19,8 +19,8 @@ export const apiEndpoints = {
   // Update diamond - PUT /api/v1/diamonds/{diamond_id}?user_id={user_id}
   updateDiamond: (diamondId: string, userId: number) => `/api/v1/diamonds/${diamondId}?user_id=${userId}`,
   
-  // CORRECTED Delete diamond endpoint to match FastAPI spec
-  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}`,
+  // Delete diamond endpoint - accepts stock_number as path parameter
+  deleteDiamond: (stockNumber: string, userId: number) => `/api/v1/delete_stone/${encodeURIComponent(stockNumber)}?user_id=${userId}`,
   
   // SFTP endpoints - CORRECTED to include proper auth
   sftpProvision: () => `/api/v1/sftp/provision`,

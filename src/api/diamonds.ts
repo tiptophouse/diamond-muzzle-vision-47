@@ -23,11 +23,50 @@ export async function deleteDiamond(stockNumber: string, userId: number): Promis
       { method: "DELETE" }
     );
     
+    // Validate response structure
+    if (!response || typeof response.success !== 'boolean') {
+      throw new Error('Invalid response format from delete endpoint');
+    }
+    
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to delete diamond');
+    }
+    
     logger.info('Diamond deleted successfully', { stockNumber, response });
     return response;
-  } catch (error) {
-    logger.error('Diamond delete operation failed', error, { stockNumber, userId });
-    throw error;
+  } catch (error: any) {
+    // Enhanced error handling with specific error types
+    const errorContext = { stockNumber, userId };
+    
+    // Handle HTTP status code errors
+    if (error.status === 404 || error.message?.includes('404')) {
+      logger.error('Diamond not found', error, errorContext);
+      throw new Error(`Diamond with stock number "${stockNumber}" not found`);
+    }
+    
+    if (error.status === 422 || error.message?.includes('422')) {
+      logger.error('Invalid diamond ID format', error, errorContext);
+      throw new Error(`Invalid stock number format: "${stockNumber}"`);
+    }
+    
+    if (error.status === 401 || error.message?.includes('401')) {
+      logger.error('Unauthorized delete attempt', error, errorContext);
+      throw new Error('Authentication required to delete diamonds');
+    }
+    
+    if (error.status === 403 || error.message?.includes('403')) {
+      logger.error('Forbidden delete attempt', error, errorContext);
+      throw new Error('You do not have permission to delete this diamond');
+    }
+    
+    if (error.message?.includes('fetch') || error.name === 'TypeError') {
+      logger.error('Network error during delete', error, errorContext);
+      throw new Error('Network error: Unable to connect to server');
+    }
+    
+    // Generic error fallback
+    logger.error('Diamond delete operation failed', error, errorContext);
+    throw new Error(error.message || 'Failed to delete diamond. Please try again.');
   }
 }
 
