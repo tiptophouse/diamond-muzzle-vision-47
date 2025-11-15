@@ -39,6 +39,7 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 import AdminStatsPage from './pages/AdminStatsPage';
 import WeeklyKPIPage from './pages/WeeklyKPIPage';
+import BlockedUsersPage from './pages/BlockedUsersPage';
 import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
 import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -212,6 +213,13 @@ function App() {
                      <AuthenticatedRoute>
                        <EnhancedTelegramAdminGuard>
                          <WeeklyKPIPage />
+                       </EnhancedTelegramAdminGuard>
+                     </AuthenticatedRoute>
+                   } />
+                   <Route path="/blocked-users" element={
+                     <AuthenticatedRoute>
+                       <EnhancedTelegramAdminGuard>
+                         <BlockedUsersPage />
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />
