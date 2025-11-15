@@ -166,29 +166,31 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: testMode ? [
-          // Personal chat - use web_app with proper deep links
+          // Personal chat - perfect deep links to Mini App
           [
             {
-              text: '💎 פרטים מלאים',
-              web_app: {
-                url: `${telegramBotUrl}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
-              }
+              text: '💎 פרטים מלאים + תמונות HD',
+              url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+            }
+          ],
+          [
+            {
+              text: '💰 הצע מחיר',
+              url: `${telegramBotUrl}?startapp=offer_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
             {
               text: '📱 צור קשר',
               url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
-            }
-          ],
-          [
+            },
             {
-              text: '🏪 עוד יהלומים מהמוכר',
+              text: '🏪 עוד יהלומים',
               url: `${telegramBotUrl}?startapp=store_${sharedBy}`
             }
           ]
         ] : (() => {
-          // Group chat - use Telegram deep links that actually work
+          // Group chat - perfect deep links that open in Mini App
           const buttons = [
             [
               {
@@ -202,17 +204,23 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           if (activeAuction) {
             buttons.push([
               {
-                text: '🔨 הצע מחיר במכרז',
-                web_app: {
-                  url: `${baseUrl}/public/auction/${activeAuction.id}?shared=true`
-                }
+                text: '🔨 מכרז פעיל - הצע עכשיו!',
+                url: `${telegramBotUrl}?startapp=auction_${activeAuction.id}`
               }
             ]);
           }
 
+          // Add make offer button for all diamonds
           buttons.push([
             {
-              text: '📱 צור קשר למחיר ולפרטים',
+              text: '💰 הצע מחיר ליהלום',
+              url: `${telegramBotUrl}?startapp=offer_${diamond.stockNumber}_${sharedBy}`
+            }
+          ]);
+
+          buttons.push([
+            {
+              text: '📱 צור קשר למוכר',
               url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ]);
@@ -224,7 +232,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             },
             {
               text: '🤖 עזרה בבחירה',
-              url: `${telegramBotUrl}?start=ai_assistant_${diamond.stockNumber}`
+              url: `${telegramBotUrl}?startapp=ai_${diamond.stockNumber}`
             }
           ]);
 
