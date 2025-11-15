@@ -28,7 +28,14 @@ export function UserImageUpload({ diamond, onUpdate }: UserImageUploadProps) {
   };
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsUploading(true);
     try {
@@ -37,24 +44,28 @@ export function UserImageUpload({ diamond, onUpdate }: UserImageUploadProps) {
         gem_360_url: gem360Url
       };
 
-      const endpoint = apiEndpoints.updateDiamond(diamond.id, user.id);
+      // Use stockNumber for FastAPI endpoint
+      const endpoint = apiEndpoints.updateDiamond(diamond.stockNumber, user.id);
+      console.log('💎 Updating diamond images:', { stockNumber: diamond.stockNumber, updateData });
+      
       const response = await api.put(endpoint, updateData);
 
       if (response.data) {
+        console.log('✅ Diamond images updated successfully');
         toast({
           title: "✅ Success",
           description: "Diamond images updated successfully"
         });
         setOpen(false);
-        onUpdate();
+        onUpdate(); // Trigger refresh
       } else {
         throw new Error(response.error || "Failed to update diamond");
       }
     } catch (error) {
-      console.error('Error updating diamond:', error);
+      console.error('❌ Error updating diamond:', error);
       toast({
-        title: "Error",
-        description: "Failed to update diamond images",
+        title: "❌ Error",
+        description: "Failed to update diamond images. Please try again.",
         variant: "destructive"
       });
     } finally {
