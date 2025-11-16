@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTelegramWebApp } from './useTelegramWebApp';
 import { useDiamondShareAnalytics } from './useDiamondShareAnalytics';
+import { useDeepLinkAnalytics } from './useDeepLinkAnalytics';
 
 /**
  * Hook to handle Telegram start_param routing and analytics
@@ -10,16 +11,32 @@ import { useDiamondShareAnalytics } from './useDiamondShareAnalytics';
 export function useStartParamRouter() {
   const navigate = useNavigate();
   const { webApp } = useTelegramWebApp();
+  const { trackDeepLinkArrival, trackNavigation } = useDeepLinkAnalytics();
 
   useEffect(() => {
     if (!webApp) return;
 
-    // Get start_param from Telegram WebApp (fix type issue)
-    const startParam = (webApp as any)?.initDataUnsafe?.start_param;
+    // Try to get start_param from Telegram WebApp first
+    let startParam = (webApp as any)?.initDataUnsafe?.start_param;
+    
+    // Fallback: check URL query parameters for tgWebAppStartParam
+    if (!startParam) {
+      const queryParams = new URLSearchParams(window.location.search);
+      startParam = queryParams.get('tgWebAppStartParam') || undefined;
+    }
     
     if (!startParam) return;
 
     console.log('🔗 Processing start_param:', startParam);
+    
+    // Track deep link arrival analytics
+    console.log('📊 Deep Link Analytics:', {
+      type: 'deep_link_arrival',
+      start_param: startParam,
+      timestamp: new Date().toISOString(),
+      user_id: (webApp as any)?.initDataUnsafe?.user?.id,
+      platform: 'telegram_miniapp'
+    });
 
     try {
       // Parse different start param patterns
@@ -31,6 +48,7 @@ export function useStartParamRouter() {
           const ownerId = parts[2] || null;
           
           console.log('💎 Routing to diamond:', { stockNumber, ownerId });
+          console.log('📊 Diamond Click Analytics:', { stockNumber, ownerId, source: 'deep_link' });
           
           // Route to public diamond page with tracking params
           const queryParams = new URLSearchParams();
@@ -46,6 +64,23 @@ export function useStartParamRouter() {
           if (webApp.HapticFeedback) {
             webApp.HapticFeedback.impactOccurred('light');
           }
+        }
+      } else if (startParam.startsWith('auction_')) {
+        // Pattern: auction_<auctionId>
+        const auctionId = startParam.replace('auction_', '');
+        
+        console.log('🔨 Routing to auction:', { auctionId });
+        console.log('📊 Auction Click Analytics:', { auctionId, source: 'deep_link' });
+        
+        // Route to auction page
+        const queryParams = new URLSearchParams();
+        queryParams.set('shared', 'true');
+        
+        navigate(`/auction/${auctionId}?${queryParams.toString()}`);
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('medium');
         }
       } else if (startParam.startsWith('offer_')) {
         // Pattern: offer_<stockNumber>_<ownerTelegramId>
@@ -86,6 +121,7 @@ export function useStartParamRouter() {
       } else if (startParam === 'store') {
         // Pattern: store (general store)
         console.log('🏪 Routing to general store');
+        console.log('📊 Store Click Analytics:', { source: 'deep_link', type: 'general_store' });
         
         navigate('/store');
         
@@ -149,11 +185,11 @@ export function useStartParamRouter() {
         
         console.log('🔨 Routing to auction:', { auctionId });
         
-        // Route to public auction page
+        // Route to auction page
         const queryParams = new URLSearchParams();
         queryParams.set('shared', 'true');
         
-        navigate(`/public/auction/${auctionId}?${queryParams.toString()}`);
+        navigate(`/auction/${auctionId}?${queryParams.toString()}`);
         
         // Haptic feedback
         if (webApp.HapticFeedback) {
