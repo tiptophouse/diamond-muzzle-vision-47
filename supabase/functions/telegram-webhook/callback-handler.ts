@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { fetchDiamondFromFastAPI } from '../_shared/fastapi-client.ts';
+import { buildAuctionMessage, buildEnhancedInlineKeyboard, buildStatsMessage } from '../_shared/auction-message-builder.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -19,13 +21,24 @@ export async function handleCallbackQuery(query: CallbackQuery) {
   
   console.log(`🔘 Callback: ${action} for auction ${auctionId}`);
   
+  // Track all callback interactions
+  await trackAnalytics(auctionId, query.from.id, 'click', query.message.chat.id, { action });
+  
   if (action === 'bid') {
     return await handleBid(query, auctionId);
   }
   
   if (action === 'view') {
-    await trackAnalytics(auctionId, query.from.id, 'click', query.message.chat.id);
+    await trackAnalytics(auctionId, query.from.id, 'view', query.message.chat.id);
     return answerCallbackQuery(query.id, '✅ פותח...', false);
+  }
+
+  if (action === 'stats') {
+    return await handleStats(query, auctionId);
+  }
+
+  if (action === 'notify') {
+    return await handleNotify(query, auctionId);
   }
   
   return new Response('OK', { status: 200 });
@@ -112,13 +125,18 @@ async function handleBid(query: CallbackQuery, auctionId: string) {
       bid_number: newBidCount 
     });
     
-    // 9. Update group message
+    // 9. Fetch fresh diamond data and update group message
+    const diamond = await fetchDiamondFromFastAPI(auction.stock_number, auction.seller_telegram_id);
+    
     await updateAuctionMessage(
       query.message.chat.id,
       query.message.message_id,
-      auction,
-      nextBid,
-      newBidCount
+      {
+        ...auction,
+        current_price: nextBid,
+        bid_count: newBidCount,
+      },
+      diamond
     );
     
     // 10. Notify seller

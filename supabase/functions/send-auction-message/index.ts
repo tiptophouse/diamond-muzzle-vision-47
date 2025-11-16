@@ -1,6 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
+import { fetchDiamondFromFastAPI } from '../_shared/fastapi-client.ts';
+import { buildAuctionMessage, buildEnhancedInlineKeyboard } from '../_shared/auction-message-builder.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -49,53 +51,59 @@ serve(async (req) => {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
     }
 
-    const telegramBotUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
-    const endsAtDate = new Date(ends_at);
-    const timeRemaining = Math.floor((endsAtDate.getTime() - Date.now()) / (1000 * 60 * 60));
+    // Fetch auction data from Supabase
+    const { data: auctionData, error: auctionError } = await supabase
+      .from('auctions')
+      .select('*')
+      .eq('id', auction_id)
+      .single();
 
-    // Message text
-    const messageText = `
-🔨 *מכרז פעיל*
+    if (auctionError || !auctionData) {
+      throw new Error(`Failed to fetch auction: ${auctionError?.message}`);
+    }
 
-💎 ${diamond_description}
-📦 מלאי: ${stock_number}
+    // Fetch fresh diamond data from FastAPI
+    console.log(`📡 Fetching diamond ${stock_number} from FastAPI`);
+    const diamond = await fetchDiamondFromFastAPI(stock_number, auctionData.seller_telegram_id);
 
-💰 *מחיר נוכחי: ${current_price} ${currency}*
-📈 הצעה הבאה: ${current_price + min_increment} ${currency}
-⏰ זמן נותר: ~${timeRemaining} שעות
+    // Use image from FastAPI if available, otherwise use provided image_url
+    const actualImageUrl = diamond?.picture || image_url;
 
-הצטרף למכרז עכשיו! 👇
-`.trim();
+    // Build rich auction message
+    const messageText = buildAuctionMessage(
+      diamond,
+      {
+        id: auction_id,
+        stock_number,
+        current_price,
+        min_increment,
+        currency,
+        ends_at,
+        bid_count: 0,
+        reserve_price: auctionData.reserve_price,
+        seller_telegram_id: auctionData.seller_telegram_id,
+      },
+      TELEGRAM_BOT_USERNAME
+    );
 
-    // Inline keyboard with deep links
-    const inlineKeyboard = [
-      [
-        {
-          text: `💰 הצע ${current_price + min_increment} ${currency}`,
-          callback_data: `bid:${auction_id}`,
-        },
-      ],
-      [
-        {
-          text: '👀 צפה ביהלום',
-          url: `${telegramBotUrl}?startapp=diamond_${stock_number}`,
-        },
-        {
-          text: '📈 צפה בהצעות',
-          url: `${telegramBotUrl}?startapp=auction_${auction_id}`,
-        },
-      ],
-    ];
+    // Build enhanced inline keyboard
+    const inlineKeyboard = buildEnhancedInlineKeyboard(
+      auction_id,
+      stock_number,
+      current_price + min_increment,
+      currency,
+      TELEGRAM_BOT_USERNAME
+    );
 
     // Send message with photo if available
-    const telegramApiUrl = image_url
+    const telegramApiUrl = actualImageUrl
       ? `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`
       : `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
 
-    const body = image_url
+    const body = actualImageUrl
       ? {
           chat_id,
-          photo: image_url,
+          photo: actualImageUrl,
           caption: messageText,
           parse_mode: 'Markdown',
           reply_markup: { inline_keyboard: inlineKeyboard },
@@ -106,6 +114,12 @@ serve(async (req) => {
           parse_mode: 'Markdown',
           reply_markup: { inline_keyboard: inlineKeyboard },
         };
+
+    console.log('📤 Sending auction message:', {
+      chat_id,
+      has_image: !!actualImageUrl,
+      image_source: diamond?.picture ? 'FastAPI' : 'Provided',
+    });
 
     console.log('📤 Sending auction message to chat:', chat_id);
 
