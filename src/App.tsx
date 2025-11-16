@@ -44,6 +44,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TestInlineButtons from './pages/TestInlineButtons';
 import PublicAuctionPage from './pages/PublicAuctionPage';
 import AuctionsListPage from './pages/AuctionsListPage';
+import Diagnostic from './pages/Diagnostic';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
@@ -257,6 +258,9 @@ function App() {
                       <DiamondShareAnalytics />
                     </AuthenticatedRoute>
                   } />
+
+                  {/* Diagnostic Page - Public route for debugging */}
+                  <Route path="/diagnostic" element={<Diagnostic />} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
