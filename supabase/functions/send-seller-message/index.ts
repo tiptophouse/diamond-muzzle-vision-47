@@ -95,9 +95,10 @@ serve(async (req) => {
     if (diamond_stocks && diamond_stocks.length > 0) {
       console.log('💎 Sending inline buttons for diamonds:', diamond_stocks.length);
       
+      const appUrl = `${telegramBotUrl}/app`;
       const diamondButtons = diamond_stocks.slice(0, 4).map((stock: string) => ({
         text: `💎 צפה במלאי ${stock}`,
-        url: `${telegramBotUrl}?startapp=diamond_${stock}`
+        web_app: { url: `${appUrl}?startapp=diamond_${stock}` }
       }));
 
       // Arrange buttons in rows of 2
@@ -108,7 +109,7 @@ serve(async (req) => {
 
       // Add "View All" button
       buttonRows.push([
-        { text: '🏪 לכל המלאי', url: `${telegramBotUrl}?startapp=store` }
+        { text: '🏪 לכל המלאי', web_app: { url: `${appUrl}?startapp=store` } }
       ]);
 
       const buttonUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
