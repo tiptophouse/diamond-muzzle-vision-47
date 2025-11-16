@@ -26,8 +26,8 @@ serve(async (req) => {
       throw new Error('TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_USERNAME not configured');
     }
 
-    const telegramBotUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
-    console.log('📱 Using Telegram Bot URL:', telegramBotUrl);
+    const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
+    console.log('📱 Using WebApp URL:', appUrl);
 
     // Test diamond data
     const testDiamonds = ['ABC123', 'XYZ789', 'DEF456'];
@@ -57,8 +57,6 @@ serve(async (req) => {
 
     console.log('✅ Test photo sent');
 
-    // Get the deployed app URL for web_app buttons
-    const appUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}/app`;
     
     // Create inline buttons using web_app type for proper mini app opening + tracking
     const diamondButtons = testDiamonds.map((stock: string) => ({
@@ -105,7 +103,7 @@ serve(async (req) => {
         success: true,
         message: 'Test notification sent with fixed inline buttons',
         telegram_id,
-        bot_url: telegramBotUrl,
+        app_url: appUrl,
         diamonds_tested: testDiamonds
       }),
       { 

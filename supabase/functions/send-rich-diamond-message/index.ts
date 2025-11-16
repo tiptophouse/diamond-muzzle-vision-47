@@ -46,7 +46,7 @@ serve(async (req) => {
     }
 
     const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
-    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
+    const appUrl = Deno.env.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
 
     // Step 1: Send the AI-generated message first
     if (message && message.trim()) {
@@ -102,7 +102,6 @@ serve(async (req) => {
         const diamondMessage = formatDiamondMessage(diamond);
         
         // Create inline keyboard with proper Telegram deep links
-        const appUrl = `${telegramBotUrl}/app`;
         const inlineKeyboard = [
           [
             {

@@ -133,8 +133,7 @@ _💡 טיפ: התחבר לדשבורד כדי לנהל את המלאי ולצו
       );
     }
 
-    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
-    const appUrl = `${telegramBotUrl}/app`;
+    const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
     const messagePayload = {
       chat_id: telegramId,
       text: summaryMessage,

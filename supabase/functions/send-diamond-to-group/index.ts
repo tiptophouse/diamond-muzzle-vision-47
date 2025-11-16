@@ -160,10 +160,8 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
     console.log('🔨 Active auction check:', { stockNumber: diamond.stockNumber, hasAuction: !!activeAuction });
 
     // Create inline keyboard with Telegram deep links (fixes the broken URLs)
-    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
-    const baseUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://brilliantbot.lovable.app';
+    const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
     
-    const appUrl = `${telegramBotUrl}/app`;
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: testMode ? [
