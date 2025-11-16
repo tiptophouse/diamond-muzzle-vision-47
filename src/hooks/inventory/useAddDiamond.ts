@@ -126,8 +126,9 @@ export function useAddDiamond(onSuccess?: () => void) {
       console.log('💎 Sending diamond data to FastAPI:', diamondDataPayload);
       
       // Use the new createDiamond API function (Bearer token handles auth)
-      const { createDiamond } = await import('@/api/diamonds');
-      const response = await createDiamond(diamondDataPayload);
+      try {
+        const { createDiamond } = await import('@/api/diamonds');
+        const response = await createDiamond(diamondDataPayload);
 
         // CRITICAL: Verify the stone was actually created by fetching inventory
         console.log('🔍 ADD: Verifying stone was created...');
