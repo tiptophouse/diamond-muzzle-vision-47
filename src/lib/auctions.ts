@@ -13,10 +13,14 @@ export async function createAuction(
       stock_number: request.stock_number,
       starting_price: request.starting_price,
       current_price: request.starting_price,
-      min_increment: request.min_increment,
+      min_increment: request.min_increment || 50,
       currency: request.currency || 'USD',
       ends_at: endsAt.toISOString(),
       seller_telegram_id: request.seller_telegram_id,
+      reserve_price: request.reserve_price || null,
+      auto_extend: request.auto_extend || false,
+      notify_seller: request.notify_seller !== false,
+      diamond_data: request.diamond_data || null,
     }] as any)
     .select()
     .single();
