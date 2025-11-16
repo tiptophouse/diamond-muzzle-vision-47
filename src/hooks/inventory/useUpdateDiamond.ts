@@ -11,7 +11,6 @@ export function useUpdateDiamond(onSuccess?: () => void) {
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
     if (!user?.id) {
-      console.error('❌ UPDATE: User not authenticated');
       toast({
         variant: "destructive",
         title: "Error",
@@ -20,65 +19,66 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       return false;
     }
 
+    console.log('📝 UPDATE: Starting update for diamond:', diamondId, 'with data:', data);
+
+    // diamondId here should be the FastAPI integer ID, not local UUID
+    const fastApiDiamondId = parseInt(diamondId);
+    
+    if (isNaN(fastApiDiamondId)) {
+      console.error('❌ UPDATE: Invalid diamond ID:', diamondId);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Invalid diamond ID format",
+      });
+      return false;
+    }
+
     try {
-      console.log('📝 UPDATE: Starting update for diamond:', diamondId);
-      console.log('📝 UPDATE: Form data received:', data);
-      
-      // Use the FastAPI diamond ID if it's a number, otherwise use the provided ID
-      const fastApiDiamondId = /^\d+$/.test(diamondId) ? diamondId : diamondId;
-      const endpoint = apiEndpoints.updateDiamond(fastApiDiamondId, user.id);
-      console.log('📝 UPDATE: Using endpoint:', endpoint);
-      console.log('📝 UPDATE: User ID:', user.id, 'type:', typeof user.id);
-      
-      // Prepare update data according to FastAPI schema - ensure all numbers are integers
-      const updateData = {
+      // Transform the data to match the backend expectations
+      const updatePayload = {
         stock: data.stockNumber,
         shape: data.shape?.toLowerCase(),
-        weight: Number(data.carat),
+        weight: data.carat,
         color: data.color,
         clarity: data.clarity,
-        cut: data.cut?.toUpperCase(),
-        polish: data.polish?.toUpperCase(),
-        symmetry: data.symmetry?.toUpperCase(),
-        fluorescence: data.fluorescence?.toUpperCase(),
-        price_per_carat: data.carat > 0 ? roundToInteger(Number(data.price) / Number(data.carat)) : roundToInteger(Number(data.price)),
-        status: data.status,
-        store_visible: data.storeVisible,
-        picture: data.picture,
-        certificate_url: data.certificateUrl,
-        certificate_comment: data.certificateComment,
         lab: data.lab,
-        certificate_number: data.certificateNumber ? parseInt(String(data.certificateNumber)) : null,
-        length: data.length ? Number(data.length) : null,
-        width: data.width ? Number(data.width) : null,
-        depth: data.depth ? Number(data.depth) : null,
-        ratio: data.ratio ? Number(data.ratio) : null,
-        table: data.tablePercentage ? Number(data.tablePercentage) : null,
-        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : null,
+        certificate_number: data.certificateNumber ? parseInt(data.certificateNumber) : undefined,
+        length: data.length,
+        width: data.width,
+        depth: data.depth,
+        ratio: data.ratio,
+        cut: data.cut,
+        polish: data.polish,
+        symmetry: data.symmetry,
+        fluorescence: data.fluorescence,
+        table: data.tablePercentage,
+        depth_percentage: data.depthPercentage,
         gridle: data.gridle,
-        culet: data.culet?.toUpperCase(),
-        rapnet: data.rapnet ? Number(data.rapnet) : null,
-        // Add the total price field that FastAPI expects
-        price: roundToInteger(Number(data.price)),
+        culet: data.culet,
+        certificate_comment: data.certificateComment,
+        rapnet: data.rapnet,
+        price_per_carat: data.pricePerCarat,
+        picture: data.picture,
+        store_visible: data.storeVisible,
       };
 
-      // Remove null/undefined values
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === null || updateData[key] === undefined || updateData[key] === '') {
-          delete updateData[key];
-        }
-      });
+      // Remove undefined/null values
+      Object.keys(updatePayload).forEach(key => 
+        (updatePayload as any)[key] === undefined && delete (updatePayload as any)[key]
+      );
 
-      console.log('📝 UPDATE: Sending data to FastAPI (all integers):', updateData);
+      console.log('📝 UPDATE: Sending payload to FastAPI ID:', fastApiDiamondId, updatePayload);
+
+      const { updateDiamond: updateDiamondAPI } = await import('@/api/diamonds');
+      const response = await updateDiamondAPI(fastApiDiamondId, updatePayload);
       
-      const response = await api.put(endpoint, updateData);
       
-      if (response.error) {
-        console.error('❌ UPDATE: FastAPI returned error:', response.error);
-        throw new Error(response.error);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to update diamond');
       }
 
-      console.log('✅ UPDATE: FastAPI response successful:', response.data);
+      console.log('✅ UPDATE: Diamond updated successfully:', response);
 
       toast({
         title: "✅ Success",

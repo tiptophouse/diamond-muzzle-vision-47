@@ -123,21 +123,11 @@ export function useAddDiamond(onSuccess?: () => void) {
         picture: data.picture?.trim() || "",
       };
 
-      console.log('💎 Sending diamond data to FastAPI (api.mazalbot.com):', diamondDataPayload);
+      console.log('💎 Sending diamond data to FastAPI:', diamondDataPayload);
       
-      // Try FastAPI backend at api.mazalbot.com
-      try {
-        const endpoint = apiEndpoints.addDiamond(user.id);
-        console.log('➕ ADD: Using endpoint:', endpoint);
-        console.log('➕ ADD: Making POST request to:', `${API_BASE_URL}${endpoint}`);
-        
-        const response = await api.post(endpoint, diamondDataPayload);
-        
-        if (response.error) {
-          throw new Error(response.error);
-        }
-
-        console.log('✅ ADD: FastAPI POST response:', response.data);
+      // Use the new createDiamond API function (Bearer token handles auth)
+      const { createDiamond } = await import('@/api/diamonds');
+      const response = await createDiamond(diamondDataPayload);
 
         // CRITICAL: Verify the stone was actually created by fetching inventory
         console.log('🔍 ADD: Verifying stone was created...');

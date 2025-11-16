@@ -14,12 +14,13 @@ export interface CreateDiamondResponse {
   diamond_id?: string;
 }
 
-export async function deleteDiamond(stockNumber: string, userId: number): Promise<DeleteDiamondResponse> {
-  logger.info('Diamond delete operation started', { stockNumber, userId });
+// DELETE expects integer diamond_id from FastAPI, not stockNumber
+export async function deleteDiamond(diamondId: number): Promise<DeleteDiamondResponse> {
+  logger.info('Diamond delete operation started', { diamondId });
   
   try {
     const response = await http<DeleteDiamondResponse>(
-      apiEndpoints.deleteDiamond(stockNumber, userId), 
+      `/api/v1/delete_stone/${diamondId}`,
       { method: "DELETE" }
     );
     
@@ -32,21 +33,19 @@ export async function deleteDiamond(stockNumber: string, userId: number): Promis
       throw new Error(response.message || 'Failed to delete diamond');
     }
     
-    logger.info('Diamond deleted successfully', { stockNumber, response });
+    logger.info('Diamond deleted successfully', { diamondId, response });
     return response;
   } catch (error: any) {
-    // Enhanced error handling with specific error types
-    const errorContext = { stockNumber, userId };
+    const errorContext = { diamondId };
     
-    // Handle HTTP status code errors
     if (error.status === 404 || error.message?.includes('404')) {
       logger.error('Diamond not found', error, errorContext);
-      throw new Error(`Diamond with stock number "${stockNumber}" not found`);
+      throw new Error(`Diamond #${diamondId} not found`);
     }
     
     if (error.status === 422 || error.message?.includes('422')) {
       logger.error('Invalid diamond ID format', error, errorContext);
-      throw new Error(`Invalid stock number format: "${stockNumber}"`);
+      throw new Error(`Invalid diamond ID: ${diamondId}`);
     }
     
     if (error.status === 401 || error.message?.includes('401')) {
@@ -64,18 +63,18 @@ export async function deleteDiamond(stockNumber: string, userId: number): Promis
       throw new Error('Network error: Unable to connect to server');
     }
     
-    // Generic error fallback
     logger.error('Diamond delete operation failed', error, errorContext);
     throw new Error(error.message || 'Failed to delete diamond. Please try again.');
   }
 }
 
-export async function createDiamond(diamondData: any, userId: number): Promise<CreateDiamondResponse> {
-  logger.info('Diamond creation started', { diamondData, userId });
+// POST to /api/v1/diamonds - Bearer token handles auth, no user_id needed
+export async function createDiamond(diamondData: any): Promise<CreateDiamondResponse> {
+  logger.info('Diamond creation started', { diamondData });
   
   try {
     const response = await http<CreateDiamondResponse>(
-      apiEndpoints.addDiamond(userId),
+      `/api/v1/diamonds`,
       {
         method: "POST",
         body: JSON.stringify(diamondData)
@@ -85,17 +84,18 @@ export async function createDiamond(diamondData: any, userId: number): Promise<C
     logger.info('Diamond created successfully', { diamondData, response });
     return response;
   } catch (error) {
-    logger.error('Diamond creation failed', error, { diamondData, userId });
+    logger.error('Diamond creation failed', error, { diamondData });
     throw error;
   }
 }
 
-export async function updateDiamond(diamondId: string, diamondData: any, userId: number): Promise<CreateDiamondResponse> {
-  logger.info('Diamond update started', { diamondId, diamondData, userId });
+// PUT to /api/v1/diamonds/{diamond_id} - expects integer ID, Bearer token handles auth
+export async function updateDiamond(diamondId: number, diamondData: any): Promise<CreateDiamondResponse> {
+  logger.info('Diamond update started', { diamondId, diamondData });
   
   try {
     const response = await http<CreateDiamondResponse>(
-      apiEndpoints.updateDiamond(diamondId, userId),
+      `/api/v1/diamonds/${diamondId}`,
       {
         method: "PUT", 
         body: JSON.stringify(diamondData)
@@ -105,17 +105,18 @@ export async function updateDiamond(diamondId: string, diamondData: any, userId:
     logger.info('Diamond updated successfully', { diamondId, diamondData, response });
     return response;
   } catch (error) {
-    logger.error('Diamond update failed', error, { diamondId, diamondData, userId });
+    logger.error('Diamond update failed', error, { diamondId, diamondData });
     throw error;
   }
 }
 
-export async function createDiamondsBatch(diamondsData: any[], userId: number): Promise<CreateDiamondResponse> {
-  logger.info('Batch diamond creation started', { count: diamondsData.length, userId });
+// POST to /api/v1/diamonds/batch - Bearer token handles auth
+export async function createDiamondsBatch(diamondsData: any[]): Promise<CreateDiamondResponse> {
+  logger.info('Batch diamond creation started', { count: diamondsData.length });
   
   try {
     const response = await http<CreateDiamondResponse>(
-      apiEndpoints.addDiamondsBatch(userId),
+      `/api/v1/diamonds/batch`,
       {
         method: "POST",
         body: JSON.stringify({ diamonds: diamondsData })
@@ -125,7 +126,7 @@ export async function createDiamondsBatch(diamondsData: any[], userId: number): 
     logger.info('Batch diamonds created successfully', { count: diamondsData.length, response });
     return response;
   } catch (error) {
-    logger.error('Batch diamond creation failed', error, { count: diamondsData.length, userId });
+    logger.error('Batch diamond creation failed', error, { count: diamondsData.length });
     throw error;
   }
 }
