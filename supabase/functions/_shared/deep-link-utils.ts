@@ -31,12 +31,12 @@ export function buildWebAppUrl(webAppBaseUrl: string, startParam: string): strin
 
 /**
  * Create an inline keyboard button for Mini App
- * Uses web_app for direct Mini App launch
+ * Uses url with t.me deep link for proper mini app launch
  */
-export function createMiniAppButton(text: string, webAppUrl: string) {
+export function createMiniAppButton(text: string, botUsername: string, startParam: string) {
   return {
     text,
-    web_app: { url: webAppUrl }
+    url: buildMiniAppDeepLink(botUsername, startParam)
   };
 }
 

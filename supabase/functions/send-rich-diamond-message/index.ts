@@ -46,7 +46,12 @@ serve(async (req) => {
     }
 
     const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
-    const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
+    
+    const botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME');
+    if (!botUsername) {
+      throw new Error('TELEGRAM_BOT_USERNAME not configured');
+    }
+    const cleanBotUsername = botUsername.startsWith('@') ? botUsername.substring(1) : botUsername;
 
     // Step 1: Send the AI-generated message first
     if (message && message.trim()) {
@@ -106,13 +111,13 @@ serve(async (req) => {
           [
             {
               text: '💎 פרטים מלאים + תמונות HD',
-              web_app: { url: `${appUrl}?startapp=diamond_${diamond.stock_number}` }
+              url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${diamond.stock_number}`
             }
           ],
           [
             {
               text: '🏪 כל היהלומים',
-              web_app: { url: `${appUrl}?startapp=store` }
+              url: `https://t.me/${cleanBotUsername}/app?startapp=store`
             }
           ]
         ];
