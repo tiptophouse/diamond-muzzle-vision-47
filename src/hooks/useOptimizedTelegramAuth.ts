@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { signInToBackend, clearBackendAuthToken } from '@/lib/api/auth';
+import { signInToBackend } from '@/lib/api/auth';
 import { setCurrentUserId } from '@/lib/api/config';
 import { tokenManager } from '@/lib/api/tokenManager';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,64 +20,18 @@ interface OptimizedAuthState {
 export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const startTime = useRef(Date.now());
   
-  const [state, setState] = useState<OptimizedAuthState>(() => {
-    // Try to restore from cache for instant load - but verify Telegram environment
-    const cachedAuth = tokenManager.getCachedAuthState();
-    if (cachedAuth && tokenManager.isValid()) {
-      // Verify we still have valid Telegram environment with initData
-      if (!window.Telegram?.WebApp?.initData) {
-        console.warn('⚠️ AUTH: Cached auth exists but no initData - clearing cache');
-        tokenManager.clear();
-        return {
-          user: null,
-          isLoading: true,
-          error: null,
-          isTelegramEnvironment: false,
-          isAuthenticated: false,
-          accessDeniedReason: null,
-          loadTime: 0
-        };
-      }
-      
-      console.log('⚡ AUTH: Instant load from cache with valid initData');
-      setCurrentUserId(cachedAuth.userId);
-      
-      // Set session context for RLS (non-blocking, fire-and-forget)
-      void (async () => {
-        try {
-          await supabase.rpc('set_user_context', { telegram_id: cachedAuth.userId });
-          console.log('✅ Set session context from cache');
-        } catch (err) {
-          console.warn('⚠️ Failed to set session context:', err);
-        }
-      })();
-      
-      return {
-        user: cachedAuth.user,
-        isLoading: false,
-        error: null,
-        isTelegramEnvironment: true,
-        isAuthenticated: true,
-        accessDeniedReason: null,
-        loadTime: 0
-      };
-    }
-    
-    return {
-      user: null,
-      isLoading: true,
-      error: null,
-      isTelegramEnvironment: false,
-      isAuthenticated: false,
-      accessDeniedReason: null,
-      loadTime: 0
-    };
-  });
+  const [state, setState] = useState<OptimizedAuthState>(() => ({
+    user: null,
+    isLoading: true,
+    error: null,
+    isTelegramEnvironment: false,
+    isAuthenticated: false,
+    accessDeniedReason: null,
+    loadTime: 0
+  }));
 
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
-  const retryCount = useRef(0);
-  const maxRetries = 2; // OPTIMIZED: Reduced from 3 to 2 for faster loading
 
   const updateState = useCallback((updates: Partial<OptimizedAuthState>) => {
     if (mountedRef.current) {
@@ -89,233 +43,102 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
     }
   }, []);
 
-  const authenticateWithBackoff = useCallback(async (attempt: number = 0): Promise<void> => {
+  const authenticate = useCallback(async (): Promise<void> => {
     if (initializedRef.current || !mountedRef.current) return;
 
-    const delay = Math.min(500 * Math.pow(1.5, attempt), 2000);
-    if (attempt > 0) {
-      console.log(`🔄 AUTH: Retry attempt ${attempt} after ${delay}ms delay`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-
     try {
-      // CRITICAL: Dev mode for testing (localhost AND Lovable preview)
-      const isPreviewMode = window.location.hostname === 'localhost' || 
-                           window.location.hostname === '127.0.0.1' ||
-                           window.location.hostname.endsWith('.local') ||
-                           window.location.hostname.includes('lovableproject.com') ||
-                           window.location.hostname.includes('lovable.app');
-      const urlParams = new URLSearchParams(window.location.search);
-      const testUserId = urlParams.get('test_user_id') || urlParams.get('user_id');
+      // SECURE DEV MODE: Only in development with explicit parameter
+      const isDev = window.location.hostname === 'localhost' || 
+                    window.location.hostname.includes('lovableproject.com') ||
+                    window.location.hostname.includes('lovable.app');
       
-      // DEVELOPMENT MODE: Allow bypass for testing
-      if (isPreviewMode && testUserId) {
-        console.log('🔧 DEV MODE: Using test user ID:', testUserId);
-        const mockUser: TelegramUser = {
-          id: parseInt(testUserId),
-          first_name: `User ${testUserId}`,
-          last_name: 'Test',
+      const params = new URLSearchParams(window.location.search);
+      const devUserId = params.get('dev_user_id');
+      
+      if (isDev && devUserId && /^\d+$/.test(devUserId)) {
+        console.log('🔧 Secure DEV MODE: User ID', devUserId);
+        
+        const user: TelegramUser = {
+          id: parseInt(devUserId),
+          first_name: params.get('dev_name') || 'Developer',
+          last_name: params.get('dev_lastname') || '',
+          username: params.get('dev_username') || 'dev',
           language_code: 'en'
         };
         
-        setCurrentUserId(mockUser.id);
+        setCurrentUserId(user.id);
+        tokenManager.cacheAuthState(user, 'DEV_TOKEN');
         
-        // Set session context for RLS (non-blocking, fire-and-forget)
-        void (async () => {
-          try {
-            await supabase.rpc('set_user_context', { telegram_id: mockUser.id });
-            console.log('✅ Set session context in dev mode');
-          } catch (err) {
-            console.warn('⚠️ Failed to set session context:', err);
-          }
-        })();
+        try {
+          await supabase.rpc('set_user_context', { telegram_id: user.id });
+        } catch {}
         
         updateState({
-          user: mockUser,
-          isAuthenticated: true,
+          user,
           isLoading: false,
-          error: null,
-          accessDeniedReason: null,
-          isTelegramEnvironment: true
+          isAuthenticated: true,
+          isTelegramEnvironment: false,
+          error: null
         });
         
+        initializedRef.current = true;
         return;
       }
       
-      // Fast environment check
-      if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
-        throw new Error('not_telegram_environment');
+      // PRODUCTION: Telegram authentication
+      const tg = window.Telegram?.WebApp;
+      if (!tg || !tg.initData) {
+        throw new Error('Telegram environment required');
       }
 
-      const tg = window.Telegram.WebApp;
-      updateState({ isTelegramEnvironment: true });
-
-      // Quick WebApp initialization
       try {
-        tg.ready?.();
-        tg.expand?.();
-      } catch (e) {
-        console.warn('⚠️ AUTH: WebApp init warning:', e);
-      }
+        if (tg.ready) tg.ready();
+        if (tg.expand) tg.expand();
+      } catch {}
 
-      // STRICT initData validation - must have minimum length and required fields
-      if (!tg.initData || tg.initData.length < 50) {
-        console.error('❌ AUTH: Invalid or missing Telegram initData');
-        throw new Error('no_init_data');
-      }
-
-      // Validate initData structure contains required Telegram fields
-      const initDataParams = new URLSearchParams(tg.initData);
-      if (!initDataParams.get('user') || !initDataParams.get('hash') || !initDataParams.get('auth_date')) {
-        console.error('❌ AUTH: Telegram initData missing required fields (user, hash, auth_date)');
-        throw new Error('invalid_init_data');
-      }
-
-      console.log('🚀 AUTH: Fast authentication starting...');
+      const authResult = await signInToBackend(tg.initData);
       
-      // Clear any stale tokens
-      clearBackendAuthToken();
-      
-      // Authenticate with backend
-      const jwtToken = await signInToBackend(tg.initData);
-      
-      if (!jwtToken) {
-        throw new Error('backend_auth_failed');
+      if (!authResult) {
+        throw new Error('Authentication failed - no token received');
       }
 
-      // Extract and validate user data using centralized validation
-      const userData = extractTelegramUser(tg.initData);
-      if (!userData) {
-        throw new Error('invalid_user_data');
-      }
+      const user = extractTelegramUser(tg.initDataUnsafe);
+      if (!user?.id) throw new Error('Invalid user data');
 
-      tokenManager.setToken(jwtToken, userData.id);
-      setCurrentUserId(userData.id);
-      
-      // Set telegram_id in Supabase session context for RLS
+      setCurrentUserId(user.id);
+      tokenManager.cacheAuthState(user, authResult);
+
       try {
-        await supabase.rpc('set_user_context', {
-          telegram_id: userData.id
-        });
-        console.log('✅ AUTH: Set Supabase session context for RLS');
-      } catch (error) {
-        console.warn('⚠️ AUTH: Failed to set session context, continuing without it:', error);
-        // Don't throw - this is not critical for basic functionality
-      }
-      
-      // Cache complete auth state
-      tokenManager.cacheAuthState(userData, jwtToken);
+        await supabase.rpc('set_user_context', { telegram_id: user.id });
+      } catch {}
 
-      console.log('✅ AUTH: Fast authentication complete');
-      
-      retryCount.current = 0;
       updateState({
-        user: userData,
+        user,
+        isLoading: false,
         isAuthenticated: true,
-        isLoading: false,
-        error: null,
-        accessDeniedReason: null
+        isTelegramEnvironment: true,
+        error: null
       });
 
-    } catch (error) {
-      const errorType = error instanceof Error ? error.message : 'system_error';
-      
-      retryCount.current++;
-      if (retryCount.current < maxRetries && errorType !== 'not_telegram_environment') {
-        console.log(`🔄 AUTH: Retrying (${retryCount.current}/${maxRetries})`);
-        return authenticateWithBackoff(retryCount.current);
-      }
+      initializedRef.current = true;
 
-      console.error('❌ AUTH: Authentication failed:', errorType);
+    } catch (error: any) {
+      console.error('❌ AUTH:', error.message);
       
-      const errorMessages = {
-        'not_telegram_environment': 'This app only works inside Telegram WebApp',
-        'no_init_data': 'Missing Telegram authentication data',
-        'invalid_init_data': 'Invalid Telegram authentication data',
-        'backend_auth_failed': 'Backend authentication failed',
-        'invalid_user_data': 'Invalid user data',
-        'system_error': 'System authentication error'
-      };
-
-      const errorMessage = errorMessages[errorType as keyof typeof errorMessages] || 'Authentication failed';
-      
-      if (errorType !== 'not_telegram_environment') {
-        toast.error(errorMessage, {
-          action: {
-            label: 'Retry',
-            onClick: () => {
-              retryCount.current = 0;
-              initializedRef.current = false;
-              updateState({ isLoading: true, error: null });
-              setTimeout(() => authenticateWithBackoff(), 100);
-            }
-          }
-        });
-      }
-
       updateState({
         isLoading: false,
-        error: errorMessage,
-        accessDeniedReason: errorType
+        error: error.message,
+        isAuthenticated: false
       });
-    } finally {
+      
       initializedRef.current = true;
     }
   }, [updateState]);
 
-  // Handle token refresh events
   useEffect(() => {
-    const handleTokenRefresh = async (event: CustomEvent) => {
-      console.log('🔄 AUTH: Token refresh requested');
-      if (window.Telegram?.WebApp?.initData) {
-        try {
-          const newToken = await signInToBackend(window.Telegram.WebApp.initData);
-          if (newToken && state.user) {
-            tokenManager.setToken(newToken, state.user.id);
-            tokenManager.cacheAuthState(state.user, newToken);
-            console.log('✅ AUTH: Token refreshed successfully');
-          }
-        } catch (error) {
-          console.error('❌ AUTH: Token refresh failed:', error);
-        }
-      }
-    };
-
-    window.addEventListener('token-refresh-needed', handleTokenRefresh as EventListener);
-    return () => window.removeEventListener('token-refresh-needed', handleTokenRefresh as EventListener);
-  }, [state.user]);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    
-    // Skip initialization if we already have cached valid auth
-    if (state.isAuthenticated && tokenManager.isValid()) {
-      console.log('⚡ AUTH: Using cached authentication, skipping init');
-      return;
-    }
-    
-    // Fast timeout for better UX
-    const timeoutId = setTimeout(() => {
-      if (state.isLoading && mountedRef.current && !initializedRef.current) {
-        console.error('❌ AUTH: Timeout reached');
-        updateState({
-          isLoading: false,
-          accessDeniedReason: 'timeout',
-          error: 'Authentication timeout - please reload'
-        });
-        initializedRef.current = true;
-      }
-    }, 8000); // OPTIMIZED: Reduced from 10 seconds to 8 seconds
-
-    // Start authentication with minimal delay
-    const initTimer = setTimeout(() => authenticateWithBackoff(), 25); // OPTIMIZED: Reduced from 50ms to 25ms
-
-    return () => {
-      mountedRef.current = false;
-      clearTimeout(timeoutId);
-      clearTimeout(initTimer);
-    };
-  }, [authenticateWithBackoff, state.isAuthenticated, updateState]);
+    authenticate();
+    return () => { mountedRef.current = false; };
+  }, [authenticate]);
 
   return state;
 }
