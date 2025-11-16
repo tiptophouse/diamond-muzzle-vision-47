@@ -92,19 +92,20 @@ serve(async (req) => {
 
     // Create inline keyboard with diamond viewing deep links
     const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
+    const appUrl = `${telegramBotUrl}/app`;
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: [
           [
             {
               text: '💎 View Diamond Details',
-              url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+              web_app: { url: `${appUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}` }
             }
           ],
           [
             {
               text: '📞 Contact Seller',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+              web_app: { url: `${appUrl}?startapp=contact_${diamond.stockNumber}_${sharedBy}` }
             }
           ]
         ]

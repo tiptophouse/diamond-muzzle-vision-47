@@ -102,17 +102,18 @@ serve(async (req) => {
         const diamondMessage = formatDiamondMessage(diamond);
         
         // Create inline keyboard with proper Telegram deep links
+        const appUrl = `${telegramBotUrl}/app`;
         const inlineKeyboard = [
           [
             {
               text: '💎 פרטים מלאים + תמונות HD',
-              url: `${telegramBotUrl}?startapp=diamond_${diamond.stock_number}`
+              web_app: { url: `${appUrl}?startapp=diamond_${diamond.stock_number}` }
             }
           ],
           [
             {
               text: '🏪 כל היהלומים',
-              url: `${telegramBotUrl}?startapp=store`
+              web_app: { url: `${appUrl}?startapp=store` }
             }
           ]
         ];

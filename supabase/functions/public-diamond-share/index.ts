@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
       imageUrl: diamond.picture || diamond.image_url,
       gem360Url: diamond['3D Link'] || diamond.gem360_url,
       // Generate Telegram deep link for viewing in app
-      telegramLink: `https://t.me/diamondmazalbot?startapp=diamond_${stockNumber}`,
+      telegramLink: `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}/app?startapp=diamond_${stockNumber}`,
       // Social sharing data
       shareData: {
         title: `${Number(diamond.weight || diamond.carat || 0)}ct ${diamond.shape || 'Round'} Diamond`,

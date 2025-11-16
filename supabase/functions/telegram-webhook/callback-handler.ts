@@ -183,10 +183,10 @@ async function updateAuctionMessage(
     }],
     [{
       text: '👀 צפה ביהלום',
-      url: `https://t.me/${TELEGRAM_BOT_USERNAME}?startapp=diamond_${auction.stock_number}`
+      web_app: { url: `https://t.me/${TELEGRAM_BOT_USERNAME}/app?startapp=diamond_${auction.stock_number}` }
     }, {
       text: '📈 ביצועים',
-      url: `https://t.me/${TELEGRAM_BOT_USERNAME}?startapp=auction_${auction.id}`
+      web_app: { url: `https://t.me/${TELEGRAM_BOT_USERNAME}/app?startapp=auction_${auction.id}` }
     }]
   ];
 

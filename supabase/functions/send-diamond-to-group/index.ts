@@ -163,6 +163,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
     const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
     const baseUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://brilliantbot.lovable.app';
     
+    const appUrl = `${telegramBotUrl}/app`;
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: testMode ? [
@@ -170,23 +171,23 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           [
             {
               text: '💎 פרטים מלאים + תמונות HD',
-              url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+              web_app: { url: `${appUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}` }
             }
           ],
           [
             {
               text: '💰 הצע מחיר',
-              url: `${telegramBotUrl}?startapp=offer_${diamond.stockNumber}_${sharedBy}`
+              web_app: { url: `${appUrl}?startapp=offer_${diamond.stockNumber}_${sharedBy}` }
             }
           ],
           [
             {
               text: '📱 צור קשר',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+              web_app: { url: `${appUrl}?startapp=contact_${diamond.stockNumber}_${sharedBy}` }
             },
             {
               text: '🏪 עוד יהלומים',
-              url: `${telegramBotUrl}?startapp=store_${sharedBy}`
+              web_app: { url: `${appUrl}?startapp=store_${sharedBy}` }
             }
           ]
         ] : (() => {
@@ -195,7 +196,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             [
               {
                 text: '💎 פרטים מלאים + תמונות HD',
-                url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+                web_app: { url: `${appUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}` }
               }
             ]
           ];
@@ -205,7 +206,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             buttons.push([
               {
                 text: '🔨 מכרז פעיל - הצע עכשיו!',
-                url: `${telegramBotUrl}?startapp=auction_${activeAuction.id}`
+                web_app: { url: `${appUrl}?startapp=auction_${activeAuction.id}` }
               }
             ]);
           }
@@ -214,25 +215,25 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           buttons.push([
             {
               text: '💰 הצע מחיר ליהלום',
-              url: `${telegramBotUrl}?startapp=offer_${diamond.stockNumber}_${sharedBy}`
+              web_app: { url: `${appUrl}?startapp=offer_${diamond.stockNumber}_${sharedBy}` }
             }
           ]);
 
           buttons.push([
             {
               text: '📱 צור קשר למוכר',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+              web_app: { url: `${appUrl}?startapp=contact_${diamond.stockNumber}_${sharedBy}` }
             }
           ]);
 
           buttons.push([
             {
               text: '🏪 עוד יהלומים מהמוכר',
-              url: `${telegramBotUrl}?startapp=store_${sharedBy}`
+              web_app: { url: `${appUrl}?startapp=store_${sharedBy}` }
             },
             {
               text: '🤖 עזרה בבחירה',
-              url: `${telegramBotUrl}?startapp=ai_${diamond.stockNumber}`
+              web_app: { url: `${appUrl}?startapp=ai_${diamond.stockNumber}` }
             }
           ]);
 
