@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTelegramWebApp } from './useTelegramWebApp';
 import { useDiamondShareAnalytics } from './useDiamondShareAnalytics';
+import { useDeepLinkAnalytics } from './useDeepLinkAnalytics';
 
 /**
  * Hook to handle Telegram start_param routing and analytics
@@ -10,6 +11,7 @@ import { useDiamondShareAnalytics } from './useDiamondShareAnalytics';
 export function useStartParamRouter() {
   const navigate = useNavigate();
   const { webApp } = useTelegramWebApp();
+  const { trackDeepLinkArrival, trackNavigation } = useDeepLinkAnalytics();
 
   useEffect(() => {
     if (!webApp) return;
