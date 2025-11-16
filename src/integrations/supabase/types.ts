@@ -394,38 +394,6 @@ export type Database = {
           },
         ]
       }
-      auction_watchers: {
-        Row: {
-          auction_id: string
-          created_at: string
-          id: string
-          telegram_id: number
-          user_name: string | null
-        }
-        Insert: {
-          auction_id: string
-          created_at?: string
-          id?: string
-          telegram_id: number
-          user_name?: string | null
-        }
-        Update: {
-          auction_id?: string
-          created_at?: string
-          id?: string
-          telegram_id?: number
-          user_name?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "auction_watchers_auction_id_fkey"
-            columns: ["auction_id"]
-            isOneToOne: false
-            referencedRelation: "auctions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       auctions: {
         Row: {
           auto_extend: boolean | null
@@ -3007,7 +2975,6 @@ export type Database = {
           recommendation: Json
         }[]
       }
-      get_auction_stats: { Args: { auction_id_param: string }; Returns: Json }
       get_bot_usage_summary: {
         Args: never
         Returns: {

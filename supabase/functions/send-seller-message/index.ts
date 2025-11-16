@@ -31,8 +31,8 @@ serve(async (req) => {
       throw new Error('TELEGRAM_BOT_USERNAME not configured');
     }
     
-    const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
-    console.log('📱 Using WebApp URL:', appUrl);
+    const telegramBotUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
+    console.log('📱 Telegram Bot URL:', telegramBotUrl);
 
     let result;
 
@@ -95,11 +95,9 @@ serve(async (req) => {
     if (diamond_stocks && diamond_stocks.length > 0) {
       console.log('💎 Sending inline buttons for diamonds:', diamond_stocks.length);
       
-      const cleanBotUsername = TELEGRAM_BOT_USERNAME.startsWith('@') ? TELEGRAM_BOT_USERNAME.substring(1) : TELEGRAM_BOT_USERNAME;
-      
       const diamondButtons = diamond_stocks.slice(0, 4).map((stock: string) => ({
         text: `💎 צפה במלאי ${stock}`,
-        url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${stock}`
+        url: `${telegramBotUrl}?startapp=diamond_${stock}`
       }));
 
       // Arrange buttons in rows of 2
@@ -110,7 +108,7 @@ serve(async (req) => {
 
       // Add "View All" button
       buttonRows.push([
-        { text: '🏪 לכל המלאי', url: `https://t.me/${cleanBotUsername}/app?startapp=store` }
+        { text: '🏪 לכל המלאי', url: `${telegramBotUrl}?startapp=store` }
       ]);
 
       const buttonUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
