@@ -57,8 +57,9 @@ export function buildEnhancedInlineKeyboard(
   currency: string,
   botUsername: string = 'Brilliantteatbot'
 ) {
-  const miniAppUrl = `https://t.me/${botUsername}?startapp=diamond_${stockNumber}`;
-  const auctionUrl = `https://t.me/${botUsername}?startapp=auction_${auctionId}`;
+  const appUrl = `https://t.me/${botUsername}/app`;
+  const auctionDeepLink = `${appUrl}?startapp=auction_${auctionId}`;
+  const diamondDeepLink = `${appUrl}?startapp=diamond_${stockNumber}`;
   const storyShareUrl = `https://t.me/${botUsername}?startapp=story_auction_${auctionId}`;
 
   return [
@@ -71,7 +72,7 @@ export function buildEnhancedInlineKeyboard(
     [
       {
         text: '👀 צפה ביהלום',
-        callback_data: `view:${auctionId}`,
+        web_app: { url: diamondDeepLink },
       },
       {
         text: '📊 ביצועים',
@@ -80,12 +81,12 @@ export function buildEnhancedInlineKeyboard(
     ],
     [
       {
-        text: '📱 שתף בסטורי',
-        url: storyShareUrl,
+        text: '🔨 פתח מכרז',
+        web_app: { url: auctionDeepLink },
       },
       {
         text: '📤 העבר לחבר',
-        switch_inline_query: `diamond_${stockNumber}`,
+        switch_inline_query: `auction_${auctionId}`,
       },
     ],
     [
