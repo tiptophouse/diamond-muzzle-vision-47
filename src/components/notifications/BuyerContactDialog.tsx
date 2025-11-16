@@ -180,13 +180,25 @@ export function BuyerContactDialog({
       console.log(`📸 Including ${currentDiamondImages.length} diamond images`);
       console.log(`💎 Including ${diamondStocks.length} diamond stock numbers`);
 
-      // Send message with diamond cards and inline buttons via Telegram bot
-      const { data, error } = await supabase.functions.invoke('send-seller-message', {
+      // Prepare diamond data for rich message with all required fields
+      const richDiamonds = diamondData.map(d => ({
+        stock_number: d.stock,
+        shape: d.shape,
+        carat: d.weight,
+        color: d.color,
+        clarity: d.clarity,
+        cut: d.cut || 'N/A',
+        price: d.price || (d.price_per_carat * d.weight),
+        picture: d.picture,
+        certificate_url: d.certificate_url
+      }));
+
+      // Send rich diamond message with cards, images, and inline buttons
+      const { data, error } = await supabase.functions.invoke('send-rich-diamond-message', {
         body: {
           telegram_id: buyerId,
           message: generatedMessage,
-          diamond_images: currentDiamondImages,
-          diamond_stocks: diamondStocks,
+          diamonds: richDiamonds,
         },
       });
 
@@ -199,6 +211,8 @@ export function BuyerContactDialog({
         throw new Error(data?.error || 'Failed to send message');
       }
 
+      console.log(`✅ Rich message sent: ${data.sent_count} diamonds delivered`);
+
       // Track the contact (fire and forget)
       supabase.functions.invoke('track-buyer-contact', {
         body: {
@@ -209,14 +223,14 @@ export function BuyerContactDialog({
           diamond_count: diamonds.length,
           total_value: totalValue,
           message_preview: generatedMessage,
-          diamonds_data: diamondData,
+          diamonds_data: richDiamonds,
         },
       }).catch(err => console.error('⚠️ Failed to track contact:', err));
 
       console.log('✅ Message sent successfully to buyer:', buyerId);
       notificationOccurred('success');
-      toast.success('ההודעה נשלחה בהצלחה!', {
-        description: `נשלח עם ${diamondData.length} יהלומים`,
+      toast.success('הודעה נשלחה בהצלחה!', {
+        description: `${data.sent_count} יהלומים נשלחו עם תמונות וכפתורים`,
       });
       
       if (onMessageSent) {

@@ -111,13 +111,13 @@ serve(async (req) => {
           [
             {
               text: '💎 פרטים מלאים + תמונות HD',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${diamond.stock_number}`
+              url: `https://t.me/${cleanBotUsername}?startapp=diamond_${diamond.stock_number}`
             }
           ],
           [
             {
               text: '🏪 כל היהלומים',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=store`
+              url: `https://t.me/${cleanBotUsername}?startapp=store`
             }
           ]
         ];
