@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
 import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -7,17 +6,15 @@ import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
-import { ModernNotificationCard } from '@/components/notifications/ModernNotificationCard';
-import { NotificationHeader } from '@/components/notifications/NotificationHeader';
-import { EmptyNotificationsState } from '@/components/notifications/EmptyNotificationsState';
 import { NotificationSkeleton } from '@/components/notifications/NotificationSkeleton';
-import { BuyerContactDialog } from '@/components/notifications/BuyerContactDialog';
+import { Bell, RefreshCw, Users, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { MatchNotificationCard } from '@/components/notifications/MatchNotificationCard';
+import { BuyerContactDialog } from '@/components/notifications/BuyerContactDialog';
 import { getCurrentUserId } from '@/lib/api';
 import { http } from '@/api/http';
 import { apiEndpoints } from '@/lib/api/endpoints';
-import { format, formatDistanceToNow } from 'date-fns';
-import { he } from 'date-fns/locale';
 
 const NotificationsPage = () => {
   const { notifications, isLoading, markAsRead, refetch, loadMore, hasMore } = useFastApiNotifications();
@@ -208,11 +205,22 @@ const NotificationsPage = () => {
     });
   }, [haptic, toast]);
 
-  // Open contact dialog (removed diamond selection requirement)
+  // Open contact dialog with selected diamonds
   const handleContactBuyer = useCallback((buyerId: number) => {
+    const selectedCount = selectedDiamonds[buyerId]?.size || 0;
+    
+    if (selectedCount === 0) {
+      toast({
+        title: 'No diamonds selected',
+        description: 'Please select at least one diamond to send',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     haptic.impactOccurred('medium');
     setSelectedBuyerId(buyerId);
-  }, [haptic]);
+  }, [selectedDiamonds, haptic, toast]);
 
   // Close contact dialog
   const handleCloseDialog = useCallback(() => {
@@ -225,21 +233,15 @@ const NotificationsPage = () => {
     
     const group = groupedNotifications.find(g => g.buyer.userId === selectedBuyerId);
     if (!group) return null;
-
-    // Extract notification IDs
-    const notificationIds = group.matches.map((m: any) => m.id);
     
-    // Prepare diamonds for the dialog
-    const diamonds = group.diamonds || [];
+    const selectedStocks = selectedDiamonds[selectedBuyerId] || new Set();
+    const selectedMatches = group.matches.filter(m => selectedStocks.has(m.stock_number));
     
     return {
-      buyerId: group.buyer.userId,
-      buyerName: group.buyer.name,
-      notificationIds,
-      diamonds,
-      searchQuery: group.matches[0]?.data?.search_query,
+      ...group,
+      selectedMatches,
     };
-  }, [selectedBuyerId, groupedNotifications]);
+  }, [selectedBuyerId, groupedNotifications, selectedDiamonds]);
 
   // Handle successful message send
   const handleMessageSent = useCallback(() => {
@@ -252,115 +254,162 @@ const NotificationsPage = () => {
     }
   }, [selectedBuyerId, selectedBuyerData, markAsRead, handleClearSelection]);
 
+  if (isLoading && groupedNotifications.length === 0) {
+    return (
+      <TelegramMiniAppLayout>
+        <div className="p-4 space-y-3">
+          <NotificationSkeleton count={5} />
+        </div>
+      </TelegramMiniAppLayout>
+    );
+  }
+
   return (
     <TelegramMiniAppLayout>
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 pb-24">
-        {/* Pull to refresh indicator */}
-        <AnimatePresence>
-          {isPulling && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: pullDistance * 0.3 }}
-              exit={{ opacity: 0 }}
-              className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4"
-            >
-              <div className="bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-large">
-                {pullDistance >= 80 ? 'שחרר לרענון...' : 'משוך למטה...'}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="container mx-auto px-4 py-6 max-w-2xl">
-          {/* Header */}
-          <NotificationHeader
-            totalNotifications={stats.totalBuyers}
-            unreadCount={stats.unreadCount}
-            totalDiamonds={stats.totalDiamonds}
-            onRefresh={refetch}
-            isRefreshing={isRefreshing || isLoading}
+      {/* Pull-to-refresh indicator */}
+      {isPulling && (
+        <div 
+          className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-primary/10 transition-all"
+          style={{ 
+            height: `${Math.min(pullDistance, 60)}px`,
+            opacity: pullDistance / 80 
+          }}
+        >
+          <RefreshCw 
+            className={`h-6 w-6 text-primary transition-transform ${
+              isRefreshing ? 'animate-spin' : ''
+            }`}
+            style={{ 
+              transform: `rotate(${pullDistance * 2}deg)` 
+            }}
           />
+        </div>
+      )}
+      
+      <div className="p-4 space-y-4 pb-20">
+        {/* Header */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between" dir="rtl">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Bell className="h-6 w-6 text-primary" />
+                {stats.unreadCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0"
+                  >
+                    {stats.unreadCount}
+                  </Badge>
+                )}
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">
+                  התראות התאמה
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  קונים מעוניינים ביהלומים שלך
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={refetch} 
+              variant="outline" 
+              size="icon"
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
 
-          {/* Notifications list */}
-          <div className="mt-6 space-y-3">
-            {isLoading && notifications.length === 0 ? (
-              // Loading skeletons
-              Array.from({ length: 3 }).map((_, i) => (
-                <NotificationSkeleton key={i} />
-              ))
-            ) : groupedNotifications.length === 0 ? (
-              // Empty state
-              <EmptyNotificationsState />
-            ) : (
-              // Notifications
-              <AnimatePresence mode="popLayout">
-                {groupedNotifications.map((group, index) => {
-                  const isNew = group.matches.some((m: any) => !m.read);
-                  const latestMatch = group.matches[0];
-                  const timeAgo = formatDistanceToNow(new Date(latestMatch.created_at), {
-                    addSuffix: true,
-                    locale: he,
-                  });
-
-                  return (
-                    <ModernNotificationCard
-                      key={group.buyer.userId}
-                      buyerName={group.buyer.name}
-                      buyerId={group.buyer.userId}
-                      diamondCount={group.totalDiamonds}
-                      timestamp={timeAgo}
-                      isNew={isNew}
-                      searchQuery={latestMatch.data?.search_query}
-                      onContact={() => handleContactBuyer(group.buyer.userId)}
-                      onViewDetails={() => handleContactBuyer(group.buyer.userId)}
-                      onGenerateMessage={() => {
-                        haptic.impactOccurred('light');
-                        handleContactBuyer(group.buyer.userId);
-                      }}
-                    />
-                  );
-                })}
-              </AnimatePresence>
-            )}
-
-            {/* Load more button */}
-            {hasMore && !isLoading && groupedNotifications.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="pt-4"
-              >
-                <Button
-                  onClick={loadMore}
-                  variant="outline"
-                  className="w-full h-12 rounded-xl border-2 border-dashed hover:border-primary/50 hover:bg-primary/5 font-medium transition-all duration-300"
-                >
-                  טען עוד התראות
-                </Button>
-              </motion.div>
-            )}
+          {/* Stats Cards */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-card border rounded-lg p-3">
+              <div className="flex items-center gap-1 mb-1">
+                <Users className="h-3 w-3 text-primary" />
+                <span className="text-xs text-muted-foreground">קונים</span>
+              </div>
+              <div className="text-xl font-bold text-primary">{stats.totalBuyers}</div>
+            </div>
+            <div className="bg-card border rounded-lg p-3">
+              <div className="flex items-center gap-1 mb-1">
+                <Bell className="h-3 w-3 text-primary" />
+                <span className="text-xs text-muted-foreground">חדשות</span>
+              </div>
+              <div className="text-xl font-bold text-destructive">{stats.unreadCount}</div>
+            </div>
+            <div className="bg-card border rounded-lg p-3">
+              <div className="flex items-center gap-1 mb-1">
+                <Sparkles className="h-3 w-3 text-primary" />
+                <span className="text-xs text-muted-foreground">יהלומים</span>
+              </div>
+              <div className="text-xl font-bold text-primary">{stats.totalDiamonds}</div>
+            </div>
           </div>
         </div>
 
-        {/* Buyer Contact Dialog */}
-        <AnimatePresence>
-          {selectedBuyerId && selectedBuyerData && user?.id && (
-            <BuyerContactDialog
-              open={!!selectedBuyerId}
-              onOpenChange={(open) => {
-                if (!open) handleCloseDialog();
-              }}
-              buyerId={selectedBuyerData.buyerId}
-              buyerName={selectedBuyerData.buyerName}
-              notificationIds={selectedBuyerData.notificationIds}
-              diamonds={selectedBuyerData.diamonds}
-              searchQuery={selectedBuyerData.searchQuery}
-              sellerTelegramId={user.id}
-              onMessageSent={handleMessageSent}
-            />
-          )}
-        </AnimatePresence>
+        {/* Notifications List */}
+        {groupedNotifications.length === 0 ? (
+          <div className="text-center py-12">
+            <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">אין התראות חדשות</h3>
+            <p className="text-sm text-muted-foreground">
+              כשקונים יחפשו יהלומים שמתאימים למלאי שלך, תקבל התראה כאן
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {groupedNotifications.map((group) => (
+              <MatchNotificationCard
+                key={group.buyer.userId}
+                group={group}
+                selectedDiamonds={selectedDiamonds[group.buyer.userId] || new Set()}
+                onToggleDiamond={(stockNumber) => handleToggleDiamond(group.buyer.userId, stockNumber)}
+                onSelectAll={(stockNumbers) => handleSelectAll(group.buyer.userId, stockNumbers)}
+                onClearSelection={() => handleClearSelection(group.buyer.userId)}
+                onContactBuyer={() => handleContactBuyer(group.buyer.userId)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Load More Button */}
+        {hasMore && groupedNotifications.length > 0 && (
+          <div className="flex justify-center py-4">
+            <Button
+              onClick={loadMore}
+              variant="outline"
+              disabled={isLoading}
+              className="gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  טוען...
+                </>
+              ) : (
+                <>
+                  טען עוד התראות
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Buyer Contact Dialog */}
+      {selectedBuyerData && (
+        <BuyerContactDialog
+          open={!!selectedBuyerId}
+          onOpenChange={handleCloseDialog}
+          buyerId={selectedBuyerData.buyer.userId}
+          buyerName={selectedBuyerData.buyer.name}
+          notificationIds={selectedBuyerData.notificationIds}
+          diamonds={selectedBuyerData.selectedMatches}
+          searchQuery={selectedBuyerData.searchQuery}
+          sellerTelegramId={getCurrentUserId() || 0}
+          onMessageSent={handleMessageSent}
+        />
+      )}
     </TelegramMiniAppLayout>
   );
 };
