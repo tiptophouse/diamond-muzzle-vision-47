@@ -52,18 +52,20 @@ import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 // Register service worker for offline support in Telegram Mini App
 registerServiceWorker();
 
-function App() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: 1, // Reduce retries for faster failure
-        staleTime: 10 * 60 * 1000, // 10 minutes - cache data longer
-        gcTime: 15 * 60 * 1000, // 15 minutes - keep cached data longer
-        refetchOnWindowFocus: false, // Don't refetch on window focus
-        refetchOnMount: false, // Don't refetch on mount if data exists
-      },
+// Create QueryClient ONCE outside component to avoid React crashes
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1, // Reduce retries for faster failure
+      staleTime: 10 * 60 * 1000, // 10 minutes - cache data longer
+      gcTime: 15 * 60 * 1000, // 15 minutes - keep cached data longer
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+      refetchOnMount: false, // Don't refetch on mount if data exists
     },
-  });
+  },
+});
+
+function App() {
   
   return (
     <ErrorBoundary>
