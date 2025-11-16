@@ -46,7 +46,7 @@ serve(async (req) => {
     }
 
     const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
-    const appUrl = Deno.env.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
+    const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
 
     // Step 1: Send the AI-generated message first
     if (message && message.trim()) {
