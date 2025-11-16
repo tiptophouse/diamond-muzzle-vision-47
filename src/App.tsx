@@ -46,6 +46,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TestInlineButtons from './pages/TestInlineButtons';
 import PublicAuctionPage from './pages/PublicAuctionPage';
 import AuctionsListPage from './pages/AuctionsListPage';
+import TestAuth from './pages/TestAuth';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
@@ -79,6 +80,9 @@ function App() {
                   <StartParamInitializer />
                   <FloatingUploadButton />
                   <Routes>
+                  {/* Test Auth Route */}
+                  <Route path="/test-auth" element={<TestAuth />} />
+                  
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
                     <PublicRoute>
