@@ -2,7 +2,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { handleCallbackQuery } from './callback-handler.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -39,19 +38,6 @@ interface TelegramUpdate {
     };
     date: number;
     text?: string;
-  };
-  callback_query?: {
-    id: string;
-    from: { 
-      id: number; 
-      first_name: string; 
-      last_name?: string; 
-    };
-    message: { 
-      chat: { id: number; }; 
-      message_id: number; 
-    };
-    data: string;
   };
 }
 
@@ -93,12 +79,6 @@ serve(async (req) => {
       has_web_app_data: !!update.message?.web_app_data
     });
     
-    // Handle callback queries (bid buttons)
-    if (update.callback_query) {
-      console.log('🔘 Handling callback query');
-      return await handleCallbackQuery(update.callback_query);
-    }
-
     // Handle web app data (diamond sharing)
     if (update.message?.web_app_data) {
       console.log('🌐 Handling web app data');

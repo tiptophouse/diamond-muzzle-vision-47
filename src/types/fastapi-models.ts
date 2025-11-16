@@ -294,18 +294,10 @@ export interface AuctionSchema {
   winner_telegram_id?: number;
   created_at: string;
   updated_at: string;
-  reserve_price?: number;
-  message_ids?: any[];
-  total_views?: number;
-  unique_viewers?: number;
-  total_clicks?: number;
-  bid_count?: number;
-  auto_extend?: boolean;
-  notify_seller?: boolean;
-  diamond_data?: any;
   
   // Joined data
   diamond?: DiamondDataSchema;
+  bid_count?: number;
   latest_bids?: AuctionBidSchema[];
 }
 
@@ -321,21 +313,9 @@ export interface AuctionBidSchema {
 export interface AuctionCreateRequest {
   stock_number: string;
   starting_price: number;
-  reserve_price?: number | null;
-  min_increment?: number;
-  currency?: string;
+  min_increment: number;
   duration_hours: number;
-  auto_extend?: boolean;
-  notify_seller?: boolean;
-  diamond_data?: {
-    description?: string;
-    image?: string;
-    carat?: number;
-    shape?: string;
-    color?: string;
-    clarity?: string;
-    cut?: string;
-  };
+  currency?: string;
 }
 
 export interface PlaceBidRequest {

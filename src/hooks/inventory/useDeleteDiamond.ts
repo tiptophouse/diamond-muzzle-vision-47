@@ -27,20 +27,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
     console.log('🗑️ DELETE: Starting delete for diamond:', diamondId);
     
-    // Extract the FastAPI diamond ID (integer) from the diamondData
-    const fastApiDiamondId = diamondData?.diamondId;
-    const stockNumber = diamondData?.stockNumber || 'unknown';
+    const stockNumber = diamondData?.stockNumber || diamondId;
     const localDiamondId = diamondData?.id || diamondId;
-
-    if (!fastApiDiamondId) {
-      console.error('❌ DELETE: No FastAPI diamond ID available:', diamondData);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Cannot delete: Invalid diamond ID",
-      });
-      return false;
-    }
 
     // Optimistically remove from UI
     if (removeDiamondFromState) {
@@ -48,8 +36,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     }
 
     try {
-      // Use the FastAPI integer ID (not stock number!)
-      const response = await deleteDiamondAPI(parseInt(fastApiDiamondId));
+      // Use the new API function with proper error handling
+      const response = await deleteDiamondAPI(stockNumber, user.id);
       
       if (response.success) {
         console.log('✅ DELETE: Diamond deleted successfully:', response);

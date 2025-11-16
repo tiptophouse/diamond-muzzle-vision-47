@@ -99,16 +99,14 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
     }
 
     try {
-      // CRITICAL: Dev mode for testing (localhost AND Lovable preview)
+      // CRITICAL: Dev mode ONLY works on localhost (NOT on production lovable.app)
       const isPreviewMode = window.location.hostname === 'localhost' || 
                            window.location.hostname === '127.0.0.1' ||
-                           window.location.hostname.endsWith('.local') ||
-                           window.location.hostname.includes('lovableproject.com') ||
-                           window.location.hostname.includes('lovable.app');
+                           window.location.hostname.endsWith('.local');
       const urlParams = new URLSearchParams(window.location.search);
       const testUserId = urlParams.get('test_user_id') || urlParams.get('user_id');
       
-      // DEVELOPMENT MODE: Allow bypass for testing
+      // DEVELOPMENT MODE: Allow bypass for testing (localhost only)
       if (isPreviewMode && testUserId) {
         console.log('🔧 DEV MODE: Using test user ID:', testUserId);
         const mockUser: TelegramUser = {
@@ -161,48 +159,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       // STRICT initData validation - must have minimum length and required fields
       if (!tg.initData || tg.initData.length < 50) {
         console.error('❌ AUTH: Invalid or missing Telegram initData');
-        
-        // FALLBACK: Check if user data is available in initDataUnsafe
-        if (tg.initDataUnsafe?.user?.id) {
-          console.warn('⚠️ AUTH: No initData but found user in initDataUnsafe - using fallback mode');
-          const fallbackUser: TelegramUser = {
-            id: tg.initDataUnsafe.user.id,
-            first_name: tg.initDataUnsafe.user.first_name || 'User',
-            last_name: tg.initDataUnsafe.user.last_name,
-            username: tg.initDataUnsafe.user.username,
-            language_code: tg.initDataUnsafe.user.language_code,
-            is_premium: tg.initDataUnsafe.user.is_premium,
-            photo_url: tg.initDataUnsafe.user.photo_url
-          };
-          
-          // Skip backend auth and use fallback mode
-          console.log('✅ AUTH: Using fallback mode with initDataUnsafe');
-          setCurrentUserId(fallbackUser.id);
-          
-          // Set session context (non-blocking)
-          void (async () => {
-            try {
-              await supabase.rpc('set_user_context', { telegram_id: fallbackUser.id });
-            } catch (err) {
-              console.warn('⚠️ Failed to set session context:', err);
-            }
-          })();
-          
-          initializedRef.current = true;
-          updateState({
-            user: fallbackUser,
-            isLoading: false,
-            isAuthenticated: true,
-            error: null,
-            accessDeniedReason: null
-          });
-          
-          toast.warning('Running in limited mode - some features may be unavailable', {
-            duration: 5000
-          });
-          return;
-        }
-        
         throw new Error('no_init_data');
       }
 

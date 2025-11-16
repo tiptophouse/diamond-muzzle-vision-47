@@ -38,35 +38,30 @@ import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 import AdminStatsPage from './pages/AdminStatsPage';
-import WeeklyKPIPage from './pages/WeeklyKPIPage';
-import BlockedUsersPage from './pages/BlockedUsersPage';
 import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
 import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TestInlineButtons from './pages/TestInlineButtons';
 import PublicAuctionPage from './pages/PublicAuctionPage';
 import AuctionsListPage from './pages/AuctionsListPage';
-import TestAuth from './pages/TestAuth';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
 // Register service worker for offline support in Telegram Mini App
 registerServiceWorker();
 
-// Create QueryClient ONCE outside component to avoid React crashes
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1, // Reduce retries for faster failure
-      staleTime: 10 * 60 * 1000, // 10 minutes - cache data longer
-      gcTime: 15 * 60 * 1000, // 15 minutes - keep cached data longer
-      refetchOnWindowFocus: false, // Don't refetch on window focus
-      refetchOnMount: false, // Don't refetch on mount if data exists
-    },
-  },
-});
-
 function App() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1, // Reduce retries for faster failure
+        staleTime: 10 * 60 * 1000, // 10 minutes - cache data longer
+        gcTime: 15 * 60 * 1000, // 15 minutes - keep cached data longer
+        refetchOnWindowFocus: false, // Don't refetch on window focus
+        refetchOnMount: false, // Don't refetch on mount if data exists
+      },
+    },
+  });
   
   return (
     <ErrorBoundary>
@@ -80,9 +75,6 @@ function App() {
                   <StartParamInitializer />
                   <FloatingUploadButton />
                   <Routes>
-                  {/* Test Auth Route */}
-                  <Route path="/test-auth" element={<TestAuth />} />
-                  
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
                     <PublicRoute>
@@ -212,20 +204,6 @@ function App() {
                      <AuthenticatedRoute>
                        <EnhancedTelegramAdminGuard>
                          <AdminStatsPage />
-                       </EnhancedTelegramAdminGuard>
-                     </AuthenticatedRoute>
-                   } />
-                   <Route path="/weekly-kpi" element={
-                     <AuthenticatedRoute>
-                       <EnhancedTelegramAdminGuard>
-                         <WeeklyKPIPage />
-                       </EnhancedTelegramAdminGuard>
-                     </AuthenticatedRoute>
-                   } />
-                   <Route path="/blocked-users" element={
-                     <AuthenticatedRoute>
-                       <EnhancedTelegramAdminGuard>
-                         <BlockedUsersPage />
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />

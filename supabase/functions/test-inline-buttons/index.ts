@@ -26,8 +26,8 @@ serve(async (req) => {
       throw new Error('TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_USERNAME not configured');
     }
 
-    const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
-    console.log('📱 Using WebApp URL:', appUrl);
+    const telegramBotUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
+    console.log('📱 Using Telegram Bot URL:', telegramBotUrl);
 
     // Test diamond data
     const testDiamonds = ['ABC123', 'XYZ789', 'DEF456'];
@@ -57,13 +57,10 @@ serve(async (req) => {
 
     console.log('✅ Test photo sent');
 
-    
-    // Create inline buttons using url with proper Telegram deep links
-    const cleanBotUsername = TELEGRAM_BOT_USERNAME.startsWith('@') ? TELEGRAM_BOT_USERNAME.substring(1) : TELEGRAM_BOT_USERNAME;
-    
+    // Send inline buttons with fixed deep link format
     const diamondButtons = testDiamonds.map((stock: string) => ({
-      text: `💎 יהלום ${stock}`,
-      url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${stock}`
+      text: `💎 צפה במלאי ${stock}`,
+      url: `${telegramBotUrl}?startapp=diamond_${stock}`
     }));
 
     const buttonRows = [];
@@ -71,9 +68,9 @@ serve(async (req) => {
       buttonRows.push(diamondButtons.slice(i, i + 2));
     }
 
-    // Add "View All" button with deep link
+    // Add "View All" button
     buttonRows.push([
-      { text: '🏪 לכל המלאי', url: `https://t.me/${cleanBotUsername}/app?startapp=store` }
+      { text: '🏪 לכל המלאי', url: `${telegramBotUrl}?startapp=store` }
     ]);
 
     const buttonUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -105,7 +102,7 @@ serve(async (req) => {
         success: true,
         message: 'Test notification sent with fixed inline buttons',
         telegram_id,
-        app_url: appUrl,
+        bot_url: telegramBotUrl,
         diamonds_tested: testDiamonds
       }),
       { 

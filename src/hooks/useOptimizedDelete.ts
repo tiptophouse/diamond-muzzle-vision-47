@@ -34,17 +34,15 @@ export function useOptimizedDelete({ onDelete, onOptimisticRemove, onOptimisticR
           onOptimisticRestore(diamondData);
         }
         
-        console.error('❌ Delete failed for diamond:', diamondId);
         toast({
           title: "❌ Delete Failed",
-          description: `Failed to delete diamond ${diamondData?.stockNumber || diamondId}. Please try again.`,
+          description: "Failed to delete diamond. Please try again.",
           variant: "destructive",
         });
       } else {
-        console.log('✅ Diamond deleted successfully:', diamondId);
         toast({
-          title: "✅ Success",
-          description: `Diamond ${diamondData?.stockNumber || diamondId} has been deleted and removed from your store.`,
+          title: "✅ Diamond Deleted",
+          description: "Diamond removed from inventory successfully",
         });
       }
 
@@ -55,10 +53,9 @@ export function useOptimizedDelete({ onDelete, onOptimisticRemove, onOptimisticR
         onOptimisticRestore(diamondData);
       }
       
-      console.error('❌ Delete error:', error);
       toast({
         title: "❌ Delete Error",
-        description: `An error occurred while deleting ${diamondData?.stockNumber || diamondId}. Please try again.`,
+        description: "An error occurred while deleting. Please try again.",
         variant: "destructive",
       });
       

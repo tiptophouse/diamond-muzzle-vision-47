@@ -71,16 +71,6 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    const botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME');
-    if (!botUsername) {
-      console.error('❌ Bot username not configured');
-      return new Response(
-        JSON.stringify({ error: 'Bot username not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    const cleanBotUsername = botUsername.startsWith('@') ? botUsername.substring(1) : botUsername;
 
     // Determine target chat: personal chat for test mode, group for normal mode
     const targetChatId = testMode ? sharedBy : (Deno.env.get('B2B_GROUP_ID') || -1002178695748);
@@ -170,40 +160,40 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
     console.log('🔨 Active auction check:', { stockNumber: diamond.stockNumber, hasAuction: !!activeAuction });
 
     // Create inline keyboard with Telegram deep links (fixes the broken URLs)
+    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
+    const baseUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://brilliantbot.lovable.app';
     
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: testMode ? [
-          // Personal chat - perfect deep links to Mini App
+          // Personal chat - use web_app with proper deep links
           [
             {
-              text: '💎 פרטים מלאים + תמונות HD',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
-            }
-          ],
-          [
-            {
-              text: '💰 הצע מחיר',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=offer_${diamond.stockNumber}_${sharedBy}`
+              text: '💎 פרטים מלאים',
+              web_app: {
+                url: `${telegramBotUrl}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+              }
             }
           ],
           [
             {
               text: '📱 צור קשר',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=contact_${diamond.stockNumber}_${sharedBy}`
-            },
+              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+            }
+          ],
+          [
             {
-              text: '🏪 עוד יהלומים',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=store_${sharedBy}`
+              text: '🏪 עוד יהלומים מהמוכר',
+              url: `${telegramBotUrl}?startapp=store_${sharedBy}`
             }
           ]
         ] : (() => {
-          // Group chat - perfect deep links that open in Mini App
+          // Group chat - use Telegram deep links that actually work
           const buttons = [
             [
               {
                 text: '💎 פרטים מלאים + תמונות HD',
-                url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+                url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
               }
             ]
           ];
@@ -212,35 +202,29 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           if (activeAuction) {
             buttons.push([
               {
-                text: '🔨 מכרז פעיל - הצע עכשיו!',
-                url: `https://t.me/${cleanBotUsername}/app?startapp=auction_${activeAuction.id}`
+                text: '🔨 הצע מחיר במכרז',
+                web_app: {
+                  url: `${baseUrl}/public/auction/${activeAuction.id}?shared=true`
+                }
               }
             ]);
           }
 
-          // Add make offer button for all diamonds
           buttons.push([
             {
-              text: '💰 הצע מחיר ליהלום',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=offer_${diamond.stockNumber}_${sharedBy}`
-            }
-          ]);
-
-          buttons.push([
-            {
-              text: '📱 צור קשר למוכר',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=contact_${diamond.stockNumber}_${sharedBy}`
+              text: '📱 צור קשר למחיר ולפרטים',
+              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ]);
 
           buttons.push([
             {
               text: '🏪 עוד יהלומים מהמוכר',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=store_${sharedBy}`
+              url: `${telegramBotUrl}?startapp=store_${sharedBy}`
             },
             {
               text: '🤖 עזרה בבחירה',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=ai_${diamond.stockNumber}`
+              url: `${telegramBotUrl}?start=ai_assistant_${diamond.stockNumber}`
             }
           ]);
 

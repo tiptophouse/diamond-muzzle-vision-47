@@ -38,11 +38,8 @@ export function CreateAuctionModal({
   onSuccess,
 }: CreateAuctionModalProps) {
   const [startingPrice, setStartingPrice] = useState('');
-  const [reservePrice, setReservePrice] = useState('');
   const [minIncrement, setMinIncrement] = useState('50');
   const [durationHours, setDurationHours] = useState('24');
-  const [autoExtend, setAutoExtend] = useState(true);
-  const [notifySeller, setNotifySeller] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { hapticFeedback } = useTelegramWebApp();
@@ -71,21 +68,9 @@ export function CreateAuctionModal({
       const auction = await createAuction({
         stock_number: stockNumber,
         starting_price: Number(startingPrice),
-        reserve_price: reservePrice ? Number(reservePrice) : null,
         min_increment: Number(minIncrement),
         duration_hours: Number(durationHours),
         seller_telegram_id: userId,
-        auto_extend: autoExtend,
-        notify_seller: notifySeller,
-        diamond_data: {
-          description: diamondName,
-          image: diamond.picture,
-          carat: diamond.carat,
-          shape: diamond.shape,
-          color: diamond.color,
-          clarity: diamond.clarity,
-          cut: diamond.cut
-        }
       });
 
       console.log('✅ Auction created:', auction.id);
@@ -197,32 +182,6 @@ export function CreateAuctionModal({
               min="1"
               max="168"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="reserve-price">מחיר מינימום (אופציונלי $)</Label>
-            <Input
-              id="reserve-price"
-              type="number"
-              value={reservePrice}
-              onChange={(e) => setReservePrice(e.target.value)}
-              placeholder="מחיר מינימום לקבלה"
-              min="0"
-              step="100"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="notify-seller"
-              checked={notifySeller}
-              onChange={(e) => setNotifySeller(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <Label htmlFor="notify-seller" className="cursor-pointer">
-              שלח התראות על הצעות חדשות
-            </Label>
           </div>
 
           <Button

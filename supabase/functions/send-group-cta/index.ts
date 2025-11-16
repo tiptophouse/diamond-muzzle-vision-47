@@ -75,29 +75,26 @@ serve(async (req) => {
       const finalButtonText = buttonText || '🚀 הצטרף ל-BrilliantBot';
       const finalButtonUrl = buttonUrl || `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=growth_announcement&start=group_activation&button_clicked=join_brilliantbot`;
       
-      // Sanitize t.me deep links and use web_app for Mini App
-      let sanitizedUrl = finalButtonUrl;
-      if (sanitizedUrl.startsWith('https://t.me/')) {
-        // Remove accidental '@' after t.me/
-        sanitizedUrl = sanitizedUrl.replace('https://t.me/@', 'https://t.me/');
-        // If it's a startapp deep link, ensure /app is present and use web_app
-        if (sanitizedUrl.includes('startapp=')) {
-          const parts = sanitizedUrl.split('https://t.me/')[1];
-          const [usernameAndPath, query] = parts.split('?');
-          const username = usernameAndPath.replace('/app', '');
-          sanitizedUrl = `https://t.me/${username}/app?${query}`;
-          telegramPayload.reply_markup = {
-            inline_keyboard: [[{ text: finalButtonText, web_app: { url: sanitizedUrl } }]]
-          };
-        } else {
-          // Regular bot start links - keep as standard URL button
-          telegramPayload.reply_markup = {
-            inline_keyboard: [[{ text: finalButtonText, url: sanitizedUrl }]]
-          };
-        }
+      // If buttonUrl starts with https://t.me/, use url instead of web_app
+      if (finalButtonUrl.startsWith('https://t.me/')) {
+        telegramPayload.reply_markup = {
+          inline_keyboard: [[
+            {
+              text: finalButtonText,
+              url: finalButtonUrl
+            }
+          ]]
+        };
       } else {
         telegramPayload.reply_markup = {
-          inline_keyboard: [[{ text: finalButtonText, web_app: { url: sanitizedUrl } }]]
+          inline_keyboard: [[
+            {
+              text: finalButtonText,
+              web_app: {
+                url: finalButtonUrl
+              }
+            }
+          ]]
         };
       }
     }

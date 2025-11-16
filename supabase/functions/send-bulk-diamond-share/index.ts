@@ -89,27 +89,23 @@ serve(async (req) => {
     }
 
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
-    
-    const botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME');
-    if (!botUsername) {
-      throw new Error('TELEGRAM_BOT_USERNAME not configured');
-    }
-    const cleanBotUsername = botUsername.startsWith('@') ? botUsername.substring(1) : botUsername;
 
-    // Create inline keyboard with diamond viewing deep links
+    // Create inline keyboard with diamond viewing options
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: [
           [
             {
               text: '💎 View Diamond Details',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+              web_app: {
+                url: `${Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '')}/diamond/${diamond.id}?shared=true&from=${sharedBy}`
+              }
             }
           ],
           [
             {
               text: '📞 Contact Seller',
-              url: `https://t.me/${cleanBotUsername}/app?startapp=contact_${diamond.stockNumber}_${sharedBy}`
+              callback_data: `contact_seller_${diamond.stockNumber}_${sharedBy}`
             }
           ]
         ]

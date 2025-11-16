@@ -32,18 +32,36 @@ port = 54328
 [edge_functions]
 enabled = true
 
-# Essential functions only
+# Core functions - actively used
 [functions.check-admin]
 verify_jwt = false
 
-[functions.log-user-login]
+[functions.check-subscription-status]
+verify_jwt = false
+
+[functions.admin-manage-blocked-users]
+verify_jwt = false
+
+[functions.generate-buyer-message]
+verify_jwt = false
+
+[functions.generate-conversation-starter]
+verify_jwt = false
+
+[functions.send-rich-diamond-message]
+verify_jwt = false
+
+[functions.send-diamond-to-group]
+verify_jwt = false
+
+[functions.public-diamond-share]
+verify_jwt = false
+
+[functions.user-engagement-monitor]
+verify_jwt = false
+
+[functions.test-inline-buttons]
 verify_jwt = false
 
 [functions.send-auction-message]
-verify_jwt = false
-
-[functions.telegram-webhook]
-verify_jwt = false
-
-[functions.expire-auctions]
 verify_jwt = false
