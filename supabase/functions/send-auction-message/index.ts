@@ -1,5 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 const TELEGRAM_BOT_USERNAME = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'Brilliantteatbot';
@@ -118,6 +123,23 @@ serve(async (req) => {
     }
 
     console.log('✅ Auction message sent successfully');
+
+    // Store message_id in auction for future updates
+    try {
+      const messageIds = [{ 
+        chat_id: result.result.chat.id, 
+        message_id: result.result.message_id 
+      }];
+      
+      await supabase
+        .from('auctions')
+        .update({ message_ids: messageIds })
+        .eq('id', auction_id);
+        
+      console.log('💾 Message ID stored in auction');
+    } catch (error) {
+      console.error('Failed to store message_id:', error);
+    }
 
     return new Response(
       JSON.stringify({

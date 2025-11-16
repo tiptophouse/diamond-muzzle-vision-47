@@ -38,3 +38,12 @@ verify_jwt = false
 
 [functions.log-user-login]
 verify_jwt = false
+
+[functions.send-auction-message]
+verify_jwt = false
+
+[functions.telegram-webhook]
+verify_jwt = false
+
+[functions.expire-auctions]
+verify_jwt = false
