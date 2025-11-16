@@ -57,10 +57,13 @@ serve(async (req) => {
 
     console.log('✅ Test photo sent');
 
-    // Send inline buttons with fixed deep link format
+    // Get the deployed app URL for web_app buttons
+    const appUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}/app`;
+    
+    // Create inline buttons using web_app type for proper mini app opening + tracking
     const diamondButtons = testDiamonds.map((stock: string) => ({
-      text: `💎 צפה במלאי ${stock}`,
-      url: `${telegramBotUrl}?startapp=diamond_${stock}`
+      text: `💎 יהלום ${stock}`,
+      web_app: { url: `${appUrl}?startapp=diamond_${stock}` }
     }));
 
     const buttonRows = [];
@@ -68,9 +71,9 @@ serve(async (req) => {
       buttonRows.push(diamondButtons.slice(i, i + 2));
     }
 
-    // Add "View All" button
+    // Add "View All" button with web_app
     buttonRows.push([
-      { text: '🏪 לכל המלאי', url: `${telegramBotUrl}?startapp=store` }
+      { text: '🏪 לכל המלאי', web_app: { url: `${appUrl}?startapp=store` } }
     ]);
 
     const buttonUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
