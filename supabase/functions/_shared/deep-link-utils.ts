@@ -12,13 +12,12 @@ export function sanitizeBotUsername(username: string): string {
 
 /**
  * Build a Telegram Mini App deep link
- * Format: https://t.me/{botUsername}?startapp={encodedParam}
- * For bots with Menu Button Web App configured
+ * Format: https://t.me/{botUsername}/app?startapp={encodedParam}
  */
 export function buildMiniAppDeepLink(botUsername: string, startParam: string): string {
   const cleanUsername = sanitizeBotUsername(botUsername);
   const encodedParam = encodeURIComponent(startParam);
-  return `https://t.me/${cleanUsername}?startapp=${encodedParam}`;
+  return `https://t.me/${cleanUsername}/app?startapp=${encodedParam}`;
 }
 
 /**
