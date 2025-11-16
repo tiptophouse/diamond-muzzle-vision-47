@@ -57,7 +57,7 @@ export function buildEnhancedInlineKeyboard(
   currency: string,
   botUsername: string = 'Brilliantteatbot'
 ) {
-  const appUrl = `https://t.me/${botUsername}/app`;
+  const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
   const auctionDeepLink = `${appUrl}?startapp=auction_${auctionId}`;
   const diamondDeepLink = `${appUrl}?startapp=diamond_${stockNumber}`;
   const storyShareUrl = `https://t.me/${botUsername}?startapp=story_auction_${auctionId}`;

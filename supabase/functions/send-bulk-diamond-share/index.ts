@@ -91,8 +91,7 @@ serve(async (req) => {
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
 
     // Create inline keyboard with diamond viewing deep links
-    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
-    const appUrl = `${telegramBotUrl}/app`;
+    const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: [
