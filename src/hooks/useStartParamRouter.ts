@@ -14,8 +14,14 @@ export function useStartParamRouter() {
   useEffect(() => {
     if (!webApp) return;
 
-    // Get start_param from Telegram WebApp (fix type issue)
-    const startParam = (webApp as any)?.initDataUnsafe?.start_param;
+    // Try to get start_param from Telegram WebApp first
+    let startParam = (webApp as any)?.initDataUnsafe?.start_param;
+    
+    // Fallback: check URL query parameters for tgWebAppStartParam
+    if (!startParam) {
+      const queryParams = new URLSearchParams(window.location.search);
+      startParam = queryParams.get('tgWebAppStartParam') || undefined;
+    }
     
     if (!startParam) return;
 
