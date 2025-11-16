@@ -149,11 +149,11 @@ export function useStartParamRouter() {
         
         console.log('🔨 Routing to auction:', { auctionId });
         
-        // Route to public auction page
+        // Route to auction page
         const queryParams = new URLSearchParams();
         queryParams.set('shared', 'true');
         
-        navigate(`/public/auction/${auctionId}?${queryParams.toString()}`);
+        navigate(`/auction/${auctionId}?${queryParams.toString()}`);
         
         // Haptic feedback
         if (webApp.HapticFeedback) {
