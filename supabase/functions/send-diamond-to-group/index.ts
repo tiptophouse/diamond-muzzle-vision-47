@@ -71,6 +71,16 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    const botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME');
+    if (!botUsername) {
+      console.error('❌ Bot username not configured');
+      return new Response(
+        JSON.stringify({ error: 'Bot username not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const cleanBotUsername = botUsername.startsWith('@') ? botUsername.substring(1) : botUsername;
 
     // Determine target chat: personal chat for test mode, group for normal mode
     const targetChatId = testMode ? sharedBy : (Deno.env.get('B2B_GROUP_ID') || -1002178695748);
@@ -160,7 +170,6 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
     console.log('🔨 Active auction check:', { stockNumber: diamond.stockNumber, hasAuction: !!activeAuction });
 
     // Create inline keyboard with Telegram deep links (fixes the broken URLs)
-    const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
     
     const inlineKeyboard = {
       reply_markup: {
@@ -169,23 +178,23 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           [
             {
               text: '💎 פרטים מלאים + תמונות HD',
-              web_app: { url: `${appUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}` }
+              url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
             {
               text: '💰 הצע מחיר',
-              web_app: { url: `${appUrl}?startapp=offer_${diamond.stockNumber}_${sharedBy}` }
+              url: `https://t.me/${cleanBotUsername}/app?startapp=offer_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
             {
               text: '📱 צור קשר',
-              web_app: { url: `${appUrl}?startapp=contact_${diamond.stockNumber}_${sharedBy}` }
+              url: `https://t.me/${cleanBotUsername}/app?startapp=contact_${diamond.stockNumber}_${sharedBy}`
             },
             {
               text: '🏪 עוד יהלומים',
-              web_app: { url: `${appUrl}?startapp=store_${sharedBy}` }
+              url: `https://t.me/${cleanBotUsername}/app?startapp=store_${sharedBy}`
             }
           ]
         ] : (() => {
@@ -194,7 +203,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             [
               {
                 text: '💎 פרטים מלאים + תמונות HD',
-                web_app: { url: `${appUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}` }
+                url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
               }
             ]
           ];
@@ -204,7 +213,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             buttons.push([
               {
                 text: '🔨 מכרז פעיל - הצע עכשיו!',
-                web_app: { url: `${appUrl}?startapp=auction_${activeAuction.id}` }
+                url: `https://t.me/${cleanBotUsername}/app?startapp=auction_${activeAuction.id}`
               }
             ]);
           }
@@ -213,25 +222,25 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           buttons.push([
             {
               text: '💰 הצע מחיר ליהלום',
-              web_app: { url: `${appUrl}?startapp=offer_${diamond.stockNumber}_${sharedBy}` }
+              url: `https://t.me/${cleanBotUsername}/app?startapp=offer_${diamond.stockNumber}_${sharedBy}`
             }
           ]);
 
           buttons.push([
             {
               text: '📱 צור קשר למוכר',
-              web_app: { url: `${appUrl}?startapp=contact_${diamond.stockNumber}_${sharedBy}` }
+              url: `https://t.me/${cleanBotUsername}/app?startapp=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ]);
 
           buttons.push([
             {
               text: '🏪 עוד יהלומים מהמוכר',
-              web_app: { url: `${appUrl}?startapp=store_${sharedBy}` }
+              url: `https://t.me/${cleanBotUsername}/app?startapp=store_${sharedBy}`
             },
             {
               text: '🤖 עזרה בבחירה',
-              web_app: { url: `${appUrl}?startapp=ai_${diamond.stockNumber}` }
+              url: `https://t.me/${cleanBotUsername}/app?startapp=ai_${diamond.stockNumber}`
             }
           ]);
 

@@ -57,10 +57,7 @@ export function buildEnhancedInlineKeyboard(
   currency: string,
   botUsername: string = 'Brilliantteatbot'
 ) {
-  const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
-  const auctionDeepLink = `${appUrl}?startapp=auction_${auctionId}`;
-  const diamondDeepLink = `${appUrl}?startapp=diamond_${stockNumber}`;
-  const storyShareUrl = `https://t.me/${botUsername}?startapp=story_auction_${auctionId}`;
+  const cleanBotUsername = botUsername.startsWith('@') ? botUsername.substring(1) : botUsername;
 
   return [
     [
@@ -72,7 +69,7 @@ export function buildEnhancedInlineKeyboard(
     [
       {
         text: '👀 צפה ביהלום',
-        web_app: { url: diamondDeepLink },
+        url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${stockNumber}`,
       },
       {
         text: '📊 ביצועים',
@@ -82,7 +79,7 @@ export function buildEnhancedInlineKeyboard(
     [
       {
         text: '🔨 פתח מכרז',
-        web_app: { url: auctionDeepLink },
+        url: `https://t.me/${cleanBotUsername}/app?startapp=auction_${auctionId}`,
       },
       {
         text: '📤 העבר לחבר',

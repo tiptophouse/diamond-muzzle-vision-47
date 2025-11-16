@@ -176,7 +176,7 @@ async function updateAuctionMessage(
 הצטרף למכרז! 👇
 `.trim();
 
-  const appUrl = Deno.env.get('WEBAPP_URL') || 'https://miniapp.mazalbot.com';
+  const cleanBotUsername = TELEGRAM_BOT_USERNAME.startsWith('@') ? TELEGRAM_BOT_USERNAME.substring(1) : TELEGRAM_BOT_USERNAME;
   
   const inlineKeyboard = [
     [{
@@ -185,10 +185,10 @@ async function updateAuctionMessage(
     }],
     [{
       text: '👀 צפה ביהלום',
-      web_app: { url: `${appUrl}?startapp=diamond_${auction.stock_number}` }
+      url: `https://t.me/${cleanBotUsername}/app?startapp=diamond_${auction.stock_number}`
     }, {
       text: '📈 ביצועים',
-      web_app: { url: `${appUrl}?startapp=auction_${auction.id}` }
+      url: `https://t.me/${cleanBotUsername}/app?startapp=auction_${auction.id}`
     }]
   ];
 
