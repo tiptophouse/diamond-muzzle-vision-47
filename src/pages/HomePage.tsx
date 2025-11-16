@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Gem, Users, ArrowRight, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
+import { InventoryGuard } from '@/components/InventoryGuard';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -18,13 +19,7 @@ export default function HomePage() {
   const sharedFrom = searchParams.get('from');
 
   useEffect(() => {
-    // If user is already authenticated, redirect to inventory
-    if (isAuthenticated && user && !isRegistrationRequired) {
-      navigate('/inventory');
-      return;
-    }
-
-    // Show registration success message if user just registered
+    // Don't auto-redirect - let user see homepage first
     if (isAuthenticated && isRegistrationRequired) {
       if (accessRequired === 'diamond_access') {
         toast.success('🎉 Registration completed! You can now view shared diamonds.');
@@ -32,7 +27,7 @@ export default function HomePage() {
         toast.success('🎉 Welcome to the Diamond Mini App!');
       }
     }
-  }, [isAuthenticated, user, navigate, isRegistrationRequired, accessRequired]);
+  }, [isAuthenticated, isRegistrationRequired, accessRequired]);
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
@@ -51,6 +46,37 @@ export default function HomePage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600"></div>
       </div>
+    );
+  }
+
+  // Show inventory guard only for authenticated users
+  if (isAuthenticated && user) {
+    return (
+      <InventoryGuard 
+        requireStock={true}
+        onUploadClick={() => navigate('/inventory/add')}
+      >
+        <div className="min-h-screen">
+          <div className="container mx-auto px-6 py-16 max-w-4xl">
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold mb-4">ברוך הבא! 👋</h1>
+              <p className="text-xl text-muted-foreground">יש לך מלאי - בוא נתחיל!</p>
+            </div>
+            
+            <div className="grid gap-4">
+              <Button onClick={() => navigate('/inventory')} size="lg" className="w-full">
+                צפה במלאי שלי
+                <ArrowRight className="mr-2 h-5 w-5" />
+              </Button>
+              
+              <Button onClick={handleViewStore} size="lg" variant="outline" className="w-full">
+                צפה בחנות
+                <Users className="mr-2 h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </InventoryGuard>
     );
   }
 
