@@ -80,6 +80,48 @@ export function useStartParamRouter() {
         if (webApp.HapticFeedback) {
           webApp.HapticFeedback.impactOccurred('light');
         }
+      } else if (startParam === 'notifications') {
+        // Pattern: notifications
+        console.log('🔔 Routing to notifications page');
+        
+        navigate('/notifications');
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
+      } else if (startParam === 'store') {
+        // Pattern: store
+        console.log('🏪 Routing to store page');
+        
+        navigate('/store');
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
+      } else if (startParam === 'dashboard') {
+        // Pattern: dashboard
+        console.log('📊 Routing to dashboard');
+        
+        navigate('/dashboard');
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
+      } else if (startParam.startsWith('store_')) {
+        // Pattern: store_<userId>
+        const userId = startParam.replace('store_', '');
+        
+        console.log('🏪 Routing to seller store:', { userId });
+        
+        navigate(`/store?seller=${userId}`);
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
       }
 
     } catch (error) {
