@@ -37,7 +37,12 @@ export function UserImageUpload({ diamond, onUpdate }: UserImageUploadProps) {
         gem_360_url: gem360Url
       };
 
-      const endpoint = apiEndpoints.updateDiamond(diamond.id);
+      const numericId = parseInt(diamond.id);
+      if (isNaN(numericId)) {
+        throw new Error('Invalid diamond ID');
+      }
+      
+      const endpoint = apiEndpoints.updateDiamond(numericId);
       const response = await api.put(endpoint, updateData);
 
       if (response.data) {

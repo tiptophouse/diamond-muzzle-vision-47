@@ -115,7 +115,7 @@ export function useUpdateDiamond() {
       data,
       userId,
     }: {
-      diamondId: string;
+      diamondId: number;
       data: any;
       userId: number;
     }) => {
@@ -147,7 +147,7 @@ export function useUpdateDiamond() {
       } catch (e) {}
       
       queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
-      queryClient.invalidateQueries({ queryKey: diamondKeys.detail(variables.diamondId) });
+      queryClient.invalidateQueries({ queryKey: diamondKeys.detail(variables.diamondId.toString()) });
       
       toast({
         title: '✅ יהלום עודכן בהצלחה',
@@ -183,11 +183,11 @@ export function useDeleteDiamond() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ stockNumber, userId }: { stockNumber: string; userId: number }) => {
-      console.log('🗑️ Deleting diamond:', stockNumber);
-      return diamondsApi.deleteDiamond(stockNumber);
+    mutationFn: ({ diamondId, userId }: { diamondId: number; userId: number }) => {
+      console.log('🗑️ Deleting diamond:', diamondId);
+      return diamondsApi.deleteDiamond(diamondId);
     },
-    onMutate: async ({ stockNumber, userId }) => {
+    onMutate: async ({ diamondId, userId }) => {
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
       
       const previousDiamonds = queryClient.getQueryData(diamondKeys.list(userId));
@@ -195,7 +195,7 @@ export function useDeleteDiamond() {
       // Optimistic delete
       queryClient.setQueryData(diamondKeys.list(userId), (old: any[] = []) =>
         old.filter(diamond => 
-          diamond.stock_number !== stockNumber && diamond.id !== stockNumber
+          diamond.id !== diamondId && diamond.diamond_id !== diamondId
         )
       );
       

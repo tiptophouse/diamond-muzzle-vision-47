@@ -17,10 +17,10 @@ export const apiEndpoints = {
   addDiamondsBatch: () => `/api/v1/diamonds/batch`,
   
   // Update diamond - PUT /api/v1/diamonds/{diamond_id} (userId from JWT)
-  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
+  updateDiamond: (diamondId: number) => `/api/v1/diamonds/${diamondId}`,
   
   // Delete diamond endpoint - DELETE /api/v1/delete_stone/{diamond_id} (userId from JWT)
-  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
+  deleteDiamond: (diamondId: number) => `/api/v1/delete_stone/${diamondId}`,
   
   // SFTP endpoints - CORRECTED to include proper auth
   sftpProvision: () => `/api/v1/sftp/provision`,
