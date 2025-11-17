@@ -2,6 +2,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { deleteDiamond as deleteDiamondAPI } from '@/api/diamonds';
+import { extractDiamondId } from '@/api/diamondTransformers';
 import { useInventoryDataSync } from './useInventoryDataSync';
 
 interface UseDeleteDiamondProps {
@@ -36,8 +37,15 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     }
 
     try {
+      // Extract numeric diamond ID from the data
+      const diamondId = extractDiamondId(diamondData);
+      
+      if (!diamondId) {
+        throw new Error(`Cannot delete diamond: Invalid ID for stock ${stockNumber}`);
+      }
+      
       // Use the new API function with proper error handling
-      const response = await deleteDiamondAPI(stockNumber);
+      const response = await deleteDiamondAPI(diamondId);
       
       if (response.success) {
         console.log('✅ DELETE: Diamond deleted successfully:', response);

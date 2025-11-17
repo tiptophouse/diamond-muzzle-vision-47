@@ -1,6 +1,12 @@
 import { http } from "./http";
 import { apiEndpoints } from "@/lib/api/endpoints";
 import { logger } from '@/utils/logger';
+import { 
+  transformToFastAPICreate, 
+  transformToFastAPIUpdate,
+  FastAPIDiamondCreate,
+  FastAPIDiamondUpdate 
+} from './diamondTransformers';
 
 export interface DeleteDiamondResponse {
   success: boolean;
@@ -14,23 +20,8 @@ export interface CreateDiamondResponse {
   diamond_id?: string;
 }
 
-export async function deleteDiamond(stockNumber: string): Promise<DeleteDiamondResponse> {
-  logger.info('Diamond delete operation started', { stockNumber });
-  
-  // Handle both numeric and alphanumeric stock numbers
-  // Try to parse as integer first (FastAPI expects integer diamond_id)
-  let diamondId: string;
-  const parsedId = parseInt(stockNumber, 10);
-  
-  if (!isNaN(parsedId) && parsedId.toString() === stockNumber.trim()) {
-    // Pure numeric stock number
-    diamondId = parsedId.toString();
-    logger.info('Using numeric diamond ID', { diamondId });
-  } else {
-    // Alphanumeric or non-numeric - use as-is but warn
-    diamondId = stockNumber.trim();
-    logger.warn('Using non-numeric stock number', { stockNumber: diamondId });
-  }
+export async function deleteDiamond(diamondId: number): Promise<DeleteDiamondResponse> {
+  logger.info('Diamond delete operation started', { diamondId });
   
   try {
     const response = await http<DeleteDiamondResponse>(
@@ -38,15 +29,15 @@ export async function deleteDiamond(stockNumber: string): Promise<DeleteDiamondR
       { method: "DELETE" }
     );
     
-    logger.info('Diamond deleted successfully', { stockNumber, diamondId, response });
+    logger.info('Diamond deleted successfully', { diamondId, response });
     return response;
   } catch (error) {
-    logger.error('Diamond delete operation failed', error, { stockNumber, diamondId });
+    logger.error('Diamond delete operation failed', error, { diamondId });
     throw error;
   }
 }
 
-export async function createDiamond(diamondData: any): Promise<CreateDiamondResponse> {
+export async function createDiamond(diamondData: FastAPIDiamondCreate): Promise<CreateDiamondResponse> {
   logger.info('Diamond creation started', { diamondData });
   
   try {
@@ -58,16 +49,16 @@ export async function createDiamond(diamondData: any): Promise<CreateDiamondResp
       }
     );
     
-    logger.info('Diamond created successfully', { diamondData, response });
+    logger.info('Diamond created successfully', { response });
     return response;
   } catch (error) {
-    logger.error('Diamond creation failed', error, { diamondData });
+    logger.error('Diamond creation failed', error);
     throw error;
   }
 }
 
-export async function updateDiamond(diamondId: string, diamondData: any): Promise<CreateDiamondResponse> {
-  logger.info('Diamond update started', { diamondId, diamondData });
+export async function updateDiamond(diamondId: number, diamondData: FastAPIDiamondUpdate): Promise<CreateDiamondResponse> {
+  logger.info('Diamond update started', { diamondId });
   
   try {
     const response = await http<CreateDiamondResponse>(
@@ -78,10 +69,10 @@ export async function updateDiamond(diamondId: string, diamondData: any): Promis
       }
     );
     
-    logger.info('Diamond updated successfully', { diamondId, diamondData, response });
+    logger.info('Diamond updated successfully', { diamondId, response });
     return response;
   } catch (error) {
-    logger.error('Diamond update failed', error, { diamondId, diamondData });
+    logger.error('Diamond update failed', error, { diamondId });
     throw error;
   }
 }

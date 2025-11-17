@@ -24,9 +24,13 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       console.log('📝 UPDATE: Starting update for diamond:', diamondId);
       console.log('📝 UPDATE: Form data received:', data);
       
-      // Use the FastAPI diamond ID if it's a number, otherwise use the provided ID
-      const fastApiDiamondId = /^\d+$/.test(diamondId) ? diamondId : diamondId;
-      const endpoint = apiEndpoints.updateDiamond(fastApiDiamondId);
+      // Use the FastAPI diamond ID if it's a number, otherwise parse it
+      const numericId = parseInt(diamondId);
+      if (isNaN(numericId)) {
+        throw new Error('Invalid diamond ID');
+      }
+      
+      const endpoint = apiEndpoints.updateDiamond(numericId);
       console.log('📝 UPDATE: Using endpoint:', endpoint);
       console.log('📝 UPDATE: User ID:', user.id, 'type:', typeof user.id);
       
