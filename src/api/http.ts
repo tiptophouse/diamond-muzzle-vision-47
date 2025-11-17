@@ -70,14 +70,32 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
   
   console.log('🔑 HTTP: Making request to:', fullUrl, 'Method:', method);
 
+  // Import dev mode check
+  const { isDevelopmentMode, getCurrentUserId } = await import('@/lib/api/config');
+  const isDevMode = isDevelopmentMode();
+  
   // Check authentication for protected endpoints (most endpoints require auth according to OpenAPI spec)
   const token = getBackendAuthToken();
   
   if (!token && !endpoint.includes('/api/v1/sign-in/')) {
-    console.error('❌ HTTP: No JWT token available for protected endpoint:', endpoint);
-    const error = new Error('נדרש אימות. אנא התחבר מחדש לאפליקציה');
-    
-    toast({
+    if (isDevMode) {
+      console.warn('⚠️ HTTP DEV MODE: No JWT token but continuing in development mode');
+      console.warn('⚠️ This may cause API errors. You should test in actual Telegram for full functionality.');
+      
+      // Show warning toast once per session
+      if (!sessionStorage.getItem('dev_mode_warning_shown')) {
+        toast({
+          title: "🧪 Development Mode",
+          description: "Running without authentication. Some features may not work. Test in Telegram for full functionality.",
+          variant: "default",
+        });
+        sessionStorage.setItem('dev_mode_warning_shown', 'true');
+      }
+    } else {
+      console.error('❌ HTTP: No JWT token available for protected endpoint:', endpoint);
+      const error = new Error('נדרש אימות. אנא התחבר מחדש לאפליקציה');
+      
+      toast({
       title: "🔐 Authentication Required",
       description: "אנא התחבר מחדש לאפליקציה",
       variant: "destructive",
