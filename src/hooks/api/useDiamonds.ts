@@ -41,7 +41,7 @@ export function useCreateDiamond() {
 
   return useMutation({
     mutationFn: ({ data, userId }: { data: any; userId: number }) =>
-      diamondsApi.createDiamond(data, userId),
+      diamondsApi.createDiamond(data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
       
@@ -76,7 +76,7 @@ export function useUpdateDiamond() {
       diamondId: string;
       data: any;
       userId: number;
-    }) => diamondsApi.updateDiamond(diamondId, data, userId),
+    }) => diamondsApi.updateDiamond(diamondId, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
       queryClient.invalidateQueries({ queryKey: diamondKeys.detail(variables.diamondId) });
@@ -105,7 +105,7 @@ export function useDeleteDiamond() {
 
   return useMutation({
     mutationFn: ({ stockNumber, userId }: { stockNumber: string; userId: number }) =>
-      diamondsApi.deleteDiamond(stockNumber, userId),
+      diamondsApi.deleteDiamond(stockNumber),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
       
@@ -133,7 +133,7 @@ export function useCreateDiamondsBatch() {
 
   return useMutation({
     mutationFn: ({ diamonds, userId }: { diamonds: any[]; userId: number }) =>
-      diamondsApi.createDiamondsBatch(diamonds, userId),
+      diamondsApi.createDiamondsBatch(diamonds),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
       

@@ -37,7 +37,7 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
     try {
       // Use the new API function with proper error handling
-      const response = await deleteDiamondAPI(stockNumber, user.id);
+      const response = await deleteDiamondAPI(stockNumber);
       
       if (response.success) {
         console.log('✅ DELETE: Diamond deleted successfully:', response);
