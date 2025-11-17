@@ -35,15 +35,14 @@ export function useGetAllStones(userId: number) {
 /**
  * Create a single diamond
  */
-export function useCreateDiamond() {
+export function useCreateDiamond(userId: number) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ data, userId }: { data: any; userId: number }) =>
-      diamondsApi.createDiamond(data, userId),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
+    mutationFn: (data: any) => diamondsApi.createDiamond(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: diamondKeys.list(userId) });
       
       toast({
         title: 'יהלום נוסף בהצלחה',
@@ -63,22 +62,15 @@ export function useCreateDiamond() {
 /**
  * Update a diamond
  */
-export function useUpdateDiamond() {
+export function useUpdateDiamond(userId: number) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({
-      diamondId,
-      data,
-      userId,
-    }: {
-      diamondId: string;
-      data: any;
-      userId: number;
-    }) => diamondsApi.updateDiamond(diamondId, data, userId),
+    mutationFn: ({ diamondId, data }: { diamondId: string; data: any }) =>
+      diamondsApi.updateDiamond(diamondId, data),
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
+      queryClient.invalidateQueries({ queryKey: diamondKeys.list(userId) });
       queryClient.invalidateQueries({ queryKey: diamondKeys.detail(variables.diamondId) });
       
       toast({
@@ -99,15 +91,14 @@ export function useUpdateDiamond() {
 /**
  * Delete a diamond
  */
-export function useDeleteDiamond() {
+export function useDeleteDiamond(userId: number) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ stockNumber, userId }: { stockNumber: string; userId: number }) =>
-      diamondsApi.deleteDiamond(stockNumber, userId),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
+    mutationFn: (stockNumber: string) => diamondsApi.deleteDiamond(stockNumber),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: diamondKeys.list(userId) });
       
       toast({
         title: 'יהלום נמחק בהצלחה',
@@ -127,19 +118,18 @@ export function useDeleteDiamond() {
 /**
  * Create multiple diamonds in batch
  */
-export function useCreateDiamondsBatch() {
+export function useCreateDiamondsBatch(userId: number) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ diamonds, userId }: { diamonds: any[]; userId: number }) =>
-      diamondsApi.createDiamondsBatch(diamonds, userId),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
+    mutationFn: (diamonds: any[]) => diamondsApi.createDiamondsBatch(diamonds),
+    onSuccess: (data, diamonds) => {
+      queryClient.invalidateQueries({ queryKey: diamondKeys.list(userId) });
       
       toast({
         title: 'יהלומים נוספו בהצלחה',
-        description: `${variables.diamonds.length} יהלומים נוספו למלאי`,
+        description: `${diamonds.length} יהלומים נוספו למלאי`,
       });
     },
     onError: (error: Error) => {
