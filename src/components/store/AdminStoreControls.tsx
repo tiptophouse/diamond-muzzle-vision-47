@@ -15,7 +15,7 @@ interface AdminStoreControlsProps {
 export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreControlsProps) {
   const { user } = useTelegramAuth();
   const { isAdmin } = useIsAdmin();
-  const { deleteStone } = useDiamondManagement(user?.id || 0);
+  const deleteStone = useDeleteDiamond();
 
   if (!isAdmin || !user?.id) {
     return null;
@@ -23,12 +23,23 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Are you sure you want to delete this diamond?')) {
-      deleteStone.mutate(diamond.stockNumber, {
-        onSuccess: () => {
-          onDelete();
-        },
+    
+    if (!confirm('Are you sure you want to delete this diamond?')) {
+      return;
+    }
+
+    try {
+      // Call the mutation with proper parameters
+      await deleteStone.mutateAsync({ 
+        stockNumber: diamond.stockNumber, 
+        userId: user.id 
       });
+      
+      // Success is handled by the mutation's onSuccess callback
+      onDelete();
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+      console.error('Delete failed:', error);
     }
   };
 
