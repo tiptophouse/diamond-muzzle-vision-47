@@ -96,13 +96,17 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
       const error = new Error('נדרש אימות. אנא התחבר מחדש לאפליקציה');
       
       toast({
-      title: "🔐 Authentication Required",
-      description: "אנא התחבר מחדש לאפליקציה",
-      variant: "destructive",
-    });
-    
-    throw error;
+        title: "🔐 Authentication Required",
+        description: "אנא התחבר מחדש לאפליקציה",
+        variant: "destructive",
+      });
+      
+      throw error;
+    }
   }
+
+  console.log('🔑 HTTP: JWT token available:', !!token);
+  console.log('🧪 HTTP: Dev mode:', isDevMode);
 
   // Test backend health for non-auth requests
   if (!endpoint.includes('/api/v1/sign-in/')) {

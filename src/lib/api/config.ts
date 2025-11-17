@@ -1,23 +1,44 @@
+// API Configuration
+export const API_BASE_URL = 'https://api.mazalbot.com';
 
-// FastAPI backend configuration - UNIFIED FOR PRODUCTION
-export const API_BASE_URL = "https://api.mazalbot.com"; // ✅ Unified production FastAPI backend
-
-let currentUserId: number | null = null;
-
-export function setCurrentUserId(userId: number) {
-  currentUserId = userId;
-  console.log('🔧 API: Current user ID set to:', userId, 'type:', typeof userId);
+// Development mode - allows testing without Telegram authentication
+export function isDevelopmentMode(): boolean {
+  // Enable dev mode if:
+  // 1. Running in Lovable preview (lovableproject.com)
+  // 2. Or explicitly set via URL param ?dev=true
+  // 3. Or running on localhost
+  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
+  const hasDevParam = new URLSearchParams(window.location.search).get('dev') === 'true';
+  const isLocalhost = window.location.hostname === 'localhost';
+  
+  return isLovablePreview || hasDevParam || isLocalhost;
 }
+
+// Mock user for development/testing
+export const DEV_MOCK_USER = {
+  id: 2138564172, // Admin user ID from the logs
+  first_name: 'Dev',
+  last_name: 'User',
+  username: 'devuser',
+  language_code: 'en'
+};
+
+// Current user ID management
+let currentUserId: number | null = null;
 
 export function getCurrentUserId(): number | null {
   console.log('🔧 API: Getting current user ID:', currentUserId);
   return currentUserId;
 }
 
-// Helper function to check if we're in development
+export function setCurrentUserId(userId: number | null): void {
+  console.log('🔧 API: Setting current user ID:', userId);
+  currentUserId = userId;
+}
+
+// Helper function to check if we're in development (legacy support)
 export function isDevelopment(): boolean {
-  return window.location.hostname === 'localhost' || 
-         window.location.hostname.includes('lovableproject.com');
+  return isDevelopmentMode();
 }
 
 // Add a function to test the exact endpoint format
