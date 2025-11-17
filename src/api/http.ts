@@ -150,6 +150,7 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
       
       // Handle 401 Unauthorized - Session expired
       if (response.status === 401 && !endpoint.includes('/api/v1/sign-in/')) {
+        const isTelegram = typeof window !== 'undefined' && (window as any).Telegram?.WebApp;
         toast({
           title: "🔐 Session Expired",
           description: "אנא התחבר מחדש | Please sign in again",
@@ -163,10 +164,14 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
           console.error('Failed to clear auth token:', e);
         }
         
-        // Auto-reload after 2 seconds
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+        // In Telegram Mini App, avoid hard reload which looks like a crash
+        if (!isTelegram) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else {
+          console.warn('Skipping auto-reload inside Telegram WebApp after 401');
+        }
         
         throw new Error('Session expired');
       }
