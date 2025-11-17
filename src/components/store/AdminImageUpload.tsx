@@ -72,7 +72,7 @@ export function AdminImageUpload({ diamond, onUpdate }: AdminImageUploadProps) {
         picture: imageUrl
       };
 
-      const endpoint = apiEndpoints.updateDiamond(diamond.id, user!.id);
+      const endpoint = apiEndpoints.updateDiamond(diamond.id);
       const result = await api.put(endpoint, updateData);
 
       if (result.error) {
