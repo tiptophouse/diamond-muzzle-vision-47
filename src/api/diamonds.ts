@@ -17,16 +17,24 @@ export interface CreateDiamondResponse {
 export async function deleteDiamond(stockNumber: string): Promise<DeleteDiamondResponse> {
   logger.info('Diamond delete operation started', { stockNumber });
   
+  // Validate stockNumber is numeric (FastAPI expects integer diamond_id)
+  const diamondId = parseInt(stockNumber, 10);
+  if (isNaN(diamondId)) {
+    const error = new Error(`Invalid stock number: ${stockNumber}. Must be numeric.`);
+    logger.error('Diamond delete validation failed', error, { stockNumber });
+    throw error;
+  }
+  
   try {
     const response = await http<DeleteDiamondResponse>(
-      apiEndpoints.deleteDiamond(stockNumber), 
+      apiEndpoints.deleteDiamond(diamondId.toString()), 
       { method: "DELETE" }
     );
     
-    logger.info('Diamond deleted successfully', { stockNumber, response });
+    logger.info('Diamond deleted successfully', { stockNumber, diamondId, response });
     return response;
   } catch (error) {
-    logger.error('Diamond delete operation failed', error, { stockNumber });
+    logger.error('Diamond delete operation failed', error, { stockNumber, diamondId });
     throw error;
   }
 }
