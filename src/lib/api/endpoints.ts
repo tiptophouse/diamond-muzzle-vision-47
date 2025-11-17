@@ -10,17 +10,17 @@ export const apiEndpoints = {
     return url;
   },
   
-  // Create diamond - POST /api/v1/diamonds?user_id={user_id}
-  addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
+  // Create diamond - POST /api/v1/diamonds (userId from JWT)
+  addDiamond: () => `/api/v1/diamonds`,
   
-  // Batch diamond upload - POST /api/v1/diamonds/batch?user_id={user_id}
-  addDiamondsBatch: (userId: number) => `/api/v1/diamonds/batch?user_id=${userId}`,
+  // Batch diamond upload - POST /api/v1/diamonds/batch (userId from JWT)
+  addDiamondsBatch: () => `/api/v1/diamonds/batch`,
   
-  // Update diamond - PUT /api/v1/diamonds/{diamond_id}?user_id={user_id}
-  updateDiamond: (diamondId: string, userId: number) => `/api/v1/diamonds/${diamondId}?user_id=${userId}`,
+  // Update diamond - PUT /api/v1/diamonds/{diamond_id} (userId from JWT)
+  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   
-  // CORRECTED Delete diamond endpoint to match FastAPI spec
-  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}`,
+  // Delete diamond endpoint - DELETE /api/v1/delete_stone/{diamond_id} (userId from JWT)
+  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
   
   // SFTP endpoints - CORRECTED to include proper auth
   sftpProvision: () => `/api/v1/sftp/provision`,

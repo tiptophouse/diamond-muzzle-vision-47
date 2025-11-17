@@ -40,7 +40,7 @@ export function StoreVisibilityToggle({ stockNumber, diamondId, isVisible, onTog
       // Use FastAPI to update diamond store visibility
       const response = await updateDiamond(diamondId, {
         store_visible: !isVisible
-      }, user.id);
+      });
 
       if (!response.success) {
         throw new Error(response.message || 'Failed to update visibility');

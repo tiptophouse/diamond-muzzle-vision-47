@@ -26,7 +26,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       
       // Use the FastAPI diamond ID if it's a number, otherwise use the provided ID
       const fastApiDiamondId = /^\d+$/.test(diamondId) ? diamondId : diamondId;
-      const endpoint = apiEndpoints.updateDiamond(fastApiDiamondId, user.id);
+      const endpoint = apiEndpoints.updateDiamond(fastApiDiamondId);
       console.log('📝 UPDATE: Using endpoint:', endpoint);
       console.log('📝 UPDATE: User ID:', user.id, 'type:', typeof user.id);
       
