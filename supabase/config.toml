@@ -65,3 +65,9 @@ verify_jwt = false
 
 [functions.send-auction-message]
 verify_jwt = false
+
+[functions.send-auction-notification]
+verify_jwt = false
+
+[functions.telegram-webhook]
+verify_jwt = false
