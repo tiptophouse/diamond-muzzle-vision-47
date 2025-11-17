@@ -246,20 +246,36 @@ serve(async (req) => {
     const responseTime = Date.now() - startTime;
     console.error('❌ Error sending auction notification:', error);
     
-    // Track failed notification
+    // Track failed notification - use payload data from try block
+    const errorPayload: AuctionNotificationPayload = {
+      auction_id: '',
+      recipient_telegram_id: 0,
+      notification_type: 'new_bid',
+    };
+
     try {
-      await supabase.from('auction_analytics').insert({
-        auction_id: (await req.json()).auction_id,
-        telegram_id: (await req.json()).recipient_telegram_id,
-        event_type: 'notification_failed',
-        event_data: {
-          error: error.message,
-          response_time_ms: responseTime,
-          timestamp: new Date().toISOString(),
-        },
-      });
-    } catch (trackError) {
-      console.warn('Failed to track error:', trackError);
+      const bodyText = await req.text();
+      const parsedPayload = JSON.parse(bodyText);
+      Object.assign(errorPayload, parsedPayload);
+    } catch (parseError) {
+      console.warn('Could not parse error payload:', parseError);
+    }
+
+    if (errorPayload.auction_id && errorPayload.recipient_telegram_id) {
+      try {
+        await supabase.from('auction_analytics').insert({
+          auction_id: errorPayload.auction_id,
+          telegram_id: errorPayload.recipient_telegram_id,
+          event_type: 'notification_failed',
+          event_data: {
+            error: error.message,
+            response_time_ms: responseTime,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      } catch (trackError) {
+        console.warn('Failed to track error:', trackError);
+      }
     }
 
     return new Response(
