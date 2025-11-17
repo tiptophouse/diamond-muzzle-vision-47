@@ -3,7 +3,7 @@ import { Edit, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useDiamondManagement } from "@/hooks/inventory/useDiamondManagement";
+import { useDeleteDiamond } from "@/hooks/api/useDiamonds";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 interface AdminStoreControlsProps {
