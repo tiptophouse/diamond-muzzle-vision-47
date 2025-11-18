@@ -51,9 +51,10 @@ export function AuctionCard({ auction }: AuctionCardProps) {
 
     const trackingId = `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const sharerId = user?.id || 0;
+    const botUsername = 'Brilliantteatbot';
     
     // Generate deep link with attribution
-    const deepLink = `https://t.me/your_bot?startapp=auction_${auction.id}_sharer${sharerId}_track${trackingId}`;
+    const deepLink = `https://t.me/${botUsername}?startapp=auction_${auction.id}_sharer${sharerId}_track${trackingId}`;
     
     const shareText = `🔥 Live Auction: ${diamond?.weight}ct ${diamond?.shape} Diamond\n💎 ${diamond?.color} | ${diamond?.clarity}${diamond?.cut ? ` | ${diamond?.cut}` : ''}\n💰 Current Bid: $${auction.current_price.toLocaleString()}\n⏰ ${timeRemaining()} remaining\n\n${deepLink}`;
 
