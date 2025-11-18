@@ -65,14 +65,40 @@ export function useStartParamRouter() {
           webApp.HapticFeedback.impactOccurred('light');
         }
       } else if (startParam.startsWith('auction_')) {
-        // Pattern: auction_<auctionId>
-        const auctionId = startParam.replace('auction_', '');
+        // Pattern: auction_<auctionId>_sharer<sharerId>_track<trackingId>
+        // or auction_<auctionId>_group<groupId>_msg<msgId>_sharer<sharerId>_track<trackingId>
+        const parts = startParam.split('_');
+        const auctionId = parts[1];
         
-        console.log('🔨 Routing to auction:', { auctionId });
+        console.log('🔨 Routing to auction:', { auctionId, startParam });
         
-        // Route to public auction page
+        // Parse attribution parameters
         const queryParams = new URLSearchParams();
         queryParams.set('shared', 'true');
+        
+        // Extract sharer ID
+        const sharerMatch = startParam.match(/sharer(\d+)/);
+        if (sharerMatch) {
+          queryParams.set('sharer', sharerMatch[1]);
+        }
+        
+        // Extract tracking ID
+        const trackMatch = startParam.match(/track([a-zA-Z0-9_]+)/);
+        if (trackMatch) {
+          queryParams.set('track', trackMatch[1]);
+        }
+        
+        // Extract group ID
+        const groupMatch = startParam.match(/group(\d+)/);
+        if (groupMatch) {
+          queryParams.set('group', groupMatch[1]);
+        }
+        
+        // Extract message ID
+        const msgMatch = startParam.match(/msg(\d+)/);
+        if (msgMatch) {
+          queryParams.set('msg', msgMatch[1]);
+        }
         
         navigate(`/public/auction/${auctionId}?${queryParams.toString()}`);
         
