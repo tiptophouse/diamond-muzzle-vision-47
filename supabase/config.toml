@@ -33,6 +33,9 @@ port = 54328
 enabled = true
 
 # Core functions - actively used
+[functions.track-auction-view]
+verify_jwt = false
+
 [functions.check-admin]
 verify_jwt = false
 
