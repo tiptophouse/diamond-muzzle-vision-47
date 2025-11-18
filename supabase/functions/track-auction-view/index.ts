@@ -48,28 +48,44 @@ serve(async (req) => {
     }
 
     // Update auction view counters
-    const { error: updateError } = await supabase
+    const { data: auction, error: fetchError } = await supabase
       .from('auctions')
-      .update({
-        total_views: supabase.rpc('increment', { field: 'total_views' }),
-      })
-      .eq('id', auction_id);
+      .select('total_views')
+      .eq('id', auction_id)
+      .single();
 
-    if (updateError) {
-      console.error('❌ Failed to update counters:', updateError);
+    if (!fetchError && auction) {
+      const { error: updateError } = await supabase
+        .from('auctions')
+        .update({
+          total_views: (auction.total_views || 0) + 1,
+        })
+        .eq('id', auction_id);
+
+      if (updateError) {
+        console.error('❌ Failed to update counters:', updateError);
+      }
     }
 
     // If there's a sharer, increment their viral score
     if (sharer_id) {
-      const { error: sharerError } = await supabase
+      const { data: sharer, error: sharerFetchError } = await supabase
         .from('user_profiles')
-        .update({
-          shares_count: supabase.rpc('increment', { field: 'shares_count' }),
-        })
-        .eq('telegram_id', sharer_id);
+        .select('shares_count')
+        .eq('telegram_id', sharer_id)
+        .single();
 
-      if (sharerError) {
-        console.error('⚠️ Failed to update sharer stats:', sharerError);
+      if (!sharerFetchError && sharer) {
+        const { error: sharerError } = await supabase
+          .from('user_profiles')
+          .update({
+            shares_count: (sharer.shares_count || 0) + 1,
+          })
+          .eq('telegram_id', sharer_id);
+
+        if (sharerError) {
+          console.error('⚠️ Failed to update sharer stats:', sharerError);
+        }
       }
     }
 

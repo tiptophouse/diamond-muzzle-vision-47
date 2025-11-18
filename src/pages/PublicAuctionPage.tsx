@@ -65,7 +65,7 @@ export default function PublicAuctionPage() {
 
     const trackView = async () => {
       try {
-        await supabase.functions.invoke('track-auction-view', {
+        const { error } = await supabase.functions.invoke('track-auction-view', {
           body: {
             auction_id: auctionId,
             viewer_id: user.id,
@@ -74,14 +74,21 @@ export default function PublicAuctionPage() {
             tracking_id: trackingId || `direct_${Date.now()}`,
           },
         });
-        console.log('✅ Auction view tracked');
+        
+        if (error) {
+          console.error('Failed to track view:', error);
+          toast({ title: 'שגיאה', description: 'לא ניתן לעקוב אחר צפייה', variant: 'destructive' });
+        } else {
+          console.log('✅ Auction view tracked');
+        }
       } catch (error) {
         console.error('Failed to track view:', error);
+        toast({ title: 'שגיאה', description: 'לא ניתן לעקוב אחר צפייה', variant: 'destructive' });
       }
     };
 
     trackView();
-  }, [auctionId, user, groupId, sharerId, trackingId]);
+  }, [auctionId, user, groupId, sharerId, trackingId, toast]);
 
   const handlePlaceBid = async () => {
     if (!auction || !user) {

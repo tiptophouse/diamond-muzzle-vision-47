@@ -6,7 +6,7 @@ import { AuctionWithDiamond } from "@/hooks/useAuctionsData";
 import { useNavigate } from "react-router-dom";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { useRealtimeAuctionViews } from "@/hooks/useRealtimeAuctionViews";
-import { useTelegramAuth } from "@/hooks/useTelegramAuth";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { toast } from "sonner";
 
 interface AuctionCardProps {
