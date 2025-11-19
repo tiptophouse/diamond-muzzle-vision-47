@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { MessageCircle, Eye, Share2, ArrowRight } from "lucide-react";
+import { MessageCircle, Eye, Share2, ArrowRight, Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { TelegramOptimizedImage } from "@/components/ui/TelegramOptimizedImage";
 import { UniversalImageHandler } from "./UniversalImageHandler";
 import { TelegramShareButton } from "./TelegramShareButton";
 import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
+import { CreateAuctionDialog } from "@/components/auction/CreateAuctionDialog";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useNavigate } from "react-router-dom";
@@ -21,9 +22,14 @@ interface TelegramDiamondCardProps {
 
 export function TelegramDiamondCard({ diamond, index, onViewDetails }: TelegramDiamondCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [showAuctionDialog, setShowAuctionDialog] = useState(false);
   const { hapticFeedback, mainButton, backButton } = useTelegramWebApp();
   const { user } = useTelegramAuth();
   const navigate = useNavigate();
+
+  // Check if user owns this diamond (from FastAPI user_id or diamondId)
+  const diamondUserId = (diamond as any).user_id || (diamond as any).userId;
+  const isOwner = user?.id && diamondUserId && user.id === diamondUserId;
 
   // Priority loading for first 6 cards
   const isPriority = index < 6;
@@ -205,6 +211,22 @@ View details: ${window.location.origin}/diamond/${diamond.stockNumber}`;
           </TelegramShareButton>
         </div>
 
+        {/* Post to Auction - Owner Only */}
+        {isOwner && (
+          <Button
+            onClick={() => {
+              hapticFeedback.impact('medium');
+              setShowAuctionDialog(true);
+            }}
+            size="sm"
+            variant="outline"
+            className="w-full"
+          >
+            <Hammer className="h-3 w-3 mr-2" />
+            Post to Auction
+          </Button>
+        )}
+
         {/* Premium Group Share Button */}
         <LimitedGroupShareButton 
           diamond={diamond} 
@@ -223,6 +245,16 @@ View details: ${window.location.origin}/diamond/${diamond.stockNumber}`;
           Contact in Telegram
         </Button>
       </CardContent>
+
+      {/* Auction Creation Dialog */}
+      <CreateAuctionDialog
+        diamond={diamond}
+        open={showAuctionDialog}
+        onOpenChange={setShowAuctionDialog}
+        onSuccess={() => {
+          navigate('/auctions');
+        }}
+      />
     </Card>
   );
 }
