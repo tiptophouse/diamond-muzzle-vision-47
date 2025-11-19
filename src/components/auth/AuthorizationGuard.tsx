@@ -100,7 +100,7 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
     const isBlocked = user && isUserBlocked(user.id);
     const isAdminUser = user && user.id === adminTelegramId;
     const invalidEnvironment = process.env.NODE_ENV === 'production' && !isTelegramEnvironment;
-    const ADMIN_PHONE = '+972527665552'; // Admin contact number
+    const ADMIN_PHONE = '+972548081663'; // Admin contact number
     
     console.log('🚫 Access denied:', { isBlocked, isAdminUser, invalidEnvironment, userId: user?.id });
     
