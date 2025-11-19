@@ -23,6 +23,7 @@ export interface DiamondCardOptions {
   context?: 'group_share' | 'auction' | 'notification' | 'offer';
   includePrice?: boolean;
   additionalButtons?: Array<{ text: string; url?: string; callback_data?: string }>;
+  includeStoreButton?: boolean; // Default true
   botUsername?: string;
   baseUrl?: string;
 }
@@ -117,6 +118,7 @@ export function createDiamondInlineButtons(
   const {
     sharedById,
     additionalButtons = [],
+    includeStoreButton = true, // Default to true
     botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot_bot',
     baseUrl = Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '') || 'https://uhhljqgxhdhbbhpohxll.supabase.co',
   } = options;
@@ -150,13 +152,15 @@ export function createDiamondInlineButtons(
     }
   }
 
-  // Store button (last row)
-  buttons.push([
-    {
-      text: '🏪 כל היהלומים',
-      url: `${telegramBotUrl}?startapp=store`
-    }
-  ]);
+  // Store button (last row) - conditional
+  if (includeStoreButton) {
+    buttons.push([
+      {
+        text: '🏪 כל היהלומים',
+        url: `${telegramBotUrl}?startapp=store`
+      }
+    ]);
+  }
 
   return buttons;
 }
