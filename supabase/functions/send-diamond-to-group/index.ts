@@ -9,16 +9,24 @@ const corsHeaders = {
 
 interface DiamondGroupShareRequest {
   diamond: {
-    id: string;
-    stockNumber: string;
-    carat: number;
+    // New FastAPI fields
+    diamond_id?: number;
+    stock_number?: string;
+    weight?: number;
+    price_per_carat?: number;
+    gem_360_url?: string;
+    // Old frontend fields (backward compatibility)
+    id?: string;
+    stockNumber?: string;
+    carat?: number;
+    price?: number;
+    imageUrl?: string;
+    gem360Url?: string;
+    // Common fields
     shape: string;
     color: string;
     clarity: string;
     cut: string;
-    price: number;
-    imageUrl?: string;
-    gem360Url?: string;
     // CSV image fallbacks
     Image?: string;
     image?: string;
@@ -27,6 +35,7 @@ interface DiamondGroupShareRequest {
   sharedBy: number;
   sharedByName?: string;
   testMode?: boolean;
+  customMessage?: string;
 }
 
 serve(async (req) => {
@@ -40,19 +49,35 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('📥 Full request body:', requestBody);
     
-    const { diamond, sharedBy, sharedByName, testMode }: DiamondGroupShareRequest = requestBody;
+    const { diamond, sharedBy, sharedByName, testMode, customMessage }: DiamondGroupShareRequest = requestBody;
+    
+    // Normalize diamond data to handle both old and new field names
+    const normalizedDiamond = {
+      id: diamond.diamond_id?.toString() || diamond.id,
+      stockNumber: diamond.stock_number || diamond.stockNumber || '',
+      carat: diamond.weight || diamond.carat || 0,
+      shape: diamond.shape,
+      color: diamond.color,
+      clarity: diamond.clarity,
+      cut: diamond.cut,
+      price: diamond.price || (diamond.price_per_carat && diamond.weight ? diamond.price_per_carat * diamond.weight : 0),
+      imageUrl: diamond.picture || diamond.imageUrl || diamond.Image || diamond.image,
+      gem360Url: diamond.gem_360_url || diamond.gem360Url
+    };
     
     console.log('📥 Request data:', { 
-      diamondStock: diamond.stockNumber,
+      diamondStock: normalizedDiamond.stockNumber,
+      carat: normalizedDiamond.carat,
+      price: normalizedDiamond.price,
       sharedBy,
       sharedByName,
       testMode: !!testMode
     });
 
-    if (!diamond || !sharedBy) {
+    if (!normalizedDiamond.stockNumber || !sharedBy) {
       console.error('❌ Missing required fields');
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields: stockNumber and sharedBy are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -95,14 +120,13 @@ serve(async (req) => {
     }
 
     // Get best available image URL with validation
-    let imageUrl = diamond.imageUrl || diamond.Image || diamond.image || diamond.picture;
+    let imageUrl = normalizedDiamond.imageUrl;
     
     // Validate and fix image URL format
     if (imageUrl) {
       // Convert .html URLs to actual image URLs if needed
       if (imageUrl.includes('.html')) {
-        const stockNumber = diamond.stockNumber;
-        imageUrl = `https://s3.eu-west-1.amazonaws.com/my360.fab/${stockNumber}.jpg`;
+        imageUrl = `https://s3.eu-west-1.amazonaws.com/my360.fab/${normalizedDiamond.stockNumber}.jpg`;
       }
       
       // Ensure HTTPS for Telegram compatibility
@@ -111,7 +135,7 @@ serve(async (req) => {
       }
       
       console.log('🖼️ Image URL processed:', {
-        original: diamond.imageUrl?.substring(0, 50) + '...',
+        original: normalizedDiamond.imageUrl?.substring(0, 50) + '...',
         processed: imageUrl?.substring(0, 50) + '...',
         isValid: imageUrl && (imageUrl.endsWith('.jpg') || imageUrl.endsWith('.jpeg') || imageUrl.endsWith('.png') || imageUrl.endsWith('.webp'))
       });
@@ -124,25 +148,27 @@ serve(async (req) => {
     }
 
     // Create enhanced diamond share message with better formatting and bigger focus
-    const priceText = diamond.price && diamond.price > 0 
-      ? `💰 $${diamond.price.toLocaleString()}` 
+    const priceText = normalizedDiamond.price && normalizedDiamond.price > 0 
+      ? `💰 $${normalizedDiamond.price.toLocaleString()}` 
       : '💰 צור קשר למחיר';
+    
+    const customMessageText = customMessage ? `\n\n📝 **הודעה מהמוכר:**\n${customMessage}\n` : '';
       
-    const shareMessage = `${messagePrefix}✨💎 **${diamond.carat}ct ${diamond.shape.toUpperCase()} BRILLIANT** 💎✨
+    const shareMessage = `${messagePrefix}✨💎 **${normalizedDiamond.carat}ct ${normalizedDiamond.shape.toUpperCase()} BRILLIANT** 💎✨
 
 🏆 **יהלום פרמיום זמין עכשיו!**
-*${diamond.color} צבע • ${diamond.clarity} ניקיון • ${diamond.cut} חיתוך*
+*${normalizedDiamond.color} צבע • ${normalizedDiamond.clarity} ניקיון • ${normalizedDiamond.cut} חיתוך*
 
 💎 **${priceText}**
 
 🔥 **למה הלקוח יבחר ביהלום הזה?**
-• ✨ איכות פרמיום עם תעודת ${diamond.cut === 'EXCELLENT' ? 'מעולה' : diamond.cut}
+• ✨ איכות פרמיום עם תעודת ${normalizedDiamond.cut === 'EXCELLENT' ? 'מעולה' : normalizedDiamond.cut}
 • 📊 מדדי איכות מושלמים
 • 🎯 מחיר תחרותי במיוחד
 • ⚡ זמין לאספקה מיידית
 • 🔒 אחריות מלאה ותעודה
-
-📋 **מק"ט:** \`${diamond.stockNumber}\`
+${customMessageText}
+📋 **מק"ט:** \`${normalizedDiamond.stockNumber}\`
 👤 **מוצע על ידי:** ${sharerName}
 
 🎯 **רוצה לראות עוד פרטים? לחץ על הכפתורים למטה! 👇**
@@ -152,12 +178,12 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
     const { data: activeAuction } = await supabase
       .from('auctions')
       .select('id, ends_at')
-      .eq('stock_number', diamond.stockNumber)
+      .eq('stock_number', normalizedDiamond.stockNumber)
       .eq('status', 'active')
       .gt('ends_at', new Date().toISOString())
       .single();
 
-    console.log('🔨 Active auction check:', { stockNumber: diamond.stockNumber, hasAuction: !!activeAuction });
+    console.log('🔨 Active auction check:', { stockNumber: normalizedDiamond.stockNumber, hasAuction: !!activeAuction });
 
     // Create inline keyboard with Telegram deep links (fixes the broken URLs)
     const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
@@ -171,14 +197,14 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             {
               text: '💎 פרטים מלאים',
               web_app: {
-                url: `${telegramBotUrl}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+                url: `${telegramBotUrl}/app?startapp=diamond_${normalizedDiamond.stockNumber}_${sharedBy}`
               }
             }
           ],
           [
             {
               text: '📱 צור קשר',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+              url: `${telegramBotUrl}?start=contact_${normalizedDiamond.stockNumber}_${sharedBy}`
             }
           ],
           [
@@ -193,7 +219,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             [
               {
                 text: '💎 פרטים מלאים + תמונות HD',
-                url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+                url: `${telegramBotUrl}?startapp=diamond_${normalizedDiamond.stockNumber}_${sharedBy}`
               }
             ]
           ];
@@ -213,7 +239,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           buttons.push([
             {
               text: '📱 צור קשר למחיר ולפרטים',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+              url: `${telegramBotUrl}?start=contact_${normalizedDiamond.stockNumber}_${sharedBy}`
             }
           ]);
 
@@ -224,7 +250,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             },
             {
               text: '🤖 עזרה בבחירה',
-              url: `${telegramBotUrl}?start=ai_assistant_${diamond.stockNumber}`
+              url: `${telegramBotUrl}?start=ai_assistant_${normalizedDiamond.stockNumber}`
             }
           ]);
 
@@ -239,7 +265,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
       text: shareMessage.substring(0, 100) + '...', 
       parse_mode: 'Markdown',
       test_mode: !!testMode,
-      hasImage: !!diamond.imageUrl
+      hasImage: !!imageUrl
     });
     
     // Send diamond to target chat with enhanced error handling
@@ -332,7 +358,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
       // Track the share in analytics
       try {
         await supabase.from('diamond_share_analytics').insert({
-          diamond_stock_number: diamond.stockNumber,
+          diamond_stock_number: normalizedDiamond.stockNumber,
           owner_telegram_id: sharedBy,
           viewer_telegram_id: null, // Group share, no specific viewer yet
           action_type: 'group_share_sent',
@@ -343,7 +369,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             test_share: !!testMode,
             target_chat_id: targetChatId,
             share_timestamp: new Date().toISOString(),
-            diamond_data: diamond,
+            diamond_data: normalizedDiamond,
             message_id: result.message_id
           }
         });
@@ -356,7 +382,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
         JSON.stringify({
           success: true,
           messageId: result.message_id,
-          diamond: diamond,
+          diamond: normalizedDiamond,
           message: 'Diamond shared to group successfully'
         }),
         {
