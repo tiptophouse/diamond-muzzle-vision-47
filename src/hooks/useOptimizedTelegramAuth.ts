@@ -6,7 +6,6 @@ import { tokenManager } from '@/lib/api/tokenManager';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { extractTelegramUser } from '@/lib/api/validation';
-import { logAuthEvent } from '@/lib/api/authLogger';
 
 interface OptimizedAuthState {
   user: TelegramUser | null;
@@ -28,12 +27,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       // Verify we still have valid Telegram environment with initData
       if (!window.Telegram?.WebApp?.initData) {
         console.warn('⚠️ AUTH: Cached auth exists but no initData - clearing cache');
-        logAuthEvent({
-          event_type: 'init_check',
-          event_data: { cached: true, hasInitData: false },
-          init_data_present: false,
-          has_valid_token: true
-        });
         tokenManager.clear();
         return {
           user: null,
@@ -47,15 +40,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       }
       
       console.log('⚡ AUTH: Instant load from cache with valid initData');
-      logAuthEvent({
-        telegram_id: cachedAuth.userId,
-        event_type: 'success',
-        event_data: { source: 'cache', user: cachedAuth.user },
-        init_data_present: true,
-        init_data_length: window.Telegram?.WebApp?.initData?.length || 0,
-        has_valid_token: true
-      });
-      
       setCurrentUserId(cachedAuth.userId);
       
       // Set session context for RLS (non-blocking, fire-and-forget)
@@ -78,14 +62,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         loadTime: 0
       };
     }
-    
-    logAuthEvent({
-      event_type: 'init_check',
-      event_data: { cached: false },
-      init_data_present: !!window.Telegram?.WebApp?.initData,
-      init_data_length: window.Telegram?.WebApp?.initData?.length || 0,
-      has_valid_token: false
-    });
     
     return {
       user: null,
@@ -141,14 +117,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
           language_code: 'en'
         };
         
-        logAuthEvent({
-          telegram_id: mockUser.id,
-          event_type: 'dev_mode',
-          event_data: { mockUser, hostname: window.location.hostname },
-          init_data_present: false,
-          has_valid_token: false
-        });
-        
         setCurrentUserId(mockUser.id);
         
         // Set session context for RLS (non-blocking, fire-and-forget)
@@ -173,16 +141,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         return;
       }
       
-      logAuthEvent({
-        event_type: 'attempt',
-        event_data: { 
-          hostname: window.location.hostname,
-          hasTelegramWebApp: !!window.Telegram?.WebApp
-        },
-        init_data_present: !!window.Telegram?.WebApp?.initData,
-        init_data_length: window.Telegram?.WebApp?.initData?.length || 0
-      });
-      
       // Fast environment check
       if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
         throw new Error('not_telegram_environment');
@@ -202,14 +160,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       // STRICT initData validation - must have minimum length and required fields
       if (!tg.initData || tg.initData.length < 50) {
         console.error('❌ AUTH: Invalid or missing Telegram initData');
-        logAuthEvent({
-          event_type: 'failure',
-          event_data: { reason: 'no_init_data' },
-          init_data_present: !!tg.initData,
-          init_data_length: tg.initData?.length || 0,
-          has_valid_token: false,
-          error_message: 'Invalid or missing Telegram initData'
-        });
         throw new Error('no_init_data');
       }
 
@@ -217,19 +167,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       const initDataParams = new URLSearchParams(tg.initData);
       if (!initDataParams.get('user') || !initDataParams.get('hash') || !initDataParams.get('auth_date')) {
         console.error('❌ AUTH: Telegram initData missing required fields (user, hash, auth_date)');
-        logAuthEvent({
-          event_type: 'failure',
-          event_data: { 
-            reason: 'invalid_init_data',
-            hasUser: !!initDataParams.get('user'),
-            hasHash: !!initDataParams.get('hash'),
-            hasAuthDate: !!initDataParams.get('auth_date')
-          },
-          init_data_present: true,
-          init_data_length: tg.initData.length,
-          has_valid_token: false,
-          error_message: 'Telegram initData missing required fields'
-        });
         throw new Error('invalid_init_data');
       }
 
@@ -242,28 +179,12 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       const jwtToken = await signInToBackend(tg.initData);
       
       if (!jwtToken) {
-        logAuthEvent({
-          event_type: 'failure',
-          event_data: { reason: 'backend_auth_failed' },
-          init_data_present: true,
-          init_data_length: tg.initData.length,
-          has_valid_token: false,
-          error_message: 'Backend authentication failed'
-        });
         throw new Error('backend_auth_failed');
       }
 
       // Extract and validate user data using centralized validation
       const userData = extractTelegramUser(tg.initData);
       if (!userData) {
-        logAuthEvent({
-          event_type: 'failure',
-          event_data: { reason: 'invalid_user_data' },
-          init_data_present: true,
-          init_data_length: tg.initData.length,
-          has_valid_token: true,
-          error_message: 'Invalid user data'
-        });
         throw new Error('invalid_user_data');
       }
 
@@ -286,15 +207,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
 
       console.log('✅ AUTH: Fast authentication complete');
       
-      logAuthEvent({
-        telegram_id: userData.id,
-        event_type: 'success',
-        event_data: { user: userData },
-        init_data_present: true,
-        init_data_length: tg.initData.length,
-        has_valid_token: true
-      });
-      
       retryCount.current = 0;
       updateState({
         user: userData,
@@ -306,20 +218,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
 
     } catch (error) {
       const errorType = error instanceof Error ? error.message : 'system_error';
-      
-      logAuthEvent({
-        event_type: 'error',
-        event_data: { 
-          errorType,
-          attempt: retryCount.current,
-          willRetry: retryCount.current < maxRetries && errorType !== 'not_telegram_environment'
-        },
-        init_data_present: !!window.Telegram?.WebApp?.initData,
-        init_data_length: window.Telegram?.WebApp?.initData?.length || 0,
-        has_valid_token: false,
-        error_message: errorType,
-        error_stack: error instanceof Error ? error.stack : undefined
-      });
       
       retryCount.current++;
       if (retryCount.current < maxRetries && errorType !== 'not_telegram_environment') {
@@ -368,14 +266,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   useEffect(() => {
     const handleTokenRefresh = async (event: CustomEvent) => {
       console.log('🔄 AUTH: Token refresh requested');
-      logAuthEvent({
-        telegram_id: state.user?.id,
-        event_type: 'token_refresh',
-        event_data: { triggered: true },
-        init_data_present: !!window.Telegram?.WebApp?.initData,
-        has_valid_token: !!tokenManager.getToken()
-      });
-      
       if (window.Telegram?.WebApp?.initData) {
         try {
           const newToken = await signInToBackend(window.Telegram.WebApp.initData);
@@ -383,25 +273,9 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
             tokenManager.setToken(newToken, state.user.id);
             tokenManager.cacheAuthState(state.user, newToken);
             console.log('✅ AUTH: Token refreshed successfully');
-            logAuthEvent({
-              telegram_id: state.user.id,
-              event_type: 'token_refresh',
-              event_data: { success: true },
-              init_data_present: true,
-              has_valid_token: true
-            });
           }
         } catch (error) {
           console.error('❌ AUTH: Token refresh failed:', error);
-          logAuthEvent({
-            telegram_id: state.user?.id,
-            event_type: 'error',
-            event_data: { context: 'token_refresh' },
-            init_data_present: true,
-            has_valid_token: false,
-            error_message: error instanceof Error ? error.message : 'Token refresh failed',
-            error_stack: error instanceof Error ? error.stack : undefined
-          });
         }
       }
     };

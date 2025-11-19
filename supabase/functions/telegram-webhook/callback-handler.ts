@@ -88,10 +88,24 @@ async function handleBidCallback(
   const { id, from, message } = callbackQuery;
 
   try {
-    // Step 1: Fetch auction
+    // Step 1: Fetch auction with diamond data
     const { data: auction, error: auctionError } = await supabase
       .from('auctions')
-      .select('*')
+      .select(`
+        *,
+        inventory!fk_auction_diamond(
+          id,
+          stock_number,
+          shape,
+          weight,
+          color,
+          clarity,
+          cut,
+          price_per_carat,
+          picture,
+          gem360_url
+        )
+      `)
       .eq('id', auctionId)
       .single();
 
@@ -100,22 +114,7 @@ async function handleBidCallback(
       return new Response('OK', { status: 200 });
     }
 
-    // Step 2: Fetch diamond from FastAPI
-    const backendUrl = Deno.env.get('BACKEND_URL');
-    let diamondData = null;
-    if (backendUrl) {
-      try {
-        const response = await fetch(`${backendUrl}/api/v1/get_all_stones?user_id=${auction.seller_telegram_id}`);
-        if (response.ok) {
-          const diamonds = await response.json();
-          diamondData = diamonds.find((d: any) => d.stock_number === auction.stock_number);
-        }
-      } catch (err) {
-        console.log('Failed to fetch diamond from FastAPI:', err);
-      }
-    }
-
-    // Step 3: Validate auction status
+    // Step 2: Validate auction status
     if (auction.status !== 'active') {
       await answerCallbackQuery(id, '⏰ המכרז הסתיים', true);
       return new Response('OK', { status: 200 });
@@ -231,18 +230,19 @@ async function handleBidCallback(
     await answerCallbackQuery(id, `✅ הצעה התקבלה! $${nextBidAmount}`, false);
 
     // Step 10: Edit message with updated info
-    if (message && diamondData) {
-      const diamondCardData: DiamondCardData = {
-        id: diamondData.id || auction.stock_number,
-        stock_number: auction.stock_number,
-        shape: diamondData.shape || '',
-        weight: diamondData.weight || 0,
-        color: diamondData.color || '',
-        clarity: diamondData.clarity || '',
-        cut: diamondData.cut,
-        price_per_carat: nextBidAmount / (diamondData.weight || 1),
-        picture: diamondData.picture,
-        gem360_url: diamondData.gem360_url,
+    if (message) {
+      const diamond = auction.inventory;
+      const diamondData: DiamondCardData = {
+        id: diamond.id,
+        stock_number: diamond.stock_number,
+        shape: diamond.shape,
+        weight: diamond.weight,
+        color: diamond.color,
+        clarity: diamond.clarity,
+        cut: diamond.cut,
+        price_per_carat: nextBidAmount / diamond.weight,
+        picture: diamond.picture,
+        gem360_url: diamond.gem360_url,
       };
 
       const endsAt = new Date(auction.ends_at);
@@ -251,7 +251,7 @@ async function handleBidCallback(
       await editDiamondCard(
         message.chat.id,
         message.message_id,
-        diamondCardData,
+        diamondData,
         {
           context: 'auction',
           customMessage: `💰 מחיר נוכחי: ${nextBidAmount} ${auction.currency}\n📈 הצעה הבאה: ${nextBidAmount + auction.min_increment} ${auction.currency}\n⏰ זמן נותר: ~${timeRemaining} שעות\n🔥 ${(auction.bid_count || 0) + 1} הצעות`,

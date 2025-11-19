@@ -94,12 +94,12 @@ serve(async (req) => {
 הצטרף למכרז עכשיו! 👇
 `.trim();
 
-    // Inline keyboard with deep links AND callback buttons
+    // Inline keyboard with deep links
     const inlineKeyboard = [
       [
         {
           text: `💰 הצע ${(current_price + min_increment).toLocaleString()} ${currency}`,
-          callback_data: `bid:${auction_id}`,
+          url: `${telegramBotUrl}?startapp=auction_${auction_id}`,
         },
       ],
       [

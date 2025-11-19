@@ -24,25 +24,19 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    const diamondId = extractDiamondId(diamond);
-    
-    if (!diamondId) {
-      console.error('❌ Cannot delete diamond: Invalid or missing diamond_id');
-      alert('Cannot delete this diamond: Missing ID from backend. Please refresh and try again.');
-      return;
-    }
-    
-    if (confirm(`Delete diamond ${diamond.stockNumber}?`)) {
+    if (confirm('Are you sure you want to delete this diamond?')) {
+      const diamondId = extractDiamondId(diamond);
+      
+      if (!diamondId) {
+        console.error('Cannot delete diamond: Invalid ID');
+        return;
+      }
+      
       deleteStone.mutate(
         { diamondId, userId: user.id },
         {
           onSuccess: () => {
-            console.log('✅ Diamond deleted successfully');
             onDelete();
-          },
-          onError: (error) => {
-            console.error('❌ Delete failed:', error);
           },
         }
       );

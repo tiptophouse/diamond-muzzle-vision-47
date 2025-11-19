@@ -45,7 +45,6 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TestInlineButtons from './pages/TestInlineButtons';
 import PublicAuctionPage from './pages/PublicAuctionPage';
 import AuctionsListPage from './pages/AuctionsListPage';
-import AuctionDetailPage from './pages/AuctionDetailPage';
 import Diagnostic from './pages/Diagnostic';
 import WebhookSetup from './pages/WebhookSetup';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
@@ -206,16 +205,11 @@ function App() {
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />
-                   <Route path="/diamond/:stockNumber" element={
-                     <AuthenticatedRoute>
-                       <DiamondDetailPage />
-                     </AuthenticatedRoute>
-                   } />
-                   <Route path="/auction/:id" element={
-                     <AuthenticatedRoute>
-                       <AuctionDetailPage />
-                     </AuthenticatedRoute>
-                   } />
+                  <Route path="/diamond/:stockNumber" element={
+                    <AuthenticatedRoute>
+                      <DiamondDetailPage />
+                    </AuthenticatedRoute>
+                  } />
                   <Route path="/secure-diamond/:encryptedData" element={
                     <AuthenticatedRoute>
                       <SecureDiamondPage />

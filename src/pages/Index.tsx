@@ -8,113 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AuthDiagnostics } from "@/components/debug/AuthDiagnostics";
 
-// ============= Navigation Data =============
-const ADMIN_NAVIGATION_ITEMS = [
-  {
-    icon: <Sparkles className="h-8 w-8" />,
-    title: "Executive AI Agents",
-    description: "CTO, CEO & Marketing insights",
-    href: "/executive-agents",
-    className: "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white hover:from-violet-600 hover:to-fuchsia-600"
-  },
-  {
-    icon: <Users className="h-8 w-8" />,
-    title: "Admin Dashboard",
-    description: "User management & analytics",
-    href: "/admin",
-    className: "bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
-  },
-  {
-    icon: <BarChart3 className="h-8 w-8" />,
-    title: "Analytics",
-    description: "Detailed system analytics",
-    href: "/admin/analytics",
-    className: "bg-gradient-to-r from-green-500 to-teal-500 text-white hover:from-green-600 hover:to-teal-600"
-  },
-  {
-    icon: <Store className="h-8 w-8" />,
-    title: "Diamond Store",
-    description: "Browse premium diamonds",
-    href: "/store",
-    className: "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-  },
-  {
-    icon: <MessageSquare className="h-8 w-8" />,
-    title: "Diamond Chat",
-    description: "AI assistant for diamonds",
-    href: "/chat",
-    className: "bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600"
-  }
-];
-
-const USER_NAVIGATION_ITEMS = [
-  {
-    icon: <PieChart className="h-8 w-8" />,
-    title: "Dashboard",
-    description: "Your diamond portfolio",
-    href: "/dashboard",
-    className: "bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
-  },
-  {
-    icon: <MessageSquare className="h-8 w-8" />,
-    title: "Diamond Chat",
-    description: "AI assistant for diamonds",
-    href: "/chat",
-    className: "bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600"
-  },
-  {
-    icon: <Store className="h-8 w-8" />,
-    title: "Diamond Store",
-    description: "Browse premium diamonds",
-    href: "/store",
-    className: "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-  },
-  {
-    icon: <Plus className="h-8 w-8" />,
-    title: "Add Diamonds",
-    description: "Upload & manage inventory",
-    href: "/upload",
-    className: "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
-  },
-  {
-    icon: <TrendingUp className="h-8 w-8" />,
-    title: "Insights",
-    description: "Market analysis & trends",
-    href: "/insights",
-    className: "bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600"
-  },
-  {
-    icon: <Search className="h-8 w-8" />,
-    title: "Search",
-    description: "Find specific diamonds",
-    href: "/catalog",
-    className: "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-600 hover:to-blue-600"
-  }
-];
-
-// ============= Helper Functions =============
-const buildDebugInfo = (
-  isLoading: boolean,
-  loadingConfig: boolean,
-  isAuthenticated: boolean,
-  user: any,
-  adminTelegramId: number | null,
-  redirectHandled: boolean
-): string[] => {
-  return [
-    `Loading: ${isLoading}`,
-    `Config Loading: ${loadingConfig}`,
-    `Authenticated: ${isAuthenticated}`,
-    `User ID: ${user?.id || 'none'}`,
-    `User Name: ${user?.first_name || 'none'}`,
-    `Admin ID: ${adminTelegramId || 'loading...'}`,
-    `Telegram Env: ${!!window.Telegram?.WebApp}`,
-    `URL: ${window.location.href}`,
-    `Redirect Handled: ${redirectHandled}`
-  ];
-};
-
-// ============= Components =============
 interface NavigationCardProps {
   icon: React.ReactNode;
   title: string;
@@ -140,41 +33,6 @@ function NavigationCard({ icon, title, description, href, className = "" }: Navi
         </a>
       </CardContent>
     </Card>
-  );
-}
-
-interface PageHeaderProps {
-  title: string;
-  subtitle?: string;
-}
-
-function PageHeader({ title, subtitle }: PageHeaderProps) {
-  return (
-    <div className="text-center mb-8">
-      <div className="inline-flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
-          <Gem className="h-6 w-6" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
-          {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface NavigationGridProps {
-  items: typeof ADMIN_NAVIGATION_ITEMS;
-}
-
-function NavigationGrid({ items }: NavigationGridProps) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {items.map((item, index) => (
-        <NavigationCard key={index} {...item} />
-      ))}
-    </div>
   );
 }
 
@@ -209,14 +67,17 @@ const Index = () => {
   
   useEffect(() => {
     // Add debug info for troubleshooting
-    const info = buildDebugInfo(
-      isLoading,
-      loadingConfig,
-      isAuthenticated,
-      user,
-      adminTelegramId,
-      redirectHandledRef.current
-    );
+    const info = [
+      `Loading: ${isLoading}`, 
+      `Config Loading: ${loadingConfig}`, 
+      `Authenticated: ${isAuthenticated}`, 
+      `User ID: ${user?.id || 'none'}`, 
+      `User Name: ${user?.first_name || 'none'}`, 
+      `Admin ID: ${adminTelegramId || 'loading...'}`, 
+      `Telegram Env: ${!!window.Telegram?.WebApp}`, 
+      `URL: ${window.location.href}`, 
+      `Redirect Handled: ${redirectHandledRef.current}`
+    ];
     setDebugInfo(info);
     console.log('🔍 Index Debug Info:', info);
   }, [user, isAuthenticated, isLoading, adminTelegramId, loadingConfig]);
@@ -273,11 +134,59 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
         <div className="max-w-4xl mx-auto">
-          <PageHeader 
-            title="BrilliantBot Admin" 
-            subtitle={`Welcome back, ${user.first_name}`}
-          />
-          <NavigationGrid items={ADMIN_NAVIGATION_ITEMS} />
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
+                <Gem className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">BrilliantBot Admin</h1>
+                <p className="text-muted-foreground">Welcome back, {user.first_name}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <NavigationCard
+              icon={<Sparkles className="h-8 w-8" />}
+              title="Executive AI Agents"
+              description="CTO, CEO & Marketing insights"
+              href="/executive-agents"
+              className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white hover:from-violet-600 hover:to-fuchsia-600"
+            />
+
+            <NavigationCard
+              icon={<Users className="h-8 w-8" />}
+              title="Admin Dashboard"
+              description="User management & analytics"
+              href="/admin"
+              className="bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+            />
+
+            <NavigationCard
+              icon={<BarChart3 className="h-8 w-8" />}
+              title="Analytics"
+              description="Detailed system analytics"
+              href="/admin/analytics"
+              className="bg-gradient-to-r from-green-500 to-teal-500 text-white hover:from-green-600 hover:to-teal-600"
+            />
+
+            <NavigationCard
+              icon={<Store className="h-8 w-8" />}
+              title="Diamond Store"
+              description="Browse premium diamonds"
+              href="/store"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+            />
+
+            <NavigationCard
+              icon={<MessageSquare className="h-8 w-8" />}
+              title="Diamond Chat"
+              description="AI assistant for diamonds"
+              href="/chat"
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600"
+            />
+          </div>
         </div>
       </div>
     );
@@ -291,11 +200,67 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
         <div className="max-w-4xl mx-auto">
-          <PageHeader 
-            title="BrilliantBot" 
-            subtitle={`Welcome, ${user.first_name}`}
-          />
-          <NavigationGrid items={USER_NAVIGATION_ITEMS} />
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
+                <Gem className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">BrilliantBot</h1>
+                <p className="text-muted-foreground">Welcome, {user.first_name}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <NavigationCard
+              icon={<PieChart className="h-8 w-8" />}
+              title="Dashboard"
+              description="Your diamond portfolio"
+              href="/dashboard"
+              className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
+            />
+
+            <NavigationCard
+              icon={<MessageSquare className="h-8 w-8" />}
+              title="Diamond Chat"
+              description="AI assistant for diamonds"
+              href="/chat"
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600"
+            />
+
+            <NavigationCard
+              icon={<Store className="h-8 w-8" />}
+              title="Diamond Store"
+              description="Browse premium diamonds"
+              href="/store"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+            />
+
+            <NavigationCard
+              icon={<Plus className="h-8 w-8" />}
+              title="Add Diamonds"
+              description="Upload & manage inventory"
+              href="/upload"
+              className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
+            />
+
+            <NavigationCard
+              icon={<TrendingUp className="h-8 w-8" />}
+              title="Insights"
+              description="Market analysis & trends"
+              href="/insights"
+              className="bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600"
+            />
+
+            <NavigationCard
+              icon={<Search className="h-8 w-8" />}
+              title="Search"
+              description="Find specific diamonds"
+              href="/catalog"
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-600 hover:to-blue-600"
+            />
+          </div>
         </div>
       </div>
     );

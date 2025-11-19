@@ -509,51 +509,6 @@ export type Database = {
           },
         ]
       }
-      auth_debug_logs: {
-        Row: {
-          created_at: string | null
-          error_message: string | null
-          error_stack: string | null
-          event_data: Json | null
-          event_type: string
-          has_valid_token: boolean | null
-          id: string
-          init_data_length: number | null
-          init_data_present: boolean | null
-          telegram_id: number | null
-          timestamp: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          error_message?: string | null
-          error_stack?: string | null
-          event_data?: Json | null
-          event_type: string
-          has_valid_token?: boolean | null
-          id?: string
-          init_data_length?: number | null
-          init_data_present?: boolean | null
-          telegram_id?: number | null
-          timestamp?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          error_message?: string | null
-          error_stack?: string | null
-          event_data?: Json | null
-          event_type?: string
-          has_valid_token?: boolean | null
-          id?: string
-          init_data_length?: number | null
-          init_data_present?: boolean | null
-          telegram_id?: number | null
-          timestamp?: string | null
-          user_agent?: string | null
-        }
-        Relationships: []
-      }
       blocked_users: {
         Row: {
           blocked_by_telegram_id: number
