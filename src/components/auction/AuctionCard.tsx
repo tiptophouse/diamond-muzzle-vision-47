@@ -58,21 +58,21 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     try {
       const diamondDesc = `${diamond?.weight}ct ${diamond?.shape} ${diamond?.color} ${diamond?.clarity}${diamond?.cut ? ` ${diamond?.cut}` : ''}`;
       
-      const { data, error } = await supabase.functions.invoke('share-auction-to-group', {
+      const { data, error } = await supabase.functions.invoke('send-auction-message', {
         body: {
-          auctionId: auction.id,
-          stockNumber: auction.stock_number,
-          diamondDescription: diamondDesc,
-          currentPrice: auction.current_price,
-          minIncrement: auction.min_increment,
+          auction_id: auction.id,
+          stock_number: auction.stock_number,
+          diamond_description: diamondDesc,
+          current_price: auction.current_price,
+          min_increment: auction.min_increment,
           currency: auction.currency,
-          endsAt: auction.ends_at,
-          imageUrl: diamond?.picture,
-          bidCount: auction.bid_count || 0,
-          viewCount: viewCount || 0,
-          sharedBy: user.id,
-          sharedByName: user.first_name,
-          testMode: false,
+          ends_at: auction.ends_at,
+          image_url: diamond?.picture,
+          bid_count: auction.bid_count || 0,
+          view_count: viewCount || 0,
+          shared_by: user.id,
+          shared_by_name: user.first_name,
+          test_mode: false,
         },
       });
 
