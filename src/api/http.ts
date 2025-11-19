@@ -89,6 +89,16 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
         } else {
           console.error('❌ HTTP: Token refresh failed');
         }
+      } else {
+        // Check if we're in development with test user
+        const isPreviewMode = window.location.hostname.includes('lovableproject.com') || 
+                             window.location.hostname === 'localhost';
+        const urlParams = new URLSearchParams(window.location.search);
+        const testUserId = urlParams.get('test_user_id') || urlParams.get('user_id');
+        
+        if (isPreviewMode && testUserId) {
+          console.log('⚠️ HTTP: Development mode - add ?test_user_id=YOUR_ID to URL to enable testing');
+        }
       }
     } catch (refreshError) {
       console.error('❌ HTTP: Token refresh error:', refreshError);
@@ -97,11 +107,17 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
     // If still no token after refresh attempt, throw error
     if (!token) {
       console.error('❌ HTTP: No JWT token available for protected endpoint:', endpoint);
-      const error = new Error('נדרש אימות. אנא התחבר מחדש לאפליקציה');
+      
+      const isPreviewMode = window.location.hostname.includes('lovableproject.com');
+      const errorMessage = isPreviewMode 
+        ? 'Preview mode: Add ?test_user_id=YOUR_ID to URL or access via Telegram bot'
+        : 'נדרש אימות. אנא התחבר מחדש לאפליקציה';
+      
+      const error = new Error(errorMessage);
       
       toast({
-        title: "🔐 נדרש אימות",
-        description: "אנא התחבר מחדש לאפליקציה",
+        title: isPreviewMode ? "🔧 Development Mode" : "🔐 נדרש אימות",
+        description: errorMessage,
         variant: "destructive",
       });
       
