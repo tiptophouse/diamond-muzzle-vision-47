@@ -40,9 +40,37 @@ export function useCreateDiamond() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ data, userId }: { data: any; userId: number }) => {
+    mutationFn: async ({ data, userId }: { data: any; userId: number }) => {
       console.log('💎 Creating diamond:', data.stockNumber || data.stock_number);
-      return diamondsApi.createDiamond(data);
+      
+      // Transform data to FastAPI format
+      const fastapiData = {
+        stock: data.stockNumber || data.stock,
+        shape: data.shape,
+        weight: data.carat || data.weight,
+        color: data.color,
+        clarity: data.clarity,
+        certificate_number: parseInt(data.certificateNumber || data.certificate_number || '0'),
+        lab: data.lab || null,
+        length: data.length || null,
+        width: data.width || null,
+        depth: data.depth || null,
+        ratio: data.ratio || null,
+        cut: data.cut || null,
+        polish: data.polish || 'GOOD',
+        symmetry: data.symmetry || 'GOOD',
+        fluorescence: data.fluorescence || 'NONE',
+        table: data.tablePercentage || data.table || 0,
+        depth_percentage: data.depthPercentage || data.depth_percentage || 0,
+        gridle: data.gridle || '',
+        culet: data.culet || 'NONE',
+        certificate_comment: data.certificateComment || data.certificate_comment || null,
+        rapnet: data.rapnet || null,
+        price_per_carat: data.pricePerCarat || data.price_per_carat || null,
+        picture: data.picture || null,
+      };
+      
+      return diamondsApi.createDiamond(fastapiData);
     },
     onMutate: async ({ data, userId }) => {
       // Cancel outgoing refetches
@@ -110,7 +138,7 @@ export function useUpdateDiamond() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       diamondId,
       data,
       userId,
@@ -119,8 +147,41 @@ export function useUpdateDiamond() {
       data: any;
       userId: number;
     }) => {
-      console.log('✏️ Updating diamond:', diamondId);
-      return diamondsApi.updateDiamond(diamondId, data);
+      console.log('✏️ Updating diamond ID:', diamondId);
+      
+      if (!diamondId || diamondId === 0) {
+        throw new Error('Invalid diamond ID for update operation');
+      }
+      
+      // Transform data to FastAPI format (only include changed fields)
+      const fastapiData: any = {};
+      
+      if (data.stockNumber !== undefined) fastapiData.stock = data.stockNumber;
+      if (data.shape !== undefined) fastapiData.shape = data.shape;
+      if (data.carat !== undefined) fastapiData.weight = data.carat;
+      if (data.color !== undefined) fastapiData.color = data.color;
+      if (data.clarity !== undefined) fastapiData.clarity = data.clarity;
+      if (data.certificateNumber !== undefined) fastapiData.certificate_number = parseInt(data.certificateNumber);
+      if (data.lab !== undefined) fastapiData.lab = data.lab || null;
+      if (data.length !== undefined) fastapiData.length = data.length || null;
+      if (data.width !== undefined) fastapiData.width = data.width || null;
+      if (data.depth !== undefined) fastapiData.depth = data.depth || null;
+      if (data.ratio !== undefined) fastapiData.ratio = data.ratio || null;
+      if (data.cut !== undefined) fastapiData.cut = data.cut || null;
+      if (data.polish !== undefined) fastapiData.polish = data.polish || null;
+      if (data.symmetry !== undefined) fastapiData.symmetry = data.symmetry || null;
+      if (data.fluorescence !== undefined) fastapiData.fluorescence = data.fluorescence || null;
+      if (data.tablePercentage !== undefined) fastapiData.table = data.tablePercentage || null;
+      if (data.depthPercentage !== undefined) fastapiData.depth_percentage = data.depthPercentage || null;
+      if (data.gridle !== undefined) fastapiData.gridle = data.gridle || null;
+      if (data.culet !== undefined) fastapiData.culet = data.culet || null;
+      if (data.certificateComment !== undefined) fastapiData.certificate_comment = data.certificateComment || null;
+      if (data.rapnet !== undefined) fastapiData.rapnet = data.rapnet || null;
+      if (data.pricePerCarat !== undefined) fastapiData.price_per_carat = data.pricePerCarat || null;
+      if (data.picture !== undefined) fastapiData.picture = data.picture || null;
+      if (data.storeVisible !== undefined) fastapiData.store_visible = data.storeVisible;
+      
+      return diamondsApi.updateDiamond(diamondId, fastapiData);
     },
     onMutate: async ({ diamondId, data, userId }) => {
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
@@ -183,8 +244,13 @@ export function useDeleteDiamond() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ diamondId, userId }: { diamondId: number; userId: number }) => {
-      console.log('🗑️ Deleting diamond:', diamondId);
+    mutationFn: async ({ diamondId, userId }: { diamondId: number; userId: number }) => {
+      console.log('🗑️ Deleting diamond ID:', diamondId);
+      
+      if (!diamondId || diamondId === 0) {
+        throw new Error('Invalid diamond ID for delete operation. Missing diamond_id from backend.');
+      }
+      
       return diamondsApi.deleteDiamond(diamondId);
     },
     onMutate: async ({ diamondId, userId }) => {

@@ -124,21 +124,28 @@ export function transformToFastAPIUpdate(formData: Partial<DiamondFormData>): Fa
 }
 
 /**
- * Get diamond ID from stock number
- * FastAPI requires integer diamond_id, but we might only have stock_number
- * This needs to query the inventory to find the ID
+ * Extract diamond ID from diamond object
+ * FastAPI backend requires integer diamond_id for update/delete operations
  */
 export function extractDiamondId(diamond: any): number | null {
-  // Try multiple possible ID fields
-  if (diamond.id && typeof diamond.id === 'number') return diamond.id;
-  if (diamond.diamondId && typeof diamond.diamondId === 'number') return diamond.diamondId;
-  if (diamond.diamond_id && typeof diamond.diamond_id === 'number') return diamond.diamond_id;
+  // Try multiple possible ID fields from FastAPI response
+  const id = 
+    diamond.diamond_id ||
+    diamond.id ||
+    diamond.diamondId;
   
-  // Try to parse string IDs
-  if (diamond.id && typeof diamond.id === 'string') {
-    const parsed = parseInt(diamond.id);
-    if (!isNaN(parsed)) return parsed;
+  if (!id) {
+    console.error('❌ Diamond ID not found in object:', diamond);
+    return null;
   }
   
-  return null;
+  // Convert to number if it's a string
+  const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+  
+  if (isNaN(numericId) || numericId === 0) {
+    console.error('❌ Invalid diamond ID:', id, 'from diamond:', diamond);
+    return null;
+  }
+  
+  return numericId;
 }
