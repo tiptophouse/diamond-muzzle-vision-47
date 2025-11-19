@@ -64,6 +64,15 @@ export function CreateAuctionModal({
     hapticFeedback.impact('light');
 
     try {
+      console.log('📋 Auction creation request:', {
+        stock_number: stockNumber,
+        starting_price: Number(startingPrice),
+        min_increment: Number(minIncrement),
+        duration_hours: Number(durationHours),
+        seller_telegram_id: userId,
+        diamond
+      });
+
       // Step 1: Create auction
       const auction = await createAuction({
         stock_number: stockNumber,
@@ -125,12 +134,24 @@ export function CreateAuctionModal({
       onOpenChange(false);
       onSuccess?.(auction.id);
     } catch (error) {
-      console.error('Failed to create auction:', error);
+      console.error('❌ Auction creation failed:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stockNumber,
+        userId,
+        diamond
+      });
+      
       hapticFeedback.notification('error');
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'לא הצלחנו ליצור את המכרז. נסה שוב.';
+      
       toast({ 
-        title: 'שגיאה', 
-        description: 'לא ניתן ליצור מכרז כרגע', 
-        variant: 'destructive' 
+        title: 'שגיאה ביצירת מכרז', 
+        description: errorMessage,
+        variant: 'destructive'
       });
     } finally {
       setIsSubmitting(false);

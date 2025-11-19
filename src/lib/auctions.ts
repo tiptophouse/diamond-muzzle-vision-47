@@ -4,19 +4,47 @@ import type { AuctionSchema, AuctionBidSchema, AuctionCreateRequest } from '@/ty
 export async function createAuction(
   request: AuctionCreateRequest & { seller_telegram_id: number }
 ): Promise<AuctionSchema> {
+  console.log('🔍 Creating auction for:', {
+    stock_number: request.stock_number,
+    seller_telegram_id: request.seller_telegram_id
+  });
+
+  // STEP 1: Verify diamond exists in inventory
+  const { data: inventoryCheck, error: checkError } = await supabase
+    .from('inventory')
+    .select('stock_number, user_id, deleted_at')
+    .eq('stock_number', request.stock_number)
+    .eq('user_id', request.seller_telegram_id)
+    .is('deleted_at', null)
+    .single();
+
+  if (checkError || !inventoryCheck) {
+    console.error('❌ Diamond not found in inventory:', {
+      stock_number: request.stock_number,
+      user_id: request.seller_telegram_id,
+      error: checkError
+    });
+    throw new Error(`Diamond ${request.stock_number} not found in your inventory. Please ensure it exists and is not deleted.`);
+  }
+
+  console.log('✅ Diamond verified in inventory:', inventoryCheck);
+
   const endsAt = new Date();
   endsAt.setHours(endsAt.getHours() + request.duration_hours);
 
-  // CRITICAL: Set user context before inserting (fixes RLS bug)
+  // STEP 2: Set user context before inserting (fixes RLS bug)
   const { error: contextError } = await supabase.rpc('set_user_context', {
     telegram_id: request.seller_telegram_id
   });
 
   if (contextError) {
     console.error('❌ Failed to set user context:', contextError);
-    throw contextError;
+    throw new Error('Authentication error. Please try again.');
   }
 
+  console.log('✅ User context set successfully');
+
+  // STEP 3: Insert auction
   const { data, error } = await (supabase as any)
     .from('auctions')
     .insert([{
@@ -32,8 +60,13 @@ export async function createAuction(
     .single();
 
   if (error) {
-    console.error('❌ Failed to create auction:', error);
-    throw error;
+    console.error('❌ Failed to create auction:', {
+      error,
+      code: error.code,
+      message: error.message,
+      details: error.details
+    });
+    throw new Error(`Failed to create auction: ${error.message}`);
   }
   
   console.log('✅ Auction created successfully:', data);
