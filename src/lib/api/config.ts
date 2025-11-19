@@ -17,8 +17,6 @@ export function getCurrentUserId(): number | null {
 // Helper function to check if we're in development
 export function isDevelopment(): boolean {
   return window.location.hostname === 'localhost' || 
-         window.location.hostname === '127.0.0.1' ||
-         window.location.hostname.endsWith('.local') ||
          window.location.hostname.includes('lovableproject.com');
 }
 

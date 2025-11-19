@@ -8,7 +8,6 @@ import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { useRealtimeAuctionViews } from "@/hooks/useRealtimeAuctionViews";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 interface AuctionCardProps {
   auction: AuctionWithDiamond;
@@ -50,38 +49,29 @@ export function AuctionCard({ auction }: AuctionCardProps) {
       (tg as any).HapticFeedback?.impactOccurred('medium');
     }
 
-    if (!user?.id) {
-      toast.error("התחבר כדי לשתף");
-      return;
-    }
+    const trackingId = `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const sharerId = user?.id || 0;
+    const botUsername = 'Brilliantteatbot';
+    
+    // Generate deep link with attribution
+    const deepLink = `https://t.me/${botUsername}?startapp=auction_${auction.id}_sharer${sharerId}_track${trackingId}`;
+    
+    const shareText = `🔥 Live Auction: ${diamond?.weight}ct ${diamond?.shape} Diamond\n💎 ${diamond?.color} | ${diamond?.clarity}${diamond?.cut ? ` | ${diamond?.cut}` : ''}\n💰 Current Bid: $${auction.current_price.toLocaleString()}\n⏰ ${timeRemaining()} remaining\n\n${deepLink}`;
 
     try {
-      const diamondDesc = `${diamond?.weight}ct ${diamond?.shape} ${diamond?.color} ${diamond?.clarity}${diamond?.cut ? ` ${diamond?.cut}` : ''}`;
-      
-      const { data, error } = await supabase.functions.invoke('send-auction-message', {
-        body: {
-          auction_id: auction.id,
-          stock_number: auction.stock_number,
-          diamond_description: diamondDesc,
-          current_price: auction.current_price,
-          min_increment: auction.min_increment,
-          currency: auction.currency,
-          ends_at: auction.ends_at,
-          image_url: diamond?.picture,
-          bid_count: auction.bid_count || 0,
-          view_count: viewCount || 0,
-          shared_by: user.id,
-          shared_by_name: user.first_name,
-          test_mode: false,
-        },
-      });
-
-      if (error) throw error;
-
-      toast.success("המכרז שותף לקבוצה בהצלחה!");
+      if (navigator.share) {
+        await navigator.share({
+          title: `${diamond?.weight}ct ${diamond?.shape} Diamond Auction`,
+          text: shareText,
+          url: deepLink,
+        });
+        toast.success("Auction shared successfully!");
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareText);
+        toast.success("Link copied to clipboard!");
+      }
     } catch (error) {
       console.error('Share failed:', error);
-      toast.error("שיתוף נכשל");
     }
   };
 

@@ -5,22 +5,17 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 export interface DiamondShareData {
-  diamond_id?: number;
-  id?: string;
-  stock_number: string;
-  stockNumber?: string;
-  weight: number;
-  carat?: number;
+  id: string;
+  stockNumber: string;
+  carat: number;
   shape: string;
   color: string;
   clarity: string;
   cut: string;
-  price_per_carat?: number;
-  price?: number;
-  picture?: string;
+  price: number;
   imageUrl?: string;
-  gem_360_url?: string;
   gem360Url?: string;
+  picture?: string;
 }
 
 export interface ShareMessageOptions {
@@ -109,23 +104,19 @@ export function useEnhancedDiamondSharing() {
     sharerId: number;
     sharerName: string;
   }): Promise<ShareResult> => {
-    // Normalize diamond data
-    const carat = diamond.weight || diamond.carat || 0;
-    const stockNumber = diamond.stock_number || diamond.stockNumber || '';
-    const totalPrice = diamond.price || (diamond.price_per_carat && diamond.price_per_carat * carat);
-    
-    const priceText = totalPrice && totalPrice > 0 
-      ? `💰 $${totalPrice.toLocaleString()}` 
+    // Generate rich diamond card message
+    const priceText = diamond.price && diamond.price > 0 
+      ? `💰 $${diamond.price.toLocaleString()}` 
       : '💰 צור קשר למחיר';
 
-    const diamondMessage = `✨💎 **${carat}ct ${diamond.shape.toUpperCase()}** 💎✨
+    const diamondMessage = `✨💎 **${diamond.carat}ct ${diamond.shape.toUpperCase()}** 💎✨
 
 🏆 **יהלום פרמיום זמין!**
 *${diamond.color} צבע • ${diamond.clarity} ניקיון • ${diamond.cut} חיתוך*
 
 ${priceText}
 
-📋 **מק"ט:** \`${stockNumber}\`
+📋 **מק"ט:** \`${diamond.stockNumber}\`
 👤 **מוצע על ידי:** ${sharerName}
 
 ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
@@ -135,25 +126,24 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
     // Create buttons for individual sharing
     const baseUrl = 'https://uhhljqgxhdhbbhpohxll.supabase.co';
     const telegramBotUrl = 'https://t.me/BrilliantBot_bot';
-    const imageUrl = diamond.picture || diamond.imageUrl;
     
     const buttons = [
       {
         text: '💎 פרטים מלאים',
-        url: `${baseUrl}/diamond/${stockNumber}?shared=true&from=${sharerId}&verify=true`
+        url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharerId}&verify=true`
       },
       {
         text: '📱 צור קשר',
-        url: `${telegramBotUrl}?start=contact_${stockNumber}_${sharerId}`
+        url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharerId}`
       }
     ];
 
     // Use individual message function with rich content
-    const payload = includeImage && imageUrl ? {
+    const payload = includeImage && diamond.imageUrl ? {
       telegramId: targetId,
       message: diamondMessage,
       buttons,
-      imageUrl: imageUrl
+      imageUrl: diamond.imageUrl
     } : {
       telegramId: targetId,
       message: diamondMessage,
@@ -189,32 +179,9 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
     sharerId: number;
     sharerName: string;
   }): Promise<ShareResult> => {
-    // Normalize diamond data for backend
-    const carat = diamond.weight || diamond.carat || 0;
-    const stockNumber = diamond.stock_number || diamond.stockNumber || '';
-    const totalPrice = diamond.price || (diamond.price_per_carat && diamond.price_per_carat * carat);
-    const gem360 = diamond.gem_360_url || diamond.gem360Url;
-    const imageUrl = diamond.picture || diamond.imageUrl;
-    
     const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
       body: {
-        diamond: {
-          diamond_id: diamond.diamond_id || (diamond.id ? parseInt(diamond.id) : undefined),
-          stock_number: stockNumber,
-          stockNumber: stockNumber,
-          weight: carat,
-          carat: carat,
-          shape: diamond.shape,
-          color: diamond.color,
-          clarity: diamond.clarity,
-          cut: diamond.cut,
-          price_per_carat: diamond.price_per_carat,
-          price: totalPrice,
-          picture: imageUrl,
-          imageUrl: imageUrl,
-          gem_360_url: gem360,
-          gem360Url: gem360
-        },
+        diamond,
         sharedBy: sharerId,
         sharedByName: sharerName,
         testMode,
