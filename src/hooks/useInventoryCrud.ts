@@ -118,10 +118,13 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
   };
 
   const addDiamond = async (data: DiamondFormData) => {
-    console.log('➕ CRUD: Starting add diamond operation');
+    console.log('🚨🚨🚨 CRUD ADD CALLED 🚨🚨🚨 Stock:', data.stockNumber);
+    console.log('User ID:', user?.id);
     setIsLoading(true);
     try {
+      console.log('📤 Calling addDiamondFn...');
       const result = await addDiamondFn(data);
+      console.log('📥 addDiamondFn result:', result);
       if (result) {
         // Send Telegram notification on successful upload
         await sendTelegramNotification(data);
@@ -135,11 +138,14 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     }
   };
 
-  const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
-    console.log('📝 CRUD: Starting update diamond operation for:', diamondId);
+  const updateDiamond = async (diamondId: string, data: Partial<DiamondFormData>) => {
+    console.log('🚨🚨🚨 CRUD UPDATE CALLED 🚨🚨🚨 ID:', diamondId);
+    console.log('User ID:', user?.id);
     setIsLoading(true);
     try {
+      console.log('📤 Calling updateDiamondFn...');
       const result = await updateDiamondFn(diamondId, data);
+      console.log('📥 updateDiamondFn result:', result);
       if (result) {
         console.log('✅ CRUD: Diamond updated successfully');
         toast({
@@ -162,10 +168,14 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
   };
 
   const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
-    console.log('🗑️ CRUD: Starting delete diamond operation for:', diamondId);
+    console.log('🚨🚨🚨 CRUD DELETE CALLED 🚨🚨🚨 ID:', diamondId);
+    console.log('User ID:', user?.id);
+    console.log('Diamond data:', diamondData);
     setIsLoading(true);
     try {
+      console.log('📤 Calling deleteDiamondFn...');
       const result = await deleteDiamondFn(diamondId, diamondData);
+      console.log('📥 deleteDiamondFn result:', result);
       if (result) {
         console.log('✅ CRUD: Diamond deleted successfully');
         toast({
