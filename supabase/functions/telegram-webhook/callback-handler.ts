@@ -261,6 +261,7 @@ async function handleBidCallback(
               callback_data: `bid:${auctionId}`,
             },
           ],
+          includeStoreButton: false, // Don't show store button in auctions
           botUsername,
         }
       );
