@@ -7,6 +7,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { extractTelegramUser } from '@/lib/api/validation';
 
+// DEV MODE: Enable testing without Telegram initData (for Lovable preview)
+const DEV_MODE = window.location.hostname.includes('lovableproject.com');
+const MOCK_ADMIN_USER: TelegramUser = {
+  id: 2138564172, // Admin ID from app_settings
+  first_name: 'Dev',
+  last_name: 'Admin',
+  username: 'dev_admin',
+  language_code: 'en',
+  is_premium: true
+};
+
 interface OptimizedAuthState {
   user: TelegramUser | null;
   isLoading: boolean;
@@ -21,6 +32,32 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const startTime = useRef(Date.now());
   
   const [state, setState] = useState<OptimizedAuthState>(() => {
+    // DEV MODE: Bypass authentication for Lovable preview
+    if (DEV_MODE) {
+      console.warn('🔧 DEV MODE: Using mock admin user for testing');
+      setCurrentUserId(MOCK_ADMIN_USER.id);
+      
+      // Set session context for RLS (non-blocking)
+      void (async () => {
+        try {
+          await supabase.rpc('set_user_context', { telegram_id: MOCK_ADMIN_USER.id });
+          console.log('✅ DEV MODE: Set session context for mock user');
+        } catch (err) {
+          console.warn('⚠️ DEV MODE: Failed to set session context:', err);
+        }
+      })();
+      
+      return {
+        user: MOCK_ADMIN_USER,
+        isLoading: false,
+        error: null,
+        isTelegramEnvironment: false,
+        isAuthenticated: true,
+        accessDeniedReason: null,
+        loadTime: 0
+      };
+    }
+    
     // Try to restore from cache for instant load - but verify Telegram environment
     const cachedAuth = tokenManager.getCachedAuthState();
     if (cachedAuth && tokenManager.isValid()) {
@@ -285,6 +322,12 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
 
   useEffect(() => {
     mountedRef.current = true;
+    
+    // DEV MODE: Skip authentication if using mock user
+    if (DEV_MODE) {
+      console.log('🔧 DEV MODE: Skipping authentication flow');
+      return;
+    }
     
     // Skip initialization if we already have cached valid auth
     if (state.isAuthenticated && tokenManager.isValid()) {
