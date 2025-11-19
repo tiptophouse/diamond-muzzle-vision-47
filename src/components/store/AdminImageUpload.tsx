@@ -72,12 +72,7 @@ export function AdminImageUpload({ diamond, onUpdate }: AdminImageUploadProps) {
         picture: imageUrl
       };
 
-      const numericId = parseInt(diamond.id);
-      if (isNaN(numericId)) {
-        throw new Error('Invalid diamond ID');
-      }
-
-      const endpoint = apiEndpoints.updateDiamond(numericId);
+      const endpoint = apiEndpoints.updateDiamond(diamond.id, user!.id);
       const result = await api.put(endpoint, updateData);
 
       if (result.error) {
@@ -114,12 +109,7 @@ export function AdminImageUpload({ diamond, onUpdate }: AdminImageUploadProps) {
         picture: null
       };
 
-      const numericId = parseInt(diamond.id);
-      if (isNaN(numericId)) {
-        throw new Error('Invalid diamond ID');
-      }
-
-      const endpoint = apiEndpoints.updateDiamond(numericId);
+      const endpoint = apiEndpoints.updateDiamond(diamond.id, user!.id);
       const result = await api.put(endpoint, updateData);
 
       if (result.error) {

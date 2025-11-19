@@ -63,27 +63,15 @@
               console.log('✅ Closing confirmation enabled');
             }
             
-            // Android-safe header/background color setting (Phase 1: Fix Crash)
-            try {
-              if (typeof tg.setHeaderColor === 'function') {
-                const testCall = tg.setHeaderColor('#1f2937');
-                if (testCall !== false && testCall !== undefined) {
-                  console.log('✅ Header color set to #1f2937');
-                }
-              }
-            } catch (e) {
-              console.warn('⚠️ setHeaderColor not supported on this platform:', e);
-              // Continue without crashing - Samsung WebView fix
+            // Set enhanced theme colors with proper validation
+            if (typeof tg.setHeaderColor === 'function') {
+              tg.setHeaderColor('#1f2937');
+              console.log('✅ Header color set to #1f2937');
             }
             
-            try {
-              if (typeof tg.setBackgroundColor === 'function') {
-                tg.setBackgroundColor('#f8fafc');
-                console.log('✅ Background color set to #f8fafc');
-              }
-            } catch (e) {
-              console.warn('⚠️ setBackgroundColor not supported on this platform:', e);
-              // Continue without crashing - Samsung WebView fix
+            if (typeof tg.setBackgroundColor === 'function') {
+              tg.setBackgroundColor('#f8fafc');
+              console.log('✅ Background color set to #f8fafc');
             }
             
             // Enhanced iPhone-specific optimizations
@@ -173,19 +161,11 @@
         }
       }
       
-      // Phase 2: Android-specific initialization delay
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      const initDelay = isAndroid ? 300 : 0;  // 300ms delay for Android WebView
-      
-      console.log(`🤖 Platform: ${isAndroid ? 'Android' : 'Other'}, Init delay: ${initDelay}ms`);
-      
       // Start secure initialization with retry mechanism
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-          setTimeout(initializeSecureTelegramWebApp, initDelay);
-        });
+        document.addEventListener('DOMContentLoaded', initializeSecureTelegramWebApp);
       } else {
-        setTimeout(initializeSecureTelegramWebApp, initDelay);
+        initializeSecureTelegramWebApp();
       }
       
       // Enhanced global error handling with haptic feedback

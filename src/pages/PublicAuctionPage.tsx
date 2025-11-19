@@ -8,23 +8,17 @@ import { getAuctionById, placeBid } from '@/lib/auctions';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { formatDistance } from 'date-fns';
-import { Clock, Gavel, TrendingUp, Share2, Eye, Users } from 'lucide-react';
+import { Clock, Gavel, TrendingUp, Share2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useRealtimeAuctionViews } from '@/hooks/useRealtimeAuctionViews';
-import { supabase } from '@/integrations/supabase/client';
 
 export default function PublicAuctionPage() {
   const { auctionId } = useParams<{ auctionId: string }>();
   const [searchParams] = useSearchParams();
   const isShared = searchParams.get('shared') === 'true';
-  const groupId = searchParams.get('group');
-  const sharerId = searchParams.get('sharer');
-  const trackingId = searchParams.get('track');
   const { webApp, hapticFeedback } = useTelegramWebApp();
   const { user } = useTelegramAuth();
   const { toast } = useToast();
   const [timeRemaining, setTimeRemaining] = useState('');
-  const { viewCount, uniqueViewers } = useRealtimeAuctionViews(auctionId || '');
 
   // Fetch auction details
   const { data: auction, isLoading, refetch } = useQuery({
@@ -59,37 +53,6 @@ export default function PublicAuctionPage() {
     return () => clearInterval(interval);
   }, [auction, refetch]);
 
-  // Track view when page loads
-  useEffect(() => {
-    if (!auctionId || !user) return;
-
-    const trackView = async () => {
-      try {
-        const { error } = await supabase.functions.invoke('track-auction-view', {
-          body: {
-            auction_id: auctionId,
-            viewer_id: user.id,
-            source_group_id: groupId,
-            sharer_id: sharerId ? parseInt(sharerId) : null,
-            tracking_id: trackingId || `direct_${Date.now()}`,
-          },
-        });
-        
-        if (error) {
-          console.error('Failed to track view:', error);
-          toast({ title: 'שגיאה', description: 'לא ניתן לעקוב אחר צפייה', variant: 'destructive' });
-        } else {
-          console.log('✅ Auction view tracked');
-        }
-      } catch (error) {
-        console.error('Failed to track view:', error);
-        toast({ title: 'שגיאה', description: 'לא ניתן לעקוב אחר צפייה', variant: 'destructive' });
-      }
-    };
-
-    trackView();
-  }, [auctionId, user, groupId, sharerId, trackingId, toast]);
-
   const handlePlaceBid = async () => {
     if (!auction || !user) {
       toast({ title: 'שגיאה', description: 'יש להתחבר כדי להציע הצעה', variant: 'destructive' });
@@ -112,14 +75,12 @@ export default function PublicAuctionPage() {
 
   const handleShare = () => {
     const botUsername = 'Brilliantteatbot';
-    const trackingId = `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const sharerId = user?.id || 0;
-    const deepLink = `https://t.me/${botUsername}?startapp=auction_${auctionId}_sharer${sharerId}_track${trackingId}`;
+    const deepLink = `https://t.me/${botUsername}?startapp=auction_${auctionId}`;
     
     if (navigator.share) {
       navigator.share({
         title: `מכרז: ${(auction as any)?.stock_number || (auction as any)?.diamond?.stock_number}`,
-        text: `💎 מכרז יהלום - מחיר נוכחי: $${(auction as any)?.current_price}\n👀 ${viewCount} צפיות | 👥 ${uniqueViewers} צופים ייחודיים`,
+        text: `💎 מכרז יהלום - מחיר נוכחי: $${(auction as any)?.current_price}`,
         url: deepLink,
       });
     } else {
@@ -147,27 +108,10 @@ export default function PublicAuctionPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">🔨 מכרז</h1>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="gap-1">
-              <Eye className="h-3 w-3" />
-              {viewCount}
-            </Badge>
-            <Badge variant="outline" className="gap-1">
-              <Users className="h-3 w-3" />
-              {uniqueViewers}
-            </Badge>
-            <Badge variant={isActive ? 'default' : 'secondary'}>
-              {(auction as any).status === 'active' ? 'פעיל' : 'הסתיים'}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Attribution Badge */}
-        {sharerId && (
-          <Badge variant="secondary" className="w-fit">
-            שותף על ידי משתמש #{sharerId}
+          <Badge variant={isActive ? 'default' : 'secondary'}>
+            {(auction as any).status === 'active' ? 'פעיל' : 'הסתיים'}
           </Badge>
-        )}
+        </div>
 
         {/* Diamond Info */}
         {(auction as any).diamond && (

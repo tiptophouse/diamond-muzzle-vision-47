@@ -2,7 +2,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { handleCallbackQuery } from './callback-handler.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -39,26 +38,6 @@ interface TelegramUpdate {
     };
     date: number;
     text?: string;
-    web_app_data?: any;
-  };
-  callback_query?: {
-    id: string;
-    from: {
-      id: number;
-      first_name: string;
-      last_name?: string;
-      username?: string;
-    };
-    message?: {
-      message_id: number;
-      chat: {
-        id: number;
-        type: string;
-      };
-      text?: string;
-    };
-    data: string;
-    inline_message_id?: string;
   };
 }
 
@@ -100,12 +79,6 @@ serve(async (req) => {
       has_web_app_data: !!update.message?.web_app_data
     });
     
-    // Handle callback queries from inline buttons (e.g., auction bids)
-    if (update.callback_query) {
-      console.log('🔘 Processing callback query:', update.callback_query.data);
-      return await handleCallbackQuery(update.callback_query);
-    }
-
     // Handle web app data (diamond sharing)
     if (update.message?.web_app_data) {
       console.log('🌐 Handling web app data');
@@ -132,49 +105,6 @@ serve(async (req) => {
       if (startParam === 'provide_sftp') {
         await handleSFTPSetupRequest(message.from);
         return new Response('OK', { status: 200, headers: corsHeaders });
-      }
-      
-      // Track deep link opens with tracking IDs (for auction notifications)
-      if (startParam?.includes('_track_')) {
-        const [resource, trackingId] = startParam.split('_track_');
-        
-        // Track deep link open from notification
-        if (resource.startsWith('auction_')) {
-          const auctionId = resource.replace('auction_', '');
-          
-          await supabase.from('auction_analytics').insert({
-            auction_id: auctionId,
-            telegram_id: message.from.id,
-            event_type: 'notification_opened',
-            event_data: {
-              tracking_id: trackingId,
-              opened_at: new Date().toISOString(),
-              from_notification: true,
-              start_param: startParam,
-            },
-          });
-          
-          console.log('📊 Tracked notification open:', { auctionId, trackingId });
-        } else if (resource.startsWith('diamond_')) {
-          const stockNumber = resource.replace('diamond_', '');
-          
-          await supabase.from('diamond_share_analytics').insert({
-            diamond_stock_number: stockNumber,
-            owner_telegram_id: 0, // Will be updated with actual owner
-            viewer_telegram_id: message.from.id,
-            action_type: 'deep_link_open',
-            session_id: crypto.randomUUID(),
-            access_via_share: true,
-            analytics_data: {
-              tracking_id: trackingId,
-              opened_at: new Date().toISOString(),
-              from_notification: true,
-              start_param: startParam,
-            },
-          });
-          
-          console.log('📊 Tracked diamond notification open:', { stockNumber, trackingId });
-        }
       }
       
       const { error: insertError } = await supabase

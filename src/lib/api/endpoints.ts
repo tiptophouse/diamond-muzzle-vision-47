@@ -10,17 +10,17 @@ export const apiEndpoints = {
     return url;
   },
   
-  // Create diamond - POST /api/v1/diamonds (userId from JWT)
-  addDiamond: () => `/api/v1/diamonds`,
+  // Create diamond - POST /api/v1/diamonds?user_id={user_id}
+  addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
   
-  // Batch diamond upload - POST /api/v1/diamonds/batch (userId from JWT)
-  addDiamondsBatch: () => `/api/v1/diamonds/batch`,
+  // Batch diamond upload - POST /api/v1/diamonds/batch?user_id={user_id}
+  addDiamondsBatch: (userId: number) => `/api/v1/diamonds/batch?user_id=${userId}`,
   
-  // Update diamond - PUT /api/v1/diamonds/{diamond_id} (userId from JWT)
-  updateDiamond: (diamondId: number) => `/api/v1/diamonds/${diamondId}`,
+  // Update diamond - PUT /api/v1/diamonds/{diamond_id}?user_id={user_id}
+  updateDiamond: (diamondId: string, userId: number) => `/api/v1/diamonds/${diamondId}?user_id=${userId}`,
   
-  // Delete diamond endpoint - DELETE /api/v1/delete_stone/{diamond_id} (userId from JWT)
-  deleteDiamond: (diamondId: number) => `/api/v1/delete_stone/${diamondId}`,
+  // Delete diamond endpoint - accepts stock_number as path parameter
+  deleteDiamond: (stockNumber: string, userId: number) => `/api/v1/delete_stone/${encodeURIComponent(stockNumber)}?user_id=${userId}`,
   
   // SFTP endpoints - CORRECTED to include proper auth
   sftpProvision: () => `/api/v1/sftp/provision`,

@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './lib/queryClient';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
@@ -39,14 +38,14 @@ import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 import AdminStatsPage from './pages/AdminStatsPage';
+import WeeklyKPIPage from './pages/WeeklyKPIPage';
+import BlockedUsersPage from './pages/BlockedUsersPage';
 import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
 import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TestInlineButtons from './pages/TestInlineButtons';
 import PublicAuctionPage from './pages/PublicAuctionPage';
 import AuctionsListPage from './pages/AuctionsListPage';
-import Diagnostic from './pages/Diagnostic';
-import WebhookSetup from './pages/WebhookSetup';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
@@ -54,6 +53,18 @@ import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 registerServiceWorker();
 
 function App() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1, // Reduce retries for faster failure
+        staleTime: 10 * 60 * 1000, // 10 minutes - cache data longer
+        gcTime: 15 * 60 * 1000, // 15 minutes - keep cached data longer
+        refetchOnWindowFocus: false, // Don't refetch on window focus
+        refetchOnMount: false, // Don't refetch on mount if data exists
+      },
+    },
+  });
+  
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -198,10 +209,17 @@ function App() {
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />
-                   <Route path="/webhook-setup" element={
+                   <Route path="/weekly-kpi" element={
                      <AuthenticatedRoute>
                        <EnhancedTelegramAdminGuard>
-                         <WebhookSetup />
+                         <WeeklyKPIPage />
+                       </EnhancedTelegramAdminGuard>
+                     </AuthenticatedRoute>
+                   } />
+                   <Route path="/blocked-users" element={
+                     <AuthenticatedRoute>
+                       <EnhancedTelegramAdminGuard>
+                         <BlockedUsersPage />
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />
@@ -255,9 +273,6 @@ function App() {
                       <DiamondShareAnalytics />
                     </AuthenticatedRoute>
                   } />
-
-                  {/* Diagnostic Page - Public route for debugging */}
-                  <Route path="/diagnostic" element={<Diagnostic />} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

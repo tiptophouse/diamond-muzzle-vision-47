@@ -321,44 +321,6 @@ export type Database = {
         }
         Relationships: []
       }
-      auction_analytics: {
-        Row: {
-          auction_id: string
-          created_at: string | null
-          event_data: Json | null
-          event_type: string
-          group_chat_id: number | null
-          id: string
-          telegram_id: number | null
-        }
-        Insert: {
-          auction_id: string
-          created_at?: string | null
-          event_data?: Json | null
-          event_type: string
-          group_chat_id?: number | null
-          id?: string
-          telegram_id?: number | null
-        }
-        Update: {
-          auction_id?: string
-          created_at?: string | null
-          event_data?: Json | null
-          event_type?: string
-          group_chat_id?: number | null
-          id?: string
-          telegram_id?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "auction_analytics_auction_id_fkey"
-            columns: ["auction_id"]
-            isOneToOne: false
-            referencedRelation: "auctions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       auction_bids: {
         Row: {
           auction_id: string
@@ -394,108 +356,49 @@ export type Database = {
           },
         ]
       }
-      auction_watchers: {
-        Row: {
-          auction_id: string
-          created_at: string
-          id: string
-          telegram_id: number
-          user_name: string | null
-        }
-        Insert: {
-          auction_id: string
-          created_at?: string
-          id?: string
-          telegram_id: number
-          user_name?: string | null
-        }
-        Update: {
-          auction_id?: string
-          created_at?: string
-          id?: string
-          telegram_id?: number
-          user_name?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "auction_watchers_auction_id_fkey"
-            columns: ["auction_id"]
-            isOneToOne: false
-            referencedRelation: "auctions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       auctions: {
         Row: {
-          auto_extend: boolean | null
-          bid_count: number | null
           created_at: string
           currency: string
           current_price: number
-          diamond_data: Json | null
           ends_at: string
           id: string
-          message_ids: Json | null
           min_increment: number
-          notify_seller: boolean | null
-          reserve_price: number | null
           seller_telegram_id: number
           starting_price: number
           starts_at: string
           status: string
           stock_number: string
-          total_clicks: number | null
-          total_views: number | null
-          unique_viewers: number | null
           updated_at: string
           winner_telegram_id: number | null
         }
         Insert: {
-          auto_extend?: boolean | null
-          bid_count?: number | null
           created_at?: string
           currency?: string
           current_price: number
-          diamond_data?: Json | null
           ends_at: string
           id?: string
-          message_ids?: Json | null
           min_increment?: number
-          notify_seller?: boolean | null
-          reserve_price?: number | null
           seller_telegram_id: number
           starting_price: number
           starts_at?: string
           status?: string
           stock_number: string
-          total_clicks?: number | null
-          total_views?: number | null
-          unique_viewers?: number | null
           updated_at?: string
           winner_telegram_id?: number | null
         }
         Update: {
-          auto_extend?: boolean | null
-          bid_count?: number | null
           created_at?: string
           currency?: string
           current_price?: number
-          diamond_data?: Json | null
           ends_at?: string
           id?: string
-          message_ids?: Json | null
           min_increment?: number
-          notify_seller?: boolean | null
-          reserve_price?: number | null
           seller_telegram_id?: number
           starting_price?: number
           starts_at?: string
           status?: string
           stock_number?: string
-          total_clicks?: number | null
-          total_views?: number | null
-          unique_viewers?: number | null
           updated_at?: string
           winner_telegram_id?: number | null
         }
@@ -3007,7 +2910,6 @@ export type Database = {
           recommendation: Json
         }[]
       }
-      get_auction_stats: { Args: { auction_id_param: string }; Returns: Json }
       get_bot_usage_summary: {
         Args: never
         Returns: {

@@ -7,16 +7,6 @@ export async function createAuction(
   const endsAt = new Date();
   endsAt.setHours(endsAt.getHours() + request.duration_hours);
 
-  // CRITICAL: Set user context before inserting (fixes RLS bug)
-  const { error: contextError } = await supabase.rpc('set_user_context', {
-    telegram_id: request.seller_telegram_id
-  });
-
-  if (contextError) {
-    console.error('❌ Failed to set user context:', contextError);
-    throw contextError;
-  }
-
   const { data, error } = await (supabase as any)
     .from('auctions')
     .insert([{

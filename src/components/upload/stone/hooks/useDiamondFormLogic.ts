@@ -38,20 +38,16 @@ export function useDiamondFormLogic({ form, onSuccess }: UseDiamondFormLogicProp
 
     // Check authentication
     if (!user?.id) {
-      console.error('❌ FORM: User not authenticated');
       toast({
         variant: 'destructive',
         title: '❌ Authentication Required',
-        description: 'Please refresh the app to re-authenticate',
+        description: 'אנא התחבר כדי להוסיף יהלומים',
       });
       return;
     }
 
     setIsSubmitting(true);
-    console.log('🔵 FORM: Starting diamond form submission');
-    console.log('🔵 FORM: Stock Number:', data.stockNumber);
-    console.log('🔵 FORM: User ID:', user.id);
-    console.log('🔵 FORM: Full data:', data);
+    console.log('📝 Starting diamond form submission:', data.stockNumber);
 
     try {
       // Validate with Zod schema

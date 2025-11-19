@@ -70,43 +70,20 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
   
   console.log('🔑 HTTP: Making request to:', fullUrl, 'Method:', method);
 
-  // Check authentication for protected endpoints
-  let token = getBackendAuthToken();
+  // Check authentication for protected endpoints (most endpoints require auth according to OpenAPI spec)
+  const token = getBackendAuthToken();
   
   if (!token && !endpoint.includes('/api/v1/sign-in/')) {
-    console.warn('⚠️ HTTP: No JWT token found, attempting to refresh from Telegram initData');
+    console.error('❌ HTTP: No JWT token available for protected endpoint:', endpoint);
+    const error = new Error('נדרש אימות. אנא התחבר מחדש לאפליקציה');
     
-    // Try to refresh token from Telegram WebApp
-    try {
-      const tg = window.Telegram?.WebApp;
-      if (tg?.initData) {
-        console.log('🔄 HTTP: Attempting token refresh with initData');
-        const { signInToBackend } = await import('@/lib/api/auth');
-        token = await signInToBackend(tg.initData);
-        
-        if (token) {
-          console.log('✅ HTTP: Token refresh successful');
-        } else {
-          console.error('❌ HTTP: Token refresh failed');
-        }
-      }
-    } catch (refreshError) {
-      console.error('❌ HTTP: Token refresh error:', refreshError);
-    }
+    toast({
+      title: "🔐 Authentication Required",
+      description: "אנא התחבר מחדש לאפליקציה",
+      variant: "destructive",
+    });
     
-    // If still no token after refresh attempt, throw error
-    if (!token) {
-      console.error('❌ HTTP: No JWT token available for protected endpoint:', endpoint);
-      const error = new Error('נדרש אימות. אנא התחבר מחדש לאפליקציה');
-      
-      toast({
-        title: "🔐 נדרש אימות",
-        description: "אנא התחבר מחדש לאפליקציה",
-        variant: "destructive",
-      });
-      
-      throw error;
-    }
+    throw error;
   }
 
   // Test backend health for non-auth requests
@@ -173,7 +150,6 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
       
       // Handle 401 Unauthorized - Session expired
       if (response.status === 401 && !endpoint.includes('/api/v1/sign-in/')) {
-        const isTelegram = typeof window !== 'undefined' && (window as any).Telegram?.WebApp;
         toast({
           title: "🔐 Session Expired",
           description: "אנא התחבר מחדש | Please sign in again",
@@ -187,14 +163,10 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
           console.error('Failed to clear auth token:', e);
         }
         
-        // In Telegram Mini App, avoid hard reload which looks like a crash
-        if (!isTelegram) {
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
-        } else {
-          console.warn('Skipping auto-reload inside Telegram WebApp after 401');
-        }
+        // Auto-reload after 2 seconds
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
         
         throw new Error('Session expired');
       }

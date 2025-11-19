@@ -133,6 +133,7 @@ _💡 טיפ: התחבר לדשבורד כדי לנהל את המלאי ולצו
       );
     }
 
+    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
     const messagePayload = {
       chat_id: telegramId,
       text: summaryMessage,
@@ -142,19 +143,19 @@ _💡 טיפ: התחבר לדשבורד כדי לנהל את המלאי ולצו
           [
             {
               text: '📱 פתח דשבורד',
-              web_app: { url: 'https://t.me/diamondmazalbot?startapp=dashboard' }
+              url: `${telegramBotUrl}?startapp=dashboard`
             }
           ],
           [
             {
               text: '💎 חנות היהלומים',
-              web_app: { url: 'https://t.me/diamondmazalbot?startapp=store' }
+              url: `${telegramBotUrl}?startapp=store`
             }
           ],
           diamondMatches > 0 ? [
             {
               text: '🔔 צפה בהתראות',
-              web_app: { url: 'https://t.me/diamondmazalbot?startapp=notifications' }
+              url: `${telegramBotUrl}?startapp=notifications`
             }
           ] : []
         ].filter(row => row.length > 0)

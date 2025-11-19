@@ -37,16 +37,10 @@ export function StoreVisibilityToggle({ stockNumber, diamondId, isVisible, onTog
     handleRequiredClick();
     
     try {
-      // Convert diamondId string to number for FastAPI
-      const numericId = parseInt(diamondId);
-      if (isNaN(numericId)) {
-        throw new Error('Invalid diamond ID');
-      }
-      
       // Use FastAPI to update diamond store visibility
-      const response = await updateDiamond(numericId, {
+      const response = await updateDiamond(diamondId, {
         store_visible: !isVisible
-      });
+      }, user.id);
 
       if (!response.success) {
         throw new Error(response.message || 'Failed to update visibility');
