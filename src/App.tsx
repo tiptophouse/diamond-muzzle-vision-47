@@ -46,6 +46,7 @@ import TestInlineButtons from './pages/TestInlineButtons';
 import PublicAuctionPage from './pages/PublicAuctionPage';
 import AuctionsListPage from './pages/AuctionsListPage';
 import Diagnostic from './pages/Diagnostic';
+import WebhookSetup from './pages/WebhookSetup';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
@@ -194,6 +195,13 @@ function App() {
                      <AuthenticatedRoute>
                        <EnhancedTelegramAdminGuard>
                          <AdminStatsPage />
+                       </EnhancedTelegramAdminGuard>
+                     </AuthenticatedRoute>
+                   } />
+                   <Route path="/webhook-setup" element={
+                     <AuthenticatedRoute>
+                       <EnhancedTelegramAdminGuard>
+                         <WebhookSetup />
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />
