@@ -114,24 +114,32 @@ export function useSecureDiamondSharing() {
           `User ${userId}`;
       }
 
+      // Normalize diamond data for backend
+      const carat = (diamond as any).weight || diamond.carat || 0;
+      const stockNumber = (diamond as any).stock_number || diamond.stockNumber || '';
+      const totalPrice = diamond.price || ((diamond as any).price_per_carat && (diamond as any).price_per_carat * carat);
+      const gem360 = (diamond as any).gem_360_url || diamond.gem360Url;
+      const imageUrl = (diamond as any).picture || diamond.imageUrl || (diamond as any).Image || (diamond as any).image;
+      
       // Call the Supabase function to send diamond to group
       const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
         body: {
           diamond: {
-            id: diamond.id,
-            stockNumber: diamond.stockNumber,
-            carat: diamond.carat,
+            diamond_id: (diamond as any).diamond_id || (diamond.id ? parseInt(diamond.id) : undefined),
+            stock_number: stockNumber,
+            stockNumber: stockNumber,
+            weight: carat,
+            carat: carat,
             shape: diamond.shape,
             color: diamond.color,
             clarity: diamond.clarity,
             cut: diamond.cut,
-            price: diamond.price,
-            imageUrl: diamond.imageUrl,
-            gem360Url: diamond.gem360Url,
-            // Include CSV image fallbacks
-            Image: (diamond as any).Image,
-            image: (diamond as any).image,
-            picture: (diamond as any).picture
+            price_per_carat: (diamond as any).price_per_carat,
+            price: totalPrice,
+            picture: imageUrl,
+            imageUrl: imageUrl,
+            gem_360_url: gem360,
+            gem360Url: gem360
           },
           sharedBy: userId,
           sharedByName: sharerName,
