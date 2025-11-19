@@ -117,6 +117,7 @@ export function createDiamondInlineButtons(
   const {
     sharedById,
     additionalButtons = [],
+    includeStoreButton = true,
     botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot_bot',
     baseUrl = Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '') || 'https://uhhljqgxhdhbbhpohxll.supabase.co',
   } = options;
@@ -150,13 +151,15 @@ export function createDiamondInlineButtons(
     }
   }
 
-  // Store button (last row)
-  buttons.push([
-    {
-      text: '🏪 כל היהלומים',
-      url: `${telegramBotUrl}?startapp=store`
-    }
-  ]);
+  // Store button (last row) - conditional
+  if (includeStoreButton) {
+    buttons.push([
+      {
+        text: '🏪 כל היהלומים',
+        url: `${telegramBotUrl}?startapp=store`
+      }
+    ]);
+  }
 
   return buttons;
 }

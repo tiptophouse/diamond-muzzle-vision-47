@@ -1,5 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { sendDiamondCard, DiamondCardData, DiamondCardOptions } from '../_shared/diamond-card-template.ts';
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 const TELEGRAM_BOT_USERNAME = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'Brilliantteatbot';
@@ -29,12 +31,10 @@ serve(async (req) => {
       chat_id: providedChatId,
       auction_id,
       stock_number,
-      diamond_description,
       current_price,
       min_increment,
       currency,
       ends_at,
-      image_url,
     } = payload;
 
     // Use test group as default if no chat_id provided
@@ -44,86 +44,94 @@ serve(async (req) => {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
     }
 
-    const telegramBotUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    console.log('📦 Fetching diamond data for stock:', stock_number);
+
+    // Fetch full diamond data from inventory
+    const { data: diamond, error: diamondError } = await supabase
+      .from('inventory')
+      .select('*')
+      .eq('stock_number', stock_number)
+      .single();
+
+    if (diamondError || !diamond) {
+      console.error('❌ Diamond not found:', diamondError);
+      throw new Error('Diamond not found in inventory');
+    }
+
+    console.log('💎 Diamond found:', diamond.stock_number);
+
+    // Build DiamondCardData
+    const diamondData: DiamondCardData = {
+      stockNumber: diamond.stock_number,
+      shape: diamond.shape,
+      weight: diamond.weight,
+      color: diamond.color,
+      clarity: diamond.clarity,
+      cut: diamond.cut,
+      polish: diamond.polish,
+      symmetry: diamond.symmetry,
+      fluorescence: diamond.fluorescence,
+      pricePerCarat: diamond.price_per_carat,
+      lab: diamond.lab,
+      certificateNumber: diamond.certificate_number,
+      certificateUrl: diamond.certificate_url,
+      picture: diamond.picture,
+      videoUrl: diamond.video_url,
+      gem360Url: diamond.gem360_url,
+    };
+
+    // Calculate time remaining
     const endsAtDate = new Date(ends_at);
     const timeRemaining = Math.floor((endsAtDate.getTime() - Date.now()) / (1000 * 60 * 60));
 
-    // Message text
-    const messageText = `
-🔨 *מכרז פעיל*
+    // Build auction context message
+    const auctionContext = `🔨 *מכרז פעיל*
 
-💎 ${diamond_description}
-📦 מלאי: ${stock_number}
-
-💰 *מחיר נוכחי: ${current_price} ${currency}*
+💰 מחיר נוכחי: ${current_price} ${currency}
 📈 הצעה הבאה: ${current_price + min_increment} ${currency}
 ⏰ זמן נותר: ~${timeRemaining} שעות
+🔥 0 הצעות`;
 
-הצטרף למכרז עכשיו! 👇
-`.trim();
-
-    // Inline keyboard with deep links
-    const inlineKeyboard = [
-      [
+    // Build DiamondCardOptions with auction context
+    const options: DiamondCardOptions = {
+      context: 'auction',
+      customMessage: auctionContext,
+      additionalButtons: [[
         {
           text: `💰 הצע ${current_price + min_increment} ${currency}`,
           callback_data: `bid:${auction_id}`,
-        },
-      ],
-      [
-        {
-          text: '👀 צפה ביהלום',
-          url: `${telegramBotUrl}?startapp=diamond_${stock_number}`,
-        },
-        {
-          text: '📈 צפה בהצעות',
-          url: `${telegramBotUrl}?startapp=auction_${auction_id}`,
-        },
-      ],
-    ];
-
-    // Send message with photo if available
-    const telegramApiUrl = image_url
-      ? `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`
-      : `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-
-    const body = image_url
-      ? {
-          chat_id,
-          photo: image_url,
-          caption: messageText,
-          parse_mode: 'Markdown',
-          reply_markup: { inline_keyboard: inlineKeyboard },
         }
-      : {
-          chat_id,
-          text: messageText,
-          parse_mode: 'Markdown',
-          reply_markup: { inline_keyboard: inlineKeyboard },
-        };
+      ]],
+      includePrice: false,
+      includeStoreButton: false,
+    };
 
     console.log('📤 Sending auction message to chat:', chat_id);
 
-    const telegramResponse = await fetch(telegramApiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    // Send diamond card
+    const result = await sendDiamondCard(
+      Number(chat_id),
+      diamondData,
+      options
+    );
 
-    const result = await telegramResponse.json();
-
-    if (!result.ok) {
-      console.error('❌ Telegram API error:', result);
-      throw new Error(`Telegram API error: ${result.description}`);
+    if (!result.success) {
+      console.error('❌ Failed to send auction message:', result.error);
+      throw new Error(result.error || 'Failed to send auction message');
     }
 
-    console.log('✅ Auction message sent successfully');
+    console.log('✅ Auction message sent successfully, message_id:', result.messageId);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message_id: result.result.message_id,
-        chat_id: result.result.chat.id,
+        message_id: result.messageId,
+        chat_id: chat_id,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
