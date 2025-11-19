@@ -100,12 +100,13 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
     const isBlocked = user && isUserBlocked(user.id);
     const isAdminUser = user && user.id === adminTelegramId;
     const invalidEnvironment = process.env.NODE_ENV === 'production' && !isTelegramEnvironment;
+    const ADMIN_PHONE = '+972527665552'; // Admin contact number
     
     console.log('🚫 Access denied:', { isBlocked, isAdminUser, invalidEnvironment, userId: user?.id });
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md w-full border">
           <div className={`rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 ${
             isAdminUser ? 'bg-yellow-50' : isBlocked ? 'bg-red-50' : 'bg-orange-50'
           }`}>
@@ -122,50 +123,88 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
             {invalidEnvironment 
               ? 'Invalid Access Method'
               : isBlocked 
-                ? 'Access Denied' 
+                ? 'Access Blocked' 
                 : 'Authorization Required'
             }
           </h2>
           
-          <p className="text-gray-600 mb-6">
-            {invalidEnvironment
-              ? 'This application must be accessed through the official Telegram application for security reasons.'
-              : isBlocked 
-                ? 'Your account has been blocked by the administrator. If you believe this is an error, please contact support.'
-                : 'This application now requires manual authorization. Please contact the administrator to request access.'
-            }
-          </p>
-          
-          {isBlocked && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-800 text-sm font-medium">
-                🚫 Account Status: <span className="font-bold">BLOCKED</span>
+          {isBlocked ? (
+            <>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-red-800 text-base font-semibold mb-3">
+                  🚫 Your Access Has Been Suspended
+                </p>
+                <p className="text-red-700 text-sm leading-relaxed">
+                  Your account access has been temporarily blocked. To restore your access, please complete the payment process or contact support.
+                </p>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-blue-800 text-sm font-medium mb-2">
+                  💳 Payment Required
+                </p>
+                <p className="text-blue-700 text-xs">
+                  Complete your payment to regain full access to the platform and all its features.
+                </p>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                <a
+                  href={`tel:${ADMIN_PHONE}`}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors w-full flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                  </svg>
+                  Call Support: {ADMIN_PHONE}
+                </a>
+                
+                <p className="text-xs text-gray-600">
+                  Contact us to complete payment and restore access
+                </p>
+              </div>
+            </>
+          ) : invalidEnvironment ? (
+            <>
+              <p className="text-gray-600 mb-6">
+                This application must be accessed through the official Telegram application for security reasons.
               </p>
-              <p className="text-red-700 text-xs mt-2">
-                All access to the platform has been revoked. Contact the administrator for assistance.
+              <div className="space-y-3">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
+                >
+                  Refresh & Retry
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-gray-600 mb-6">
+                This application now requires manual authorization. Please contact the administrator to request access.
               </p>
-            </div>
+              <div className="space-y-3">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
+                >
+                  Refresh & Retry
+                </button>
+                <a
+                  href={`tel:${ADMIN_PHONE}`}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                  </svg>
+                  Contact Support
+                </a>
+              </div>
+            </>
           )}
           
-          <div className="text-sm text-gray-500 mb-8 space-y-1">
+          <div className="text-xs text-gray-500 mt-6 pt-4 border-t">
             <p>User ID: {user?.id || 'Unknown'}</p>
-            <p>Status: {invalidEnvironment ? 'Invalid Environment' : isBlocked ? 'Blocked' : 'Pending Authorization'}</p>
-            {isAdminUser && <p className="text-yellow-600 font-medium">⚠️ Admin user detected but authorization failed</p>}
-          </div>
-          
-          <div className="space-y-3">
-            <button
-              onClick={() => {
-                console.log('🔄 Refreshing page for authorization check');
-                window.location.reload();
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
-            >
-              Refresh & Retry
-            </button>
-            <p className="text-sm text-gray-600">
-              If you believe this is an error, please contact the administrator.
-            </p>
           </div>
         </div>
       </div>
