@@ -1,10 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Hammer, Clock, TrendingUp, Gem } from "lucide-react";
+import { Hammer, Clock, TrendingUp, Gem, Eye, Share2 } from "lucide-react";
 import { AuctionWithDiamond } from "@/hooks/useAuctionsData";
 import { useNavigate } from "react-router-dom";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
+import { useRealtimeAuctionViews } from "@/hooks/useRealtimeAuctionViews";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { toast } from "sonner";
 
 interface AuctionCardProps {
   auction: AuctionWithDiamond;
@@ -13,6 +16,8 @@ interface AuctionCardProps {
 export function AuctionCard({ auction }: AuctionCardProps) {
   const navigate = useNavigate();
   const tg = getTelegramWebApp();
+  const { user } = useTelegramAuth();
+  const { viewCount, uniqueViewers } = useRealtimeAuctionViews(auction.id);
 
   const timeRemaining = () => {
     const now = new Date();
@@ -39,6 +44,37 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     navigate(`/auction/${auction.id}`);
   };
 
+  const handleShare = async () => {
+    if (tg && 'HapticFeedback' in tg) {
+      (tg as any).HapticFeedback?.impactOccurred('medium');
+    }
+
+    const trackingId = `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const sharerId = user?.id || 0;
+    const botUsername = 'Brilliantteatbot';
+    
+    // Generate deep link with attribution
+    const deepLink = `https://t.me/${botUsername}?startapp=auction_${auction.id}_sharer${sharerId}_track${trackingId}`;
+    
+    const shareText = `🔥 Live Auction: ${diamond?.weight}ct ${diamond?.shape} Diamond\n💎 ${diamond?.color} | ${diamond?.clarity}${diamond?.cut ? ` | ${diamond?.cut}` : ''}\n💰 Current Bid: $${auction.current_price.toLocaleString()}\n⏰ ${timeRemaining()} remaining\n\n${deepLink}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${diamond?.weight}ct ${diamond?.shape} Diamond Auction`,
+          text: shareText,
+          url: deepLink,
+        });
+        toast.success("Auction shared successfully!");
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareText);
+        toast.success("Link copied to clipboard!");
+      }
+    } catch (error) {
+      console.error('Share failed:', error);
+    }
+  };
+
   const diamond = auction.diamond;
 
   return (
@@ -56,7 +92,11 @@ export function AuctionCard({ auction }: AuctionCardProps) {
             <Gem className="h-16 w-16 text-muted-foreground opacity-30" />
           </div>
         )}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
+          <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm">
+            <Eye className="h-3 w-3 mr-1" />
+            {viewCount}
+          </Badge>
           <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm">
             <Clock className="h-3 w-3 mr-1" />
             {timeRemaining()}
@@ -107,15 +147,25 @@ export function AuctionCard({ auction }: AuctionCardProps) {
           </div>
         </div>
 
-        {/* Action Button */}
-        <Button
-          onClick={handleViewAuction}
-          className="w-full"
-          size="sm"
-        >
-          <Hammer className="h-4 w-4 mr-2" />
-          Place Bid
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button
+            onClick={handleViewAuction}
+            className="flex-1"
+            size="sm"
+          >
+            <Hammer className="h-4 w-4 mr-2" />
+            Place Bid
+          </Button>
+          <Button
+            onClick={handleShare}
+            variant="outline"
+            size="sm"
+            className="px-3"
+          >
+            <Share2 className="h-4 w-4" />
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

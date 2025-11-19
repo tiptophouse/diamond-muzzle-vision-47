@@ -85,3 +85,13 @@ export {
   getBackendAuthToken,
   type TelegramVerificationResponse 
 } from './auth';
+
+// Domain-specific API clients
+export * as billingApi from './billing';
+export * as searchApi from './search';
+export * as sftpApi from './sftp';
+export * as reportsApi from './reports';
+export * as diamondsApi from '@/api/diamonds';
+
+// Re-export types (backend-api.ts contains all OpenAPI types)
+export * from '@/types/backend-api';

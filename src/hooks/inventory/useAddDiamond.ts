@@ -11,11 +11,16 @@ export function useAddDiamond(onSuccess?: () => void) {
   const { user } = useTelegramAuth();
 
   const addDiamond = async (data: DiamondFormData) => {
+    console.log('🔵 ADD DIAMOND: Starting upload process');
+    console.log('🔵 User ID:', user?.id);
+    console.log('🔵 Form Data:', data);
+    
     if (!user?.id) {
+      console.error('❌ ADD DIAMOND: User not authenticated');
       toast({
         variant: "destructive",
         title: "Error",
-        description: "User not authenticated",
+        description: "User not authenticated. Please refresh the app.",
       });
       return false;
     }
@@ -25,6 +30,7 @@ export function useAddDiamond(onSuccess?: () => void) {
 
       // Validate required fields first
       if (!data.stockNumber?.trim()) {
+        console.error('❌ ADD DIAMOND: Missing stock number');
         toast({
           variant: "destructive",
           title: "❌ Missing Required Field",
@@ -125,15 +131,32 @@ export function useAddDiamond(onSuccess?: () => void) {
 
       console.log('💎 Sending diamond data to FastAPI (api.mazalbot.com):', diamondDataPayload);
       
+      // Verify authentication before making request
+      const { getBackendAuthToken } = await import('@/lib/api/auth');
+      const token = getBackendAuthToken();
+      console.log('🔑 JWT Token status:', token ? 'EXISTS' : 'MISSING');
+      
+      if (!token) {
+        console.error('❌ ADD DIAMOND: No JWT token available');
+        toast({
+          variant: "destructive",
+          title: "❌ Authentication Error",
+          description: "Please refresh the app to re-authenticate",
+        });
+        return false;
+      }
+      
       // Try FastAPI backend at api.mazalbot.com
       try {
-        const endpoint = apiEndpoints.addDiamond(user.id);
+        const endpoint = apiEndpoints.addDiamond();
         console.log('➕ ADD: Using endpoint:', endpoint);
         console.log('➕ ADD: Making POST request to:', `${API_BASE_URL}${endpoint}`);
+        console.log('➕ ADD: Payload:', JSON.stringify(diamondDataPayload, null, 2));
         
         const response = await api.post(endpoint, diamondDataPayload);
         
         if (response.error) {
+          console.error('❌ ADD: API returned error:', response.error);
           throw new Error(response.error);
         }
 
@@ -172,9 +195,10 @@ export function useAddDiamond(onSuccess?: () => void) {
         }
         
         // Success! Show confirmation (even if verification had issues)
+        console.log('✅ ADD DIAMOND: Upload successful!');
         toast({
-          title: "✅ יהלום נוסף בהצלחה!",
-          description: `אבן "${data.stockNumber}" נוספה למלאי, Dashboard וה-Store`,
+          title: "✅ Diamond Added Successfully!",
+          description: `Stone "${data.stockNumber}" has been added to your inventory`,
         });
         
         // Send notification with direct link to the specific diamond
@@ -212,9 +236,13 @@ export function useAddDiamond(onSuccess?: () => void) {
         
       } catch (apiError) {
         console.error('❌ ADD: FastAPI add failed:', apiError);
+        console.error('❌ ADD: Error details:', {
+          message: apiError instanceof Error ? apiError.message : 'Unknown',
+          stack: apiError instanceof Error ? apiError.stack : 'N/A'
+        });
         
         // Parse and show specific backend validation errors
-        let errorMessage = "Failed to add diamond via FastAPI";
+        let errorMessage = "Failed to add diamond";
         
         if (apiError instanceof Error) {
           try {
@@ -227,6 +255,8 @@ export function useAddDiamond(onSuccess?: () => void) {
                 return `${field}: ${err.msg}`;
               }).join(', ');
               errorMessage = `Validation errors: ${validationErrors}`;
+            } else if (errorData.detail) {
+              errorMessage = errorData.detail;
             }
           } catch {
             // If not JSON, use the error message directly
@@ -234,10 +264,12 @@ export function useAddDiamond(onSuccess?: () => void) {
           }
         }
         
+        console.error('❌ ADD: Showing error to user:', errorMessage);
+        
         // Show specific error message to user with API details
         toast({
           variant: "destructive",
-          title: "❌ נכשל בהוספת יהלום",
+          title: "❌ Failed to Add Diamond",
           description: errorMessage,
         });
         

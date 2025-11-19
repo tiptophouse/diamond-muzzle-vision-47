@@ -3,8 +3,9 @@ import { Edit, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useDiamondManagement } from "@/hooks/inventory/useDiamondManagement";
+import { useDeleteDiamond } from "@/hooks/api/useDiamonds";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { extractDiamondId } from "@/api/diamondTransformers";
 
 interface AdminStoreControlsProps {
   diamond: Diamond;
@@ -15,7 +16,7 @@ interface AdminStoreControlsProps {
 export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreControlsProps) {
   const { user } = useTelegramAuth();
   const { isAdmin } = useIsAdmin();
-  const { deleteStone } = useDiamondManagement(user?.id || 0);
+  const deleteStone = useDeleteDiamond();
 
   if (!isAdmin || !user?.id) {
     return null;
@@ -24,11 +25,21 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Are you sure you want to delete this diamond?')) {
-      deleteStone.mutate(diamond.stockNumber, {
-        onSuccess: () => {
-          onDelete();
-        },
-      });
+      const diamondId = extractDiamondId(diamond);
+      
+      if (!diamondId) {
+        console.error('Cannot delete diamond: Invalid ID');
+        return;
+      }
+      
+      deleteStone.mutate(
+        { diamondId, userId: user.id },
+        {
+          onSuccess: () => {
+            onDelete();
+          },
+        }
+      );
     }
   };
 

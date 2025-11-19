@@ -47,85 +47,6 @@ export function useStartParamRouter() {
             webApp.HapticFeedback.impactOccurred('light');
           }
         }
-      } else if (startParam.startsWith('offer_')) {
-        // Pattern: offer_<stockNumber>_<ownerTelegramId>
-        const parts = startParam.split('_');
-        if (parts.length >= 2) {
-          const stockNumber = parts[1];
-          const ownerId = parts[2] || null;
-          
-          console.log('💰 Routing to make offer:', { stockNumber, ownerId });
-          
-          // Route to public diamond offer page
-          const queryParams = new URLSearchParams();
-          queryParams.set('shared', 'true');
-          if (ownerId) {
-            queryParams.set('from', ownerId);
-          }
-          
-          navigate(`/public/diamond-offer/${stockNumber}?${queryParams.toString()}`);
-          
-          // Haptic feedback
-          if (webApp.HapticFeedback) {
-            webApp.HapticFeedback.impactOccurred('medium');
-          }
-        }
-      } else if (startParam.startsWith('store_')) {
-        // Pattern: store_<sellerTelegramId>
-        const sellerId = startParam.replace('store_', '');
-        
-        console.log('🏪 Routing to seller store:', { sellerId });
-        
-        // Route to catalog filtered by seller
-        navigate(`/catalog?seller=${sellerId}`);
-        
-        // Haptic feedback
-        if (webApp.HapticFeedback) {
-          webApp.HapticFeedback.impactOccurred('light');
-        }
-      } else if (startParam === 'store') {
-        // Pattern: store (general store)
-        console.log('🏪 Routing to general store');
-        
-        navigate('/store');
-        
-        // Haptic feedback
-        if (webApp.HapticFeedback) {
-          webApp.HapticFeedback.impactOccurred('light');
-        }
-      } else if (startParam === 'dashboard') {
-        // Pattern: dashboard
-        console.log('📱 Routing to dashboard');
-        
-        navigate('/dashboard');
-        
-        // Haptic feedback
-        if (webApp.HapticFeedback) {
-          webApp.HapticFeedback.impactOccurred('light');
-        }
-      } else if (startParam === 'notifications') {
-        // Pattern: notifications
-        console.log('🔔 Routing to notifications');
-        
-        navigate('/notifications');
-        
-        // Haptic feedback
-        if (webApp.HapticFeedback) {
-          webApp.HapticFeedback.impactOccurred('light');
-        }
-      } else if (startParam.startsWith('ai_')) {
-        // Pattern: ai_<stockNumber>
-        const stockNumber = startParam.replace('ai_', '');
-        
-        console.log('🤖 Routing to AI assistant:', { stockNumber });
-        
-        // Route to chat with context about specific diamond
-        navigate(`/chat?diamond=${stockNumber}`);
-        
-        // Haptic feedback
-        if (webApp.HapticFeedback) {
-          webApp.HapticFeedback.impactOccurred('light');
-        }
       } else if (startParam.startsWith('story_')) {
         // Pattern: story_<stockNumber>
         const stockNumber = startParam.replace('story_', '');
@@ -144,16 +65,84 @@ export function useStartParamRouter() {
           webApp.HapticFeedback.impactOccurred('light');
         }
       } else if (startParam.startsWith('auction_')) {
-        // Pattern: auction_<auctionId>
-        const auctionId = startParam.replace('auction_', '');
+        // Pattern: auction_<auctionId>_sharer<sharerId>_track<trackingId>
+        // or auction_<auctionId>_group<groupId>_msg<msgId>_sharer<sharerId>_track<trackingId>
+        const parts = startParam.split('_');
+        const auctionId = parts[1];
         
-        console.log('🔨 Routing to auction:', { auctionId });
+        console.log('🔨 Routing to auction:', { auctionId, startParam });
         
-        // Route to public auction page
+        // Parse attribution parameters
         const queryParams = new URLSearchParams();
         queryParams.set('shared', 'true');
         
+        // Extract sharer ID
+        const sharerMatch = startParam.match(/sharer(\d+)/);
+        if (sharerMatch) {
+          queryParams.set('sharer', sharerMatch[1]);
+        }
+        
+        // Extract tracking ID
+        const trackMatch = startParam.match(/track([a-zA-Z0-9_]+)/);
+        if (trackMatch) {
+          queryParams.set('track', trackMatch[1]);
+        }
+        
+        // Extract group ID
+        const groupMatch = startParam.match(/group(\d+)/);
+        if (groupMatch) {
+          queryParams.set('group', groupMatch[1]);
+        }
+        
+        // Extract message ID
+        const msgMatch = startParam.match(/msg(\d+)/);
+        if (msgMatch) {
+          queryParams.set('msg', msgMatch[1]);
+        }
+        
         navigate(`/public/auction/${auctionId}?${queryParams.toString()}`);
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
+      } else if (startParam === 'notifications') {
+        // Pattern: notifications
+        console.log('🔔 Routing to notifications page');
+        
+        navigate('/notifications');
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
+      } else if (startParam === 'store') {
+        // Pattern: store
+        console.log('🏪 Routing to store page');
+        
+        navigate('/store');
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
+      } else if (startParam === 'dashboard') {
+        // Pattern: dashboard
+        console.log('📊 Routing to dashboard');
+        
+        navigate('/dashboard');
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
+      } else if (startParam.startsWith('store_')) {
+        // Pattern: store_<userId>
+        const userId = startParam.replace('store_', '');
+        
+        console.log('🏪 Routing to seller store:', { userId });
+        
+        navigate(`/store?seller=${userId}`);
         
         // Haptic feedback
         if (webApp.HapticFeedback) {

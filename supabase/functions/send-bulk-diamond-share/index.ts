@@ -90,21 +90,22 @@ serve(async (req) => {
 
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
 
-    // Create inline keyboard with diamond viewing deep links
-    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
+    // Create inline keyboard with diamond viewing options
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: [
           [
             {
               text: '💎 View Diamond Details',
-              url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+              web_app: {
+                url: `${Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '')}/diamond/${diamond.id}?shared=true&from=${sharedBy}`
+              }
             }
           ],
           [
             {
               text: '📞 Contact Seller',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+              callback_data: `contact_seller_${diamond.stockNumber}_${sharedBy}`
             }
           ]
         ]
