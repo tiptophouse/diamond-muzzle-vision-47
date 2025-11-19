@@ -99,14 +99,15 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
     }
 
     try {
-      // CRITICAL: Dev mode ONLY works on localhost (NOT on production lovable.app)
+      // CRITICAL: Dev mode works on localhost AND Lovable preview URLs
       const isPreviewMode = window.location.hostname === 'localhost' || 
                            window.location.hostname === '127.0.0.1' ||
-                           window.location.hostname.endsWith('.local');
+                           window.location.hostname.endsWith('.local') ||
+                           window.location.hostname.includes('lovableproject.com');
       const urlParams = new URLSearchParams(window.location.search);
       const testUserId = urlParams.get('test_user_id') || urlParams.get('user_id');
       
-      // DEVELOPMENT MODE: Allow bypass for testing (localhost only)
+      // DEVELOPMENT MODE: Allow bypass for testing (localhost and Lovable preview)
       if (isPreviewMode && testUserId) {
         console.log('🔧 DEV MODE: Using test user ID:', testUserId);
         const mockUser: TelegramUser = {
