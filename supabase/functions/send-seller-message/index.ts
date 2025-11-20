@@ -54,7 +54,6 @@ serve(async (req) => {
       console.log('✅ AI message sent');
     }
 
-    let result;
     const messageIds: number[] = [];
 
     // Send each diamond as a beautiful card
@@ -116,7 +115,6 @@ serve(async (req) => {
 
         if (cardResult.success && cardResult.messageId) {
           messageIds.push(cardResult.messageId);
-          result = { result: { message_id: cardResult.messageId } };
         } else {
           console.error('⚠️ Failed to send diamond card:', cardResult.error);
         }
@@ -133,7 +131,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        message_id: result.result.message_id
+        message_ids: messageIds,
+        cards_sent: messageIds.length
       }),
       { 
         headers: { 
