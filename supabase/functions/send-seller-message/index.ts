@@ -72,20 +72,24 @@ serve(async (req) => {
             messages: [
               {
                 role: 'system',
-                content: `You are an expert diamond dealer crafting personalized messages to buyers. 
-Create a warm, professional message that:
-- Uses proper paragraphs (2-3 sentences each)
-- Highlights the key features that make these diamonds special
-- Creates excitement about the opportunity
-- Is concise but engaging
-- Uses Hebrew/English mix naturally
-- Ends with a call to action
+                content: `You are writing a message that a BUYER will receive about diamonds they might be interested in.
 
-Format with HTML tags: <b>bold</b>, <i>italic</i>, line breaks, but keep it clean and readable.`
+CRITICAL RULES:
+- Write the message FROM the perspective of the seller/dealer TO the buyer
+- Address the buyer directly as "you" (אתה/את in Hebrew)
+- DO NOT include any buyer IDs, user IDs, or technical identifiers
+- DO NOT write as if the buyer is selling - they are BUYING
+- Use warm, welcoming language that makes the buyer feel special
+- Keep it 2-3 short paragraphs
+- Use Hebrew/English mix naturally
+- Highlight what makes these diamonds special for THEM (the buyer)
+- End with an invitation to view more details or contact you
+
+Format with HTML tags: <b>bold</b>, <i>italic</i> for emphasis.`
               },
               {
                 role: 'user',
-                content: `Create a personalized message for a buyer about these ${diamondDetails.length} diamonds:
+                content: `Write a message to a BUYER about ${diamondDetails.length} diamonds that might interest them:
 
 ${diamondDetails.map((d, i) => `
 Diamond ${i + 1}:
@@ -95,11 +99,11 @@ Diamond ${i + 1}:
 - Price: $${(d.price_per_carat * d.weight).toLocaleString()}
 `).join('\n')}
 
-Total value: $${diamondDetails.reduce((sum, d) => sum + (d.price_per_carat * d.weight), 0).toLocaleString()}
+Total collection value: $${diamondDetails.reduce((sum, d) => sum + (d.price_per_carat * d.weight), 0).toLocaleString()}
 
-Original message context: ${message || 'מצאנו עבורך יהלומים מתאימים'}
+Context: ${message || 'Found matching diamonds for their search'}
 
-Make it personal, engaging, and professional. Use 2-3 short paragraphs.`
+Remember: This buyer is looking to PURCHASE diamonds. Make them excited about this opportunity. DO NOT include any user IDs or technical details.`
               }
             ]
           })
