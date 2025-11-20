@@ -77,7 +77,7 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
   const retryCount = useRef(0);
-  const maxRetries = 2; // OPTIMIZED: Reduced from 3 to 2 for faster loading
+  const maxRetries = 3; // Allow more retries for initData race condition
 
   const updateState = useCallback((updates: Partial<OptimizedAuthState>) => {
     if (mountedRef.current) {
@@ -87,6 +87,25 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         loadTime: Date.now() - startTime.current
       }));
     }
+  }, []);
+
+  // Helper function to wait for initData to be available
+  const waitForInitData = useCallback(async (maxWaitTime: number = 3000): Promise<string | null> => {
+    const startTime = Date.now();
+    const checkInterval = 100;
+    
+    console.log('⏳ AUTH: Waiting for Telegram initData...');
+    
+    while (Date.now() - startTime < maxWaitTime) {
+      if (window.Telegram?.WebApp?.initData && window.Telegram.WebApp.initData.length > 50) {
+        console.log('✅ AUTH: initData is now available');
+        return window.Telegram.WebApp.initData;
+      }
+      await new Promise(resolve => setTimeout(resolve, checkInterval));
+    }
+    
+    console.warn('⚠️ AUTH: Timeout waiting for initData');
+    return null;
   }, []);
 
   const authenticateWithBackoff = useCallback(async (attempt: number = 0): Promise<void> => {
@@ -156,14 +175,17 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         console.warn('⚠️ AUTH: WebApp init warning:', e);
       }
 
+      // Wait for initData to be populated (with timeout)
+      const initData = await waitForInitData(3000);
+      
       // STRICT initData validation - must have minimum length and required fields
-      if (!tg.initData || tg.initData.length < 50) {
-        console.error('❌ AUTH: Invalid or missing Telegram initData');
+      if (!initData || initData.length < 50) {
+        console.error('❌ AUTH: Invalid or missing Telegram initData after wait');
         throw new Error('no_init_data');
       }
 
       // Validate initData structure contains required Telegram fields
-      const initDataParams = new URLSearchParams(tg.initData);
+      const initDataParams = new URLSearchParams(initData);
       if (!initDataParams.get('user') || !initDataParams.get('hash') || !initDataParams.get('auth_date')) {
         console.error('❌ AUTH: Telegram initData missing required fields (user, hash, auth_date)');
         throw new Error('invalid_init_data');
@@ -174,15 +196,15 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       // Clear any stale tokens
       clearBackendAuthToken();
       
-      // Authenticate with backend
-      const jwtToken = await signInToBackend(tg.initData);
+      // Authenticate with backend using the waited-for initData
+      const jwtToken = await signInToBackend(initData);
       
       if (!jwtToken) {
         throw new Error('backend_auth_failed');
       }
 
       // Extract and validate user data using centralized validation
-      const userData = extractTelegramUser(tg.initData);
+      const userData = extractTelegramUser(initData);
       if (!userData) {
         throw new Error('invalid_user_data');
       }
@@ -219,6 +241,14 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       const errorType = error instanceof Error ? error.message : 'system_error';
       
       retryCount.current++;
+      
+      // Special handling for no_init_data - this is often a timing issue
+      if (errorType === 'no_init_data' && retryCount.current < maxRetries) {
+        console.log(`🔄 AUTH: Retrying for initData availability (${retryCount.current}/${maxRetries})`);
+        return authenticateWithBackoff(retryCount.current);
+      }
+      
+      // Regular retry logic for other errors (except not_telegram_environment)
       if (retryCount.current < maxRetries && errorType !== 'not_telegram_environment') {
         console.log(`🔄 AUTH: Retrying (${retryCount.current}/${maxRetries})`);
         return authenticateWithBackoff(retryCount.current);
