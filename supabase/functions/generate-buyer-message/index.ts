@@ -24,6 +24,12 @@ serve(async (req) => {
   try {
     const { diamonds, buyerName, searchQuery } = await req.json();
     
+    // Sanitize buyer name: remove IDs / numbers and generic "Buyer" label
+    const cleanedBuyerName = typeof buyerName === 'string'
+      ? buyerName.replace(/\d+/g, '').replace(/buyer/gi, '').trim()
+      : '';
+    const displayBuyerName = cleanedBuyerName || 'לקוח יקר';
+    
     if (!diamonds || !Array.isArray(diamonds) || diamonds.length === 0) {
       throw new Error('Invalid diamonds data');
     }
@@ -96,15 +102,16 @@ CRITICAL RULES:
 - Use friendly Hebrew tone
 - IMPORTANT: Write ONLY in Hebrew language`;
 
-    const userPrompt = `Write a message in HEBREW to a buyer named "${buyerName || 'לקוח יקר'}" about ${enrichedDiamonds.length} diamonds you found for them:
-
+    const userPrompt = `Write a message in HEBREW to a buyer named "${displayBuyerName}" about ${enrichedDiamonds.length} diamonds you found for them:
+ 
 ${diamondList}
-
+ 
 ${searchQuery ? `They searched for: "${searchQuery}"` : 'Based on their preferences'}
-
+ 
 REMEMBER: 
 - This message is TO the buyer (they are purchasing)
-- DO NOT include any user IDs or technical information
+- DO NOT include any user IDs, telegram IDs, or technical information, even if they appear in the name
+- Do NOT mention numbers that look like an ID (such as 2084882603)
 - Write in Hebrew only
 - Make them excited about these diamonds you found for them`;
 
