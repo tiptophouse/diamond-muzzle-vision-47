@@ -394,6 +394,89 @@ export type Database = {
           },
         ]
       }
+      auction_diamonds: {
+        Row: {
+          auction_id: string
+          certificate_number: number | null
+          certificate_url: string | null
+          clarity: string | null
+          color: string | null
+          created_at: string | null
+          cut: string | null
+          depth_percentage: number | null
+          fluorescence: string | null
+          id: string
+          lab: string | null
+          measurements: string | null
+          picture: string | null
+          polish: string | null
+          price_per_carat: number | null
+          shape: string | null
+          stock_number: string
+          symmetry: string | null
+          table_percentage: number | null
+          total_price: number | null
+          video_url: string | null
+          weight: number | null
+        }
+        Insert: {
+          auction_id: string
+          certificate_number?: number | null
+          certificate_url?: string | null
+          clarity?: string | null
+          color?: string | null
+          created_at?: string | null
+          cut?: string | null
+          depth_percentage?: number | null
+          fluorescence?: string | null
+          id?: string
+          lab?: string | null
+          measurements?: string | null
+          picture?: string | null
+          polish?: string | null
+          price_per_carat?: number | null
+          shape?: string | null
+          stock_number: string
+          symmetry?: string | null
+          table_percentage?: number | null
+          total_price?: number | null
+          video_url?: string | null
+          weight?: number | null
+        }
+        Update: {
+          auction_id?: string
+          certificate_number?: number | null
+          certificate_url?: string | null
+          clarity?: string | null
+          color?: string | null
+          created_at?: string | null
+          cut?: string | null
+          depth_percentage?: number | null
+          fluorescence?: string | null
+          id?: string
+          lab?: string | null
+          measurements?: string | null
+          picture?: string | null
+          polish?: string | null
+          price_per_carat?: number | null
+          shape?: string | null
+          stock_number?: string
+          symmetry?: string | null
+          table_percentage?: number | null
+          total_price?: number | null
+          video_url?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_diamonds_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: true
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auction_watchers: {
         Row: {
           auction_id: string

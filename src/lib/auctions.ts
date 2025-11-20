@@ -7,6 +7,20 @@ export async function createAuction(
   const endsAt = new Date();
   endsAt.setHours(endsAt.getHours() + request.duration_hours);
 
+  // First, get the diamond details to store snapshot
+  const { data: diamond, error: fetchError } = await supabase
+    .from('inventory' as any)
+    .select('*')
+    .eq('stock_number', request.stock_number)
+    .eq('user_id', request.seller_telegram_id)
+    .is('deleted_at', null)
+    .single();
+
+  if (fetchError || !diamond) {
+    throw new Error('Diamond not found in your inventory');
+  }
+
+  // Create auction
   const { data, error } = await (supabase as any)
     .from('auctions')
     .insert([{
@@ -25,8 +39,39 @@ export async function createAuction(
     console.error('❌ Failed to create auction:', error);
     throw error;
   }
+
+  // Store diamond snapshot
+  const diamondRecord = diamond as any;
+  const { error: diamondError } = await supabase
+    .from('auction_diamonds' as any)
+    .insert({
+      auction_id: data.id,
+      stock_number: diamondRecord.stock_number,
+      shape: diamondRecord.shape,
+      weight: diamondRecord.weight,
+      color: diamondRecord.color,
+      clarity: diamondRecord.clarity,
+      cut: diamondRecord.cut,
+      polish: diamondRecord.polish,
+      symmetry: diamondRecord.symmetry,
+      fluorescence: diamondRecord.fluorescence,
+      measurements: diamondRecord.measurements,
+      table_percentage: diamondRecord.table_percentage,
+      depth_percentage: diamondRecord.depth_percentage,
+      certificate_number: diamondRecord.certificate_number,
+      lab: diamondRecord.lab,
+      picture: diamondRecord.picture,
+      certificate_url: diamondRecord.certificate_url,
+      video_url: diamondRecord.video_url,
+      price_per_carat: diamondRecord.price_per_carat,
+      total_price: diamondRecord.price_per_carat * diamondRecord.weight,
+    });
+
+  if (diamondError) {
+    console.error('⚠️ Failed to store diamond snapshot:', diamondError);
+  }
   
-  console.log('✅ Auction created successfully:', data);
+  console.log('✅ Auction created successfully with diamond snapshot:', data);
   return data as any;
 }
 
@@ -39,11 +84,11 @@ export async function getAuctionById(auctionId: string) {
 
   if (error) throw error;
 
-  // Get diamond separately
+  // Get diamond from auction_diamonds snapshot
   const { data: diamond } = await supabase
-    .from('inventory' as any)
+    .from('auction_diamonds' as any)
     .select('*')
-    .eq('stock_number', (auction as any).stock_number)
+    .eq('auction_id', auctionId)
     .single();
 
   // Get bids

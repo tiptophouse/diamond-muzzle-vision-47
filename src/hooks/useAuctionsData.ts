@@ -46,18 +46,16 @@ export function useAuctionsData() {
 
       if (auctionsError) throw auctionsError;
 
-      // Fetch stock numbers
-      const stockNumbers = auctionsData?.map((a: any) => a.stock_number) || [];
+      // Fetch auction IDs for diamonds and bids
+      const auctionIds = auctionsData?.map((a: any) => a.id) || [];
       
-      // Fetch diamonds for these stock numbers
+      // Fetch diamond snapshots from auction_diamonds table
       const { data: diamondsData } = await (supabase as any)
-        .from('inventory')
-        .select('stock_number, shape, weight, color, clarity, cut, picture, certificate_number, lab')
-        .in('stock_number', stockNumbers)
-        .is('deleted_at', null);
+        .from('auction_diamonds')
+        .select('auction_id, stock_number, shape, weight, color, clarity, cut, picture, certificate_number, lab')
+        .in('auction_id', auctionIds);
 
       // Fetch bid counts
-      const auctionIds = auctionsData?.map((a: any) => a.id) || [];
       const { data: bidsData } = await (supabase as any)
         .from('auction_bids')
         .select('auction_id')
@@ -71,12 +69,12 @@ export function useAuctionsData() {
 
       // Combine data
       const diamondsMap = new Map(
-        diamondsData?.map((d: any) => [d.stock_number, d]) || []
+        diamondsData?.map((d: any) => [d.auction_id, d]) || []
       );
 
       const enrichedAuctions: AuctionWithDiamond[] = auctionsData?.map((auction: any) => ({
         ...auction,
-        diamond: diamondsMap.get(auction.stock_number) || null,
+        diamond: diamondsMap.get(auction.id) || null,
         bid_count: bidCounts[auction.id] || 0,
       })) || [];
 
