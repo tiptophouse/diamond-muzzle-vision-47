@@ -88,29 +88,27 @@ async function handleBidCallback(
   const { id, from, message } = callbackQuery;
 
   try {
-    // Step 1: Fetch auction with diamond data
+    // Step 1: Fetch auction with diamond snapshot from auction_diamonds
     const { data: auction, error: auctionError } = await supabase
       .from('auctions')
-      .select(`
-        *,
-        inventory!fk_auction_diamond(
-          id,
-          stock_number,
-          shape,
-          weight,
-          color,
-          clarity,
-          cut,
-          price_per_carat,
-          picture,
-          gem360_url
-        )
-      `)
+      .select('*')
       .eq('id', auctionId)
       .single();
 
     if (auctionError || !auction) {
       await answerCallbackQuery(id, '❌ המכרז לא נמצא', true);
+      return new Response('OK', { status: 200 });
+    }
+
+    // Fetch diamond snapshot from auction_diamonds table
+    const { data: diamond, error: diamondError } = await supabase
+      .from('auction_diamonds')
+      .select('*')
+      .eq('auction_id', auctionId)
+      .single();
+
+    if (diamondError || !diamond) {
+      await answerCallbackQuery(id, '❌ נתוני היהלום לא נמצאו', true);
       return new Response('OK', { status: 200 });
     }
 
@@ -229,9 +227,11 @@ async function handleBidCallback(
     // Step 9: Answer callback query
     await answerCallbackQuery(id, `✅ הצעה התקבלה! $${nextBidAmount}`, false);
 
-    // Step 10: Edit message with updated info
+    // Step 10: Edit ALL auction messages (the clicked one + all others)
+    await updateAllAuctionMessages(auction, diamond, nextBidAmount);
+
+    // Also update the specific message that was clicked immediately for better UX
     if (message) {
-      const diamond = auction.inventory;
       const diamondData: DiamondCardData = {
         id: diamond.id,
         stock_number: diamond.stock_number,
@@ -242,7 +242,7 @@ async function handleBidCallback(
         cut: diamond.cut,
         price_per_carat: nextBidAmount / diamond.weight,
         picture: diamond.picture,
-        gem360_url: diamond.gem360_url,
+        gem360_url: diamond.video_url,
       };
 
       const endsAt = new Date(auction.ends_at);
@@ -261,7 +261,7 @@ async function handleBidCallback(
               callback_data: `bid:${auctionId}`,
             },
           ],
-          includeStoreButton: false, // Don't show store button in auctions
+          includeStoreButton: false,
           botUsername,
         }
       );
@@ -312,6 +312,59 @@ async function handleBidCallback(
     console.error('❌ Error processing bid:', error);
     await answerCallbackQuery(id, '❌ משהו השתבש', true);
     return new Response('OK', { status: 200 });
+  }
+}
+
+/**
+ * Update all auction messages across all chats
+ */
+async function updateAllAuctionMessages(
+  auction: any,
+  diamond: any,
+  newPrice: number
+): Promise<void> {
+  try {
+    const messageIds = auction.message_ids || {};
+    const endsAt = new Date(auction.ends_at);
+    const timeRemaining = Math.floor((endsAt.getTime() - Date.now()) / (1000 * 60 * 60));
+
+    const diamondData: DiamondCardData = {
+      id: diamond.id,
+      stock_number: diamond.stock_number,
+      shape: diamond.shape,
+      weight: diamond.weight,
+      color: diamond.color,
+      clarity: diamond.clarity,
+      cut: diamond.cut,
+      price_per_carat: newPrice / diamond.weight,
+      picture: diamond.picture,
+      gem360_url: diamond.video_url,
+    };
+
+    const updatePromises = Object.entries(messageIds).map(([chatId, messageId]) =>
+      editDiamondCard(
+        Number(chatId),
+        Number(messageId),
+        diamondData,
+        {
+          context: 'auction',
+          customMessage: `💰 מחיר נוכחי: ${newPrice} ${auction.currency}\n📈 הצעה הבאה: ${newPrice + auction.min_increment} ${auction.currency}\n⏰ זמן נותר: ~${timeRemaining} שעות\n🔥 ${auction.bid_count || 0} הצעות`,
+          additionalButtons: [
+            {
+              text: `💰 הצע ${newPrice + auction.min_increment} ${auction.currency}`,
+              callback_data: `bid:${auction.id}`,
+            },
+          ],
+          includeStoreButton: false,
+          botUsername,
+        }
+      ).catch((err) => console.warn(`Failed to update message in chat ${chatId}:`, err))
+    );
+
+    await Promise.all(updatePromises);
+    console.log(`✅ Updated ${updatePromises.length} auction messages`);
+  } catch (error) {
+    console.error('❌ Error updating auction messages:', error);
   }
 }
 

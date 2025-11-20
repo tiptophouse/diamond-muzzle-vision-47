@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.track-buyer-contact]
 verify_jwt = false
+
+[functions.register-telegram-webhook]
+verify_jwt = false

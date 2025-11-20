@@ -10,6 +10,7 @@ import { Filter, Search, Hammer, TrendingUp } from "lucide-react";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { Badge } from "@/components/ui/badge";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
+import { WebhookRegistrationButton } from "@/components/admin/WebhookRegistrationButton";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -165,16 +166,19 @@ function AuctionsListPage() {
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b border-border">
           <div className="p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-                <Hammer className="h-5 w-5 text-white" />
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                  <Hammer className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-foreground">Live Auctions</h1>
+                  <p className="text-sm text-muted-foreground">
+                    {filteredAuctions.length} active {filteredAuctions.length === 1 ? 'auction' : 'auctions'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">Live Auctions</h1>
-                <p className="text-sm text-muted-foreground">
-                  {filteredAuctions.length} active {filteredAuctions.length === 1 ? 'auction' : 'auctions'}
-                </p>
-              </div>
+              <WebhookRegistrationButton />
             </div>
 
             {/* Search Bar */}
