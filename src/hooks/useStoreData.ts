@@ -123,7 +123,7 @@ export function useStoreData() {
     return undefined;
   }, []);
 
-  // Regular image URL processing - exclude 360° URLs
+  // Regular image URL processing - exclude 360° viewers but not S3 URLs with "360" in path
   const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
     if (!imageUrl || typeof imageUrl !== 'string') {
       return undefined;
@@ -140,13 +140,26 @@ export function useStoreData() {
       return undefined;
     }
 
-    // Skip 360° viewers - these should go to gem360Url instead
+    // Must be a valid HTTP/HTTPS URL first
+    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+      return undefined;
+    }
+
+    // Check if it's a valid image file (jpg, jpeg, png, webp, gif)
+    const hasImageExtension = trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i);
+    
+    // If it has an image extension, it's a regular image - accept it even if path contains "360"
+    if (hasImageExtension) {
+      return trimmedUrl;
+    }
+
+    // For URLs without image extensions, check if they're 360° viewers
     if (trimmedUrl.includes('.html') ||
         trimmedUrl.includes('diamondview.aspx') ||
         trimmedUrl.includes('v360.in') ||
         trimmedUrl.includes('my360.fab') ||
         trimmedUrl.includes('my360.sela') ||
-        trimmedUrl.includes('segoma.com') ||        // Add Segoma exclusion
+        trimmedUrl.includes('segoma.com') ||
         trimmedUrl.includes('sarine') ||
         trimmedUrl.includes('360') ||
         trimmedUrl.includes('3d') ||
@@ -154,19 +167,13 @@ export function useStoreData() {
       return undefined;
     }
 
-    // Must be a valid HTTP/HTTPS URL
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
-      return undefined;
-    }
-
-    // Accept common image extensions OR image service URLs
-    const hasImageExtension = trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i);
+    // Accept image service URLs without extensions
     const isImageServiceUrl = trimmedUrl.includes('unsplash.com') || 
                              trimmedUrl.includes('/image') ||
                              trimmedUrl.includes('w=') || 
                              trimmedUrl.includes('h=');   
 
-    if (hasImageExtension || isImageServiceUrl) {
+    if (isImageServiceUrl) {
       return trimmedUrl;
     }
 
