@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { sendDiamondCard, DiamondCardData, DiamondCardOptions } from '../_shared/diamond-card-template.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,12 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    const { telegram_id, message, diamond_images, diamond_stocks, seller_telegram_id, seller_username, seller_phone } = await req.json();
+    const { telegram_id, message, diamond_images, diamond_stocks, seller_telegram_id, seller_username } = await req.json();
 
-    console.log('📤 Sending message to buyer:', {
+    console.log('📤 Sending diamond cards to buyer:', {
       telegram_id,
       message_length: message?.length,
-      images_count: diamond_images?.length || 0,
       stocks_count: diamond_stocks?.length || 0,
       seller_telegram_id,
       seller_username
@@ -32,118 +33,101 @@ serve(async (req) => {
     if (!TELEGRAM_BOT_USERNAME) {
       throw new Error('TELEGRAM_BOT_USERNAME not configured');
     }
-    
-    const telegramBotUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
-    console.log('📱 Telegram Bot URL:', telegramBotUrl);
 
-    let result;
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Send diamond card with image and message
-    if (diamond_images && diamond_images.length > 0) {
-      console.log('📸 Sending diamond card with image:', diamond_images[0]);
-      
-      // Use sendPhoto for the first image with message as caption (better UX than media group)
-      const photoUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
-      
-      const photoResponse = await fetch(photoUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: telegram_id,
-          photo: diamond_images[0],
-          caption: message,
-          parse_mode: 'HTML'
-        }),
-      });
-
-      if (!photoResponse.ok) {
-        const errorData = await photoResponse.json();
-        console.error('❌ Failed to send diamond card:', errorData);
-        throw new Error(`Failed to send image: ${errorData.description || 'Unknown error'}`);
-      }
-
-      const photoResult = await photoResponse.json();
-      console.log('✅ Diamond card sent successfully');
-      result = photoResult;
-    } else {
-      // No images - send as regular message
+    // First send the AI-generated message as a standalone text
+    if (message) {
       const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-      
-      const telegramResponse = await fetch(telegramApiUrl, {
+      await fetch(telegramApiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: telegram_id,
           text: message,
           parse_mode: 'HTML'
         }),
       });
-
-      if (!telegramResponse.ok) {
-        const errorData = await telegramResponse.json();
-        console.error('❌ Telegram API error:', errorData);
-        throw new Error(`Telegram API error: ${errorData.description || 'Unknown error'}`);
-      }
-
-      result = await telegramResponse.json();
-      console.log('✅ Message sent successfully');
+      console.log('✅ AI message sent');
     }
 
-    // Always send inline buttons with Telegram deep links (open in Mini App)
+    let result;
+    const messageIds: number[] = [];
+
+    // Send each diamond as a beautiful card
     if (diamond_stocks && diamond_stocks.length > 0) {
-      console.log('💎 Sending inline buttons for diamonds:', diamond_stocks.length);
+      console.log('💎 Sending diamond cards:', diamond_stocks.length);
       
-      const diamondButtons = diamond_stocks.slice(0, 4).map((stock: string) => ({
-        text: `💎 צפה במלאי ${stock}`,
-        url: `${telegramBotUrl}?startapp=diamond_${stock}`
-      }));
+      for (const stock of diamond_stocks.slice(0, 4)) {
+        // Fetch diamond data from inventory
+        const { data: diamond, error: diamondError } = await supabase
+          .from('inventory')
+          .select('*')
+          .eq('stock_number', stock)
+          .single();
 
-      // Arrange buttons in rows of 2
-      const buttonRows = [];
-      for (let i = 0; i < diamondButtons.length; i += 2) {
-        buttonRows.push(diamondButtons.slice(i, i + 2));
+        if (diamondError || !diamond) {
+          console.error('❌ Diamond not found:', stock);
+          continue;
+        }
+
+        // Build diamond card data
+        const diamondData: DiamondCardData = {
+          id: diamond.id,
+          stock_number: diamond.stock_number,
+          shape: diamond.shape,
+          weight: diamond.weight,
+          color: diamond.color,
+          clarity: diamond.clarity,
+          cut: diamond.cut || 'N/A',
+          price_per_carat: diamond.price_per_carat,
+          picture: diamond.picture,
+          gem360_url: diamond.gem360_url,
+        };
+
+        // Build contact button
+        const additionalButtons = [];
+        if (seller_telegram_id || seller_username) {
+          const contactUrl = seller_username 
+            ? `https://t.me/${seller_username}`
+            : `tg://user?id=${seller_telegram_id}`;
+          
+          additionalButtons.push({
+            text: '📞 צור קשר עם המוכר',
+            url: contactUrl
+          });
+        }
+
+        // Send diamond card
+        const cardResult = await sendDiamondCard(
+          Number(telegram_id),
+          diamondData,
+          {
+            context: 'offer',
+            sharedById: seller_telegram_id,
+            additionalButtons: additionalButtons,
+            includeStoreButton: true,
+            botUsername: TELEGRAM_BOT_USERNAME,
+          }
+        );
+
+        if (cardResult.success && cardResult.messageId) {
+          messageIds.push(cardResult.messageId);
+          result = { result: { message_id: cardResult.messageId } };
+        } else {
+          console.error('⚠️ Failed to send diamond card:', cardResult.error);
+        }
+
+        // Small delay between cards to avoid rate limits
+        if (diamond_stocks.indexOf(stock) < diamond_stocks.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
       }
 
-      // Add "Contact Seller" button (if seller info provided)
-      if (seller_telegram_id || seller_username) {
-        const contactUrl = seller_username 
-          ? `https://t.me/${seller_username}`
-          : `tg://user?id=${seller_telegram_id}`;
-        
-        buttonRows.push([
-          { text: '📞 צור קשר עם המוכר', url: contactUrl }
-        ]);
-      }
-
-      // Add "View All" button
-      buttonRows.push([
-        { text: '🏪 לכל המלאי', url: `${telegramBotUrl}?startapp=store` }
-      ]);
-
-      const buttonUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-      
-      const buttonResponse = await fetch(buttonUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: telegram_id,
-          text: '💎 לחץ לצפייה ביהלומים במערכת:',
-          reply_markup: { inline_keyboard: buttonRows }
-        }),
-      });
-
-      if (!buttonResponse.ok) {
-        const errorData = await buttonResponse.json();
-        console.error('⚠️ Failed to send web app buttons:', errorData);
-      } else {
-        console.log('✅ Inline web_app buttons sent successfully');
-      }
+      console.log('✅ All diamond cards sent:', messageIds.length);
     }
 
     return new Response(
