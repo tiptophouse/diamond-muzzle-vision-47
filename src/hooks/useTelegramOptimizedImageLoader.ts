@@ -76,6 +76,12 @@ export function useTelegramOptimizedImageLoader(options: TelegramImageLoaderOpti
   const optimizeImageUrl = useCallback((url: string): string => {
     try {
       const urlObj = new URL(url);
+      
+      // Skip optimization for S3 URLs - they don't support query parameters
+      if (urlObj.hostname.includes('amazonaws.com') || urlObj.hostname.includes('s3.')) {
+        return url;
+      }
+      
       const params = new URLSearchParams(urlObj.search);
       
       // Telegram WebView supports WebP universally
