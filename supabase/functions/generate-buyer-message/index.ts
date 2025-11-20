@@ -82,23 +82,31 @@ serve(async (req) => {
       return price >= 0 ? sum + price : sum;
     }, 0);
 
-    const systemPrompt = `You are a professional diamond dealer assistant. Generate a warm, helpful message IN HEBREW directly to a buyer about diamonds that match their search. The message should be:
-- Warm and customer-focused, written in HEBREW
-- Address the buyer directly (use "שלום" or mention their name)
-- Brief (2-3 sentences max)
-- Mention what you found for them based on their search
-- Invite them to view details and contact for more information
-- Use friendly, professional tone in Hebrew
-- DO NOT include seller perspective or "I'm sending you" - speak directly to the buyer
+    const systemPrompt = `You are writing a message that a BUYER will receive from a diamond dealer.
+
+CRITICAL RULES:
+- Write FROM the dealer's perspective TO the buyer
+- Address the buyer directly as "you" (אתה/את in Hebrew)
+- DO NOT include buyer's user ID, telegram ID, or any technical identifiers  
+- DO NOT write as if the buyer is the seller - they are BUYING diamonds
+- Be warm, welcoming, and professional
+- Keep it brief (2-3 sentences maximum)
+- Explain what diamonds you found that match their search
+- Invite them to view details and contact you for more info
+- Use friendly Hebrew tone
 - IMPORTANT: Write ONLY in Hebrew language`;
 
-    const userPrompt = `Generate a message IN HEBREW directly to buyer "${buyerName || 'לקוח יקר'}" about ${enrichedDiamonds.length} diamonds you found for them:
+    const userPrompt = `Write a message in HEBREW to a buyer named "${buyerName || 'לקוח יקר'}" about ${enrichedDiamonds.length} diamonds you found for them:
 
 ${diamondList}
 
 ${searchQuery ? `They searched for: "${searchQuery}"` : 'Based on their preferences'}
 
-IMPORTANT: Write directly to the buyer in Hebrew. Make them feel you found something special for them.`;
+REMEMBER: 
+- This message is TO the buyer (they are purchasing)
+- DO NOT include any user IDs or technical information
+- Write in Hebrew only
+- Make them excited about these diamonds you found for them`;
 
     console.log('🤖 Generating message with AI...');
     
