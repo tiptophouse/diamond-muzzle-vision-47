@@ -11,13 +11,15 @@ serve(async (req) => {
   }
 
   try {
-    const { telegram_id, message, diamond_images, diamond_stocks } = await req.json();
+    const { telegram_id, message, diamond_images, diamond_stocks, seller_telegram_id, seller_username, seller_phone } = await req.json();
 
     console.log('📤 Sending message to buyer:', {
       telegram_id,
       message_length: message?.length,
       images_count: diamond_images?.length || 0,
-      stocks_count: diamond_stocks?.length || 0
+      stocks_count: diamond_stocks?.length || 0,
+      seller_telegram_id,
+      seller_username
     });
 
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
@@ -104,6 +106,17 @@ serve(async (req) => {
       const buttonRows = [];
       for (let i = 0; i < diamondButtons.length; i += 2) {
         buttonRows.push(diamondButtons.slice(i, i + 2));
+      }
+
+      // Add "Contact Seller" button (if seller info provided)
+      if (seller_telegram_id || seller_username) {
+        const contactUrl = seller_username 
+          ? `https://t.me/${seller_username}`
+          : `tg://user?id=${seller_telegram_id}`;
+        
+        buttonRows.push([
+          { text: '📞 צור קשר עם המוכר', url: contactUrl }
+        ]);
       }
 
       // Add "View All" button

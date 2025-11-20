@@ -180,6 +180,10 @@ export function BuyerContactDialog({
       console.log(`📸 Including ${currentDiamondImages.length} diamond images`);
       console.log(`💎 Including ${diamondStocks.length} diamond stock numbers`);
 
+      // Get seller's Telegram username if available
+      const WebApp = (window as any).Telegram?.WebApp;
+      const sellerUsername = WebApp?.initDataUnsafe?.user?.username;
+
       // Send message with diamond cards and inline buttons via Telegram bot
       const { data, error } = await supabase.functions.invoke('send-seller-message', {
         body: {
@@ -187,6 +191,8 @@ export function BuyerContactDialog({
           message: generatedMessage,
           diamond_images: currentDiamondImages,
           diamond_stocks: diamondStocks,
+          seller_telegram_id: sellerTelegramId,
+          seller_username: sellerUsername,
         },
       });
 
