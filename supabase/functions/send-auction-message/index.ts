@@ -44,29 +44,29 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log('📤 Fetching diamond data for stock:', stock_number);
+    console.log('📤 Fetching diamond snapshot for auction:', auction_id);
 
-    // Fetch full diamond data from inventory
+    // Fetch diamond snapshot from auction_diamonds
     const { data: diamond, error: diamondError } = await supabase
-      .from('inventory')
+      .from('auction_diamonds')
       .select('*')
-      .eq('stock_number', stock_number)
+      .eq('auction_id', auction_id)
       .single();
 
     if (diamondError || !diamond) {
-      console.error('❌ Diamond not found:', diamondError);
-      throw new Error('Diamond not found');
+      console.error('❌ Diamond snapshot not found:', diamondError);
+      throw new Error('Diamond snapshot not found for auction');
     }
 
-    console.log('✅ Diamond data fetched:', diamond.id);
+    console.log('✅ Diamond snapshot fetched for auction');
 
     // Calculate time remaining
     const endsAtDate = new Date(ends_at);
     const timeRemaining = Math.floor((endsAtDate.getTime() - Date.now()) / (1000 * 60 * 60));
 
-    // Build DiamondCardData
+    // Build DiamondCardData from snapshot
     const diamondData: DiamondCardData = {
-      id: diamond.id,
+      id: diamond.id || stock_number, // Use snapshot ID or stock_number as fallback
       stock_number: diamond.stock_number,
       shape: diamond.shape,
       weight: diamond.weight,
@@ -75,7 +75,7 @@ serve(async (req) => {
       cut: diamond.cut,
       price_per_carat: diamond.price_per_carat,
       picture: diamond.picture || image_url,
-      gem360_url: diamond.gem360_url,
+      gem360_url: diamond.video_url,
     };
 
     // Build DiamondCardOptions with auction context
