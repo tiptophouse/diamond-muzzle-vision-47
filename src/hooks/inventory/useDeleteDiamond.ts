@@ -69,46 +69,38 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       
     } catch (error: any) {
       console.error('❌ DELETE: Failed to delete diamond:', error);
+      console.error('❌ DELETE: Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        stockNumber,
+        diamondId: localDiamondId
+      });
       
       // Restore diamond to UI on error
       if (restoreDiamondToState && diamondData) {
         restoreDiamondToState(diamondData);
       }
 
-      // Show error message with fallback to localStorage
-      const isNetworkError = error.message?.includes('fetch') || error.name === 'TypeError';
+      // Determine error type and show appropriate message
+      let errorMessage = 'אירעה שגיאה בעת מחיקת היהלום';
       
-      if (isNetworkError) {
-        // Network error - try localStorage fallback
-        console.log('🔄 DELETE: Network error, falling back to localStorage...');
-        try {
-          const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-          const filteredData = existingData.filter((item: any) => 
-            item.id !== localDiamondId && 
-            item.stockNumber !== stockNumber
-          );
-          
-          if (filteredData.length < existingData.length) {
-            localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
-            
-            toast({
-              title: "Diamond removed locally",
-              description: "Diamond removed offline. Will sync when connection is restored.",
-            });
-            
-            triggerInventoryChange();
-            if (onSuccess) onSuccess();
-            return true;
-          }
-        } catch (localError) {
-          console.error('❌ DELETE: LocalStorage fallback failed:', localError);
-        }
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        errorMessage = 'שגיאת אימות - אנא התחבר מחדש';
+      } else if (error.message?.includes('fetch') || error.name === 'TypeError') {
+        errorMessage = 'אין חיבור לשרת - נסה שוב מאוחר יותר';
+      } else if (error.message?.includes('Invalid ID')) {
+        errorMessage = 'מזהה יהלום לא תקין';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
+      // Always show error toast
       toast({
         variant: "destructive",
-        title: "❌ Delete Failed",
-        description: `Could not delete diamond ${stockNumber}. ${error.message || 'Please try again.'}`,
+        title: "❌ מחיקה נכשלה",
+        description: errorMessage,
+        duration: 5000, // Show for 5 seconds
       });
       
       return false;
