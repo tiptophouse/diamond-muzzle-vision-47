@@ -78,7 +78,8 @@ export function AuthDiagnostics() {
         hasBackendToken: !!getBackendAuthToken(),
         backendTokenLength: getBackendAuthToken()?.length || 0,
         currentUserId: getCurrentUserId(),
-        tokenManagerMetrics: metrics
+        tokenManagerMetrics: metrics,
+        jwtToken: getBackendAuthToken() || 'No token available'
       },
       telegram: {
         initDataSample: tg?.initData?.substring(0, 100) + '...' || 'No initData',
@@ -156,6 +157,29 @@ export function AuthDiagnostics() {
             )}
           </div>
         </div>
+
+        <Separator />
+
+        {/* JWT Token Display */}
+        {getBackendAuthToken() && (
+          <div>
+            <h3 className="font-semibold mb-2">🔑 Current JWT Token</h3>
+            <div className="bg-gray-900 text-green-400 p-3 rounded-md text-xs font-mono break-all">
+              {getBackendAuthToken()}
+            </div>
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(getBackendAuthToken() || '');
+                console.log('✅ JWT token copied to clipboard');
+              }}
+              size="sm"
+              variant="outline"
+              className="mt-2"
+            >
+              📋 Copy JWT Token
+            </Button>
+          </div>
+        )}
 
         <Separator />
 
