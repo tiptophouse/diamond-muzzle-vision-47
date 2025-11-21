@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Phone, MessageCircle, Eye, TrendingUp, Gem, HandHeart, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -19,6 +20,7 @@ interface QuickStats {
 }
 
 export function ActionFocusedDashboard({ allDiamonds }: ActionFocusedDashboardProps) {
+  const navigate = useNavigate();
   const { notifications, markAsRead } = useNotifications();
   const { hapticFeedback } = useTelegramWebApp();
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
@@ -160,11 +162,15 @@ export function ActionFocusedDashboard({ allDiamonds }: ActionFocusedDashboardPr
             const isExpanded = expandedMatch === notification.id;
 
             return (
-              <Card key={notification.id} className={cn(
-                "p-4 border-l-4 transition-all duration-200",
-                "border-l-green-500 bg-green-500/5",
-                isExpanded && "shadow-lg"
-              )}>
+              <Card 
+                key={notification.id} 
+                onClick={() => navigate(`/notifications?buyerId=${customerInfo?.telegram_id || customerInfo?.user_id}`)}
+                className={cn(
+                  "p-4 border-l-4 transition-all duration-200 cursor-pointer hover:shadow-xl",
+                  "border-l-green-500 bg-green-500/5",
+                  isExpanded && "shadow-lg"
+                )}
+              >
                 <div className="space-y-3">
                   {/* Header */}
                   <div className="flex items-start justify-between">
@@ -185,7 +191,10 @@ export function ActionFocusedDashboard({ allDiamonds }: ActionFocusedDashboardPr
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleViewDetails(notification)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewDetails(notification);
+                      }}
                       className="shrink-0"
                     >
                       <Eye className="h-4 w-4" />

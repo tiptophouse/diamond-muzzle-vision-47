@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
 import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -17,6 +18,10 @@ import { http } from '@/api/http';
 import { apiEndpoints } from '@/lib/api/endpoints';
 
 const NotificationsPage = () => {
+  const [searchParams] = useSearchParams();
+  const buyerIdFromUrl = searchParams.get('buyerId');
+  const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  
   const { notifications, isLoading, markAsRead, refetch, loadMore, hasMore } = useFastApiNotifications();
   const { user } = useTelegramAuth();
   const haptic = useTelegramHapticFeedback();
@@ -62,6 +67,20 @@ const NotificationsPage = () => {
     
     fetchInventory();
   }, [user]);
+  
+  // Scroll to buyer card if buyerId is in URL
+  useEffect(() => {
+    if (buyerIdFromUrl && !isLoading) {
+      setTimeout(() => {
+        const buyerId = parseInt(buyerIdFromUrl);
+        const cardElement = cardRefs.current.get(buyerId);
+        if (cardElement) {
+          cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          haptic.impactOccurred('medium');
+        }
+      }, 300);
+    }
+  }, [buyerIdFromUrl, isLoading, haptic]);
   
   // Pull-to-refresh
   const { isRefreshing, pullDistance, isPulling } = usePullToRefresh({
@@ -359,15 +378,21 @@ const NotificationsPage = () => {
         ) : (
           <div className="space-y-3">
             {groupedNotifications.map((group) => (
-              <MatchNotificationCard
+              <div 
                 key={group.buyer.userId}
-                group={group}
-                selectedDiamonds={selectedDiamonds[group.buyer.userId] || new Set()}
-                onToggleDiamond={(stockNumber) => handleToggleDiamond(group.buyer.userId, stockNumber)}
-                onSelectAll={(stockNumbers) => handleSelectAll(group.buyer.userId, stockNumbers)}
-                onClearSelection={() => handleClearSelection(group.buyer.userId)}
-                onContactBuyer={() => handleContactBuyer(group.buyer.userId)}
-              />
+                ref={(el) => {
+                  if (el) cardRefs.current.set(group.buyer.userId, el);
+                }}
+              >
+                <MatchNotificationCard
+                  group={group}
+                  selectedDiamonds={selectedDiamonds[group.buyer.userId] || new Set()}
+                  onToggleDiamond={(stockNumber) => handleToggleDiamond(group.buyer.userId, stockNumber)}
+                  onSelectAll={(stockNumbers) => handleSelectAll(group.buyer.userId, stockNumbers)}
+                  onClearSelection={() => handleClearSelection(group.buyer.userId)}
+                  onContactBuyer={() => handleContactBuyer(group.buyer.userId)}
+                />
+              </div>
             ))}
           </div>
         )}
