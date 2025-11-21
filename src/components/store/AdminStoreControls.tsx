@@ -33,7 +33,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
       }
       
       deleteStone.mutate(
-        { diamondId, userId: user.id },
+        { diamondId: diamondId.toString(), userId: user.id },
         {
           onSuccess: () => {
             onDelete();
