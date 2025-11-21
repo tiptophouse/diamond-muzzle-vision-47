@@ -103,6 +103,7 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
         title: "🔐 נדרש אימות",
         description: "אנא התחבר מחדש לאפליקציה",
         variant: "destructive",
+        duration: 7000,
       });
       
       throw error;
@@ -119,6 +120,7 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
         title: "🔌 Server Offline",
         description: "השרת אינו זמין כרגע. אנא נסה שוב מאוחר יותר.",
         variant: "destructive",
+        duration: 7000,
       });
       
       throw new Error('השרת אינו זמין כרגע. אנא נסה שוב מאוחר יותר.');
@@ -178,6 +180,7 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
           title: "🔐 Session Expired",
           description: "אנא התחבר מחדש | Please sign in again",
           variant: "destructive",
+          duration: 7000,
         });
         
         // Clear the invalid token (attempt to clear from localStorage)
@@ -202,21 +205,31 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
       // Show specific error messages for different operations
       if (method === 'DELETE') {
         toast({
-          title: "❌ Deletion Failed",
-          description: `לא ניתן למחוק את הפריט: ${errorMessage}`,
+          title: "❌ מחיקה נכשלה",
+          description: `${errorMessage}`,
           variant: "destructive",
+          duration: 7000,
         });
       } else if (method === 'POST') {
         toast({
-          title: "❌ Creation Failed", 
-          description: `לא ניתן ליצור את הפריט: ${errorMessage}`,
+          title: "❌ יצירה נכשלה", 
+          description: `${errorMessage}`,
           variant: "destructive",
+          duration: 7000,
+        });
+      } else if (method === 'PUT') {
+        toast({
+          title: "❌ עדכון נכשל",
+          description: `${errorMessage}`,
+          variant: "destructive",
+          duration: 7000,
         });
       } else {
         toast({
           title: "❌ Request Failed",
           description: errorMessage,
           variant: "destructive",
+          duration: 7000,
         });
       }
       
@@ -256,16 +269,18 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
         toast({
-          title: "⏱️ Timeout",
+          title: "⏱️ תם הזמן",
           description: "הבקשה נכשלה עקב זמן קצוב. אנא נסה שוב.",
           variant: "destructive",
+          duration: 7000,
         });
         throw new Error('הבקשה נכשלה עקב זמן קצוב. אנא נסה שוב.');
       } else if (error.message.includes('Failed to fetch')) {
         toast({
-          title: "🌐 Connection Error",
+          title: "🌐 שגיאת חיבור",
           description: "לא ניתן להתחבר לשרת. בדוק את חיבור האינטרנט ונסה שוב.",
           variant: "destructive",
+          duration: 7000,
         });
         throw new Error('לא ניתן להתחבר לשרת. בדוק את חיבור האינטרנט ונסה שוב.');
       } else {
