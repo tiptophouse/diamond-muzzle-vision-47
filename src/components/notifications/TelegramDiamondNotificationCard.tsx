@@ -23,6 +23,7 @@ interface DiamondMatch {
   status: string;
   confidence?: number;
   total_price?: number;
+  picture?: string;
 }
 
 interface TelegramDiamondNotificationCardProps {
@@ -340,6 +341,20 @@ export function TelegramDiamondNotificationCard({
                     </Badge>
                   )}
                 </div>
+                
+                {/* Diamond Image */}
+                {topMatch.picture && (
+                  <div className="mb-2 rounded-lg overflow-hidden border border-border/30">
+                    <img 
+                      src={topMatch.picture} 
+                      alt={`${topMatch.shape} ${topMatch.weight}ct diamond`}
+                      className="w-full h-32 object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 gap-1.5 mb-2">
                   <div className="text-center bg-background/50 rounded p-1.5">

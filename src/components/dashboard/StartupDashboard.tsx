@@ -290,7 +290,11 @@ export function StartupDashboard() {
             <CardContent className="pt-0">
               <div className="space-y-2">
                 {searchResults.slice(0, 3).map((result, index) => (
-                  <div key={result.id} className="flex items-center justify-between p-3 bg-background/60 rounded-lg">
+                  <div 
+                    key={result.id} 
+                    onClick={() => handleQuickAction('notifications', `/notifications?buyerId=${result.buyer_id}`)}
+                    className="flex items-center justify-between p-3 bg-background/60 rounded-lg hover:bg-background/80 cursor-pointer transition-colors"
+                  >
                     <div className="flex items-center gap-3">
                       <div className={`w-2 h-2 rounded-full ${result.result_type === 'match' ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`}></div>
                       <div>
