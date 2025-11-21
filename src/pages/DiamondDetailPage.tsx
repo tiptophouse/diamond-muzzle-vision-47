@@ -17,6 +17,7 @@ import { Gem360Viewer } from "@/components/store/Gem360Viewer";
 import { UniversalImageHandler } from "@/components/store/UniversalImageHandler";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 function DiamondDetailPage() {
   const { stockNumber: diamondId } = useParams<{ stockNumber: string }>();
@@ -29,6 +30,7 @@ function DiamondDetailPage() {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [showAuctionModal, setShowAuctionModal] = useState(false);
+  const { isAdmin } = useIsAdmin();
 
   // Track diamond view when opened from Telegram
   useEffect(() => {
@@ -41,9 +43,6 @@ function DiamondDetailPage() {
   const handleGoBack = useCallback(() => {
     navigate(-1);
   }, [navigate]);
-
-  // Memoized admin check
-  const isAdmin = useMemo(() => user?.id === 2138564172, [user?.id]);
 
   // Memoized diamond finding using stock number
   const diamond = useMemo(() => {
