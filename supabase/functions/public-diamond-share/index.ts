@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 import { corsHeaders } from '../_shared/cors.ts'
 
-const FASTAPI_BASE_URL = 'https://diamondmazalbot.com'
+const FASTAPI_BASE_URL = 'https://api.mazalbot.com'
 
 interface Diamond {
   id: string
