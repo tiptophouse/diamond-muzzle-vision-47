@@ -38,14 +38,16 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
     try {
       // Extract numeric diamond ID from the data
-      const diamondId = extractDiamondId(diamondData);
+      const numericDiamondId = extractDiamondId(diamondData);
       
-      if (!diamondId) {
+      if (!numericDiamondId) {
         throw new Error(`Cannot delete diamond: Invalid ID for stock ${stockNumber}`);
       }
       
-      // Use the new API function with proper error handling
-      const response = await deleteDiamondAPI(diamondId.toString(), user.id);
+      console.log('🗑️ DELETE: Using diamond ID:', numericDiamondId);
+      
+      // Use the FastAPI endpoint with JWT authentication (userId is extracted from JWT)
+      const response = await deleteDiamondAPI(numericDiamondId);
       
       if (response.success) {
         console.log('✅ DELETE: Diamond deleted successfully:', response);

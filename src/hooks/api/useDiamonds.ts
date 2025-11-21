@@ -183,20 +183,21 @@ export function useDeleteDiamond() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ diamondId, userId }: { diamondId: string; userId: number }) => {
-      console.log('🗑️ Deleting diamond:', diamondId);
-      return diamondsApi.deleteDiamond(diamondId, userId);
+    mutationFn: ({ diamondId, userId }: { diamondId: number; userId: number }) => {
+      console.log('🗑️ Deleting diamond ID:', diamondId);
+      return diamondsApi.deleteDiamond(diamondId);
     },
     onMutate: async ({ diamondId, userId }) => {
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
       
       const previousDiamonds = queryClient.getQueryData(diamondKeys.list(userId));
       
-      // Optimistic delete
+      // Optimistic delete - match by numeric ID
       queryClient.setQueryData(diamondKeys.list(userId), (old: any[] = []) =>
-        old.filter(diamond => 
-          diamond.id !== diamondId && diamond.diamond_id !== diamondId
-        )
+        old.filter(diamond => {
+          const id = diamond.id || diamond.diamond_id;
+          return id !== diamondId;
+        })
       );
       
       return { previousDiamonds };
