@@ -7,6 +7,7 @@ import { Plus, Gem, Store, PieChart, BarChart3, TrendingUp, Users, Search, Messa
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AuthDiagnostics } from "@/components/debug/AuthDiagnostics";
+import { TestSubscriptionEndpoint } from "@/components/debug/TestSubscriptionEndpoint";
 
 interface NavigationCardProps {
   icon: React.ReactNode;
@@ -128,6 +129,10 @@ const Index = () => {
                 <p className="text-muted-foreground">Welcome back, {user.first_name}</p>
               </div>
             </div>
+          </div>
+
+          <div className="mb-6">
+            <TestSubscriptionEndpoint />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
