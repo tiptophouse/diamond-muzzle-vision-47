@@ -20,19 +20,19 @@ export interface CreateDiamondResponse {
   diamond_id?: string;
 }
 
-export async function deleteDiamond(diamondId: number): Promise<DeleteDiamondResponse> {
-  logger.info('Diamond delete operation started', { diamondId });
+export async function deleteDiamond(diamondId: string, userId: number): Promise<DeleteDiamondResponse> {
+  logger.info('Diamond delete operation started', { diamondId, userId });
   
   try {
     const response = await http<DeleteDiamondResponse>(
-      apiEndpoints.deleteDiamond(diamondId), 
+      apiEndpoints.deleteDiamond(diamondId, userId), 
       { method: "DELETE" }
     );
     
-    logger.info('Diamond deleted successfully', { diamondId, response });
+    logger.info('Diamond deleted successfully', { diamondId, userId, response });
     return response;
   } catch (error) {
-    logger.error('Diamond delete operation failed', error, { diamondId });
+    logger.error('Diamond delete operation failed', error, { diamondId, userId });
     throw error;
   }
 }
