@@ -24,20 +24,26 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Are you sure you want to delete this diamond?')) {
+    if (confirm('האם אתה בטוח שברצונך למחוק את היהלום הזה?')) {
       const diamondId = extractDiamondId(diamond);
       
       if (!diamondId) {
-        console.error('Cannot delete diamond: Invalid ID');
+        console.error('❌ Cannot delete diamond: Invalid or missing ID', diamond);
         return;
       }
       
+      console.log('🗑️ AdminStoreControls: Deleting diamond with ID:', diamondId);
+      
       deleteStone.mutate(
-        { diamondId: diamondId.toString(), userId: user.id },
+        { diamondId: diamondId, userId: user.id },
         {
           onSuccess: () => {
+            console.log('✅ Diamond deleted, triggering onDelete callback');
             onDelete();
           },
+          onError: (error) => {
+            console.error('❌ Delete failed:', error);
+          }
         }
       );
     }

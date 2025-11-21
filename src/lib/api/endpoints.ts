@@ -19,8 +19,8 @@ export const apiEndpoints = {
   // Update diamond - PUT /api/v1/diamonds/{diamond_id} (userId from JWT)
   updateDiamond: (diamondId: number) => `/api/v1/diamonds/${diamondId}`,
   
-  // Delete diamond endpoint - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}&diamond_id={diamond_id}
-  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}&diamond_id=${diamondId}`,
+  // Delete diamond endpoint - DELETE /api/v1/delete_stone/{diamond_id}
+  deleteDiamond: (diamondId: number) => `/api/v1/delete_stone/${diamondId}`,
   
   // SFTP endpoints - CORRECTED to include proper auth
   sftpProvision: () => `/api/v1/sftp/provision`,
