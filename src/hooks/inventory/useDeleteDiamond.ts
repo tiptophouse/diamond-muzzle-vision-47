@@ -95,13 +95,24 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         errorMessage = error.message;
       }
       
-      // Always show error toast
+      // Show detailed error information
+      const errorDetails = `
+Stock: ${stockNumber}
+ID: ${localDiamondId}
+Error: ${error.message || error.name || 'Unknown error'}
+${error.stack ? `\nStack: ${error.stack.substring(0, 200)}` : ''}
+      `.trim();
+
+      // Always show error toast with details
       toast({
         variant: "destructive",
-        title: "❌ מחיקה נכשלה",
-        description: errorMessage,
-        duration: 5000, // Show for 5 seconds
+        title: "❌ Delete Failed",
+        description: errorDetails,
+        duration: 10000, // Show for 10 seconds
       });
+
+      // Also alert for visibility
+      alert(`❌ DELETE FAILED\n\n${errorDetails}`);
       
       return false;
     }
