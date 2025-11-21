@@ -78,6 +78,7 @@ const adminMenuItems = [
     items: [
       { title: 'Diagnostics', url: '/admin?tab=diagnostics', icon: Settings, description: 'System health checks' },
       { title: 'Webhook Test', url: '/admin?tab=webhook-test', icon: Activity, description: 'API endpoint testing' },
+      { title: 'Subscription Test', url: '/admin/subscription-test', icon: CreditCard, description: 'Test subscription endpoint' },
     ]
   }
 ];
