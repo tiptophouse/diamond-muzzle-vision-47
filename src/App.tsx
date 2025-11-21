@@ -46,6 +46,7 @@ import TestInlineButtons from './pages/TestInlineButtons';
 import PublicAuctionPage from './pages/PublicAuctionPage';
 import AuctionsListPage from './pages/AuctionsListPage';
 import Diagnostic from './pages/Diagnostic';
+import SubscriptionTestPage from './pages/SubscriptionTestPage';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
@@ -187,6 +188,13 @@ function App() {
                      <AuthenticatedRoute>
                        <EnhancedTelegramAdminGuard>
                          <AdminAnalytics />
+                       </EnhancedTelegramAdminGuard>
+                     </AuthenticatedRoute>
+                   } />
+                   <Route path="/admin/subscription-test" element={
+                     <AuthenticatedRoute>
+                       <EnhancedTelegramAdminGuard>
+                         <SubscriptionTestPage />
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />
