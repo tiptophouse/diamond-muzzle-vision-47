@@ -2,8 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
 import { parseTelegramInitData, isTelegramWebApp, validateTelegramInitData } from '@/utils/telegramValidation';
-
-const ADMIN_TELEGRAM_ID = 2138564172;
+import { isAdminTelegramId } from '@/lib/secureAdmin';
 
 export function useSimpleTelegramAuth() {
   const [user, setUser] = useState<TelegramUser | null>(null);
@@ -14,17 +13,7 @@ export function useSimpleTelegramAuth() {
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
 
-  const createAdminUser = (): TelegramUser => {
-    return {
-      id: ADMIN_TELEGRAM_ID,
-      first_name: "Admin",
-      last_name: "User", 
-      username: "admin",
-      language_code: "en"
-    };
-  };
-
-  const validateAndExtractUser = (tg: any): TelegramUser | null => {
+  const validateAndExtractUser = async (tg: any): Promise<TelegramUser | null> => {
     // Validate signature first
     if (tg.initData && !validateTelegramInitData(tg.initData)) {
       console.warn('Invalid Telegram signature detected');
@@ -36,7 +25,8 @@ export function useSimpleTelegramAuth() {
       const user = tg.initDataUnsafe.user;
       console.log('🔍 Found user from initDataUnsafe:', user.id, user.first_name);
       
-      if (user.id === ADMIN_TELEGRAM_ID) {
+      const adminStatus = await isAdminTelegramId(user.id);
+      if (adminStatus) {
         console.log('✅ ADMIN USER DETECTED from initDataUnsafe!');
         return user;
       } else if (user.first_name && !['Test', 'Telegram', 'Emergency'].includes(user.first_name)) {
@@ -53,7 +43,8 @@ export function useSimpleTelegramAuth() {
           const user = parsedInitData.user;
           console.log('🔍 Found user from parsed initData:', user.id, user.first_name);
           
-          if (user.id === ADMIN_TELEGRAM_ID) {
+          const adminStatus = await isAdminTelegramId(user.id);
+          if (adminStatus) {
             console.log('✅ ADMIN USER DETECTED from parsed initData!');
             return user;
           } else if (user.first_name && !['Test', 'Telegram', 'Emergency'].includes(user.first_name)) {
@@ -69,7 +60,7 @@ export function useSimpleTelegramAuth() {
     return null;
   };
 
-  const initializeAuth = () => {
+  const initializeAuth = async () => {
     if (initializedRef.current || !mountedRef.current) {
       console.log('🔄 Auth already initialized or component unmounted');
       return;
@@ -101,7 +92,7 @@ export function useSimpleTelegramAuth() {
           console.warn('⚠️ Theme setup failed, continuing...', themeError);
         }
         
-        const validatedUser = validateAndExtractUser(tg);
+        const validatedUser = await validateAndExtractUser(tg);
         
         if (validatedUser) {
           console.log('✅ Setting validated user:', validatedUser.first_name, 'ID:', validatedUser.id);
@@ -118,11 +109,10 @@ export function useSimpleTelegramAuth() {
         return;
       }
 
-      // Development mode - only allow admin access
+      // Development mode - no automatic authentication
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 Development mode - providing admin access only');
-        const adminUser = createAdminUser();
-        setUser(adminUser);
+        console.log('🔧 Development mode - Telegram authentication required');
+        setError('Telegram authentication required');
         setIsLoading(false);
         initializedRef.current = true;
         return;

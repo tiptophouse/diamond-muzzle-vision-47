@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
-import { getFirstAdminTelegramId } from '@/lib/secureAdmin';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Plus, Gem, Store, PieChart, BarChart3, TrendingUp, Users, Search, MessageSquare, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,51 +45,35 @@ const Index = () => {
   const {
     trackPageVisit
   } = useUserTracking();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
-  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
-  const [loadingConfig, setLoadingConfig] = useState(true);
   const redirectHandledRef = useRef(false);
-  
-  useEffect(() => {
-    const loadAdminId = async () => {
-      try {
-        const adminId = await getFirstAdminTelegramId();
-        setAdminTelegramId(adminId);
-      } catch (error) {
-        console.error('Failed to load admin ID:', error);
-        setAdminTelegramId(null); // No hardcoded fallback
-      } finally {
-        setLoadingConfig(false);
-      }
-    };
-    loadAdminId();
-  }, []);
   
   useEffect(() => {
     // Add debug info for troubleshooting
     const info = [
       `Loading: ${isLoading}`, 
-      `Config Loading: ${loadingConfig}`, 
+      `Admin Loading: ${adminLoading}`, 
       `Authenticated: ${isAuthenticated}`, 
       `User ID: ${user?.id || 'none'}`, 
       `User Name: ${user?.first_name || 'none'}`, 
-      `Admin ID: ${adminTelegramId || 'loading...'}`, 
+      `Is Admin: ${isAdmin}`, 
       `Telegram Env: ${!!window.Telegram?.WebApp}`, 
       `URL: ${window.location.href}`, 
       `Redirect Handled: ${redirectHandledRef.current}`
     ];
     setDebugInfo(info);
     console.log('🔍 Index Debug Info:', info);
-  }, [user, isAuthenticated, isLoading, adminTelegramId, loadingConfig]);
+  }, [user, isAuthenticated, isLoading, isAdmin, adminLoading]);
   
   useEffect(() => {
-    if (!isLoading && !loadingConfig && !redirectHandledRef.current) {
+    if (!isLoading && !adminLoading && !redirectHandledRef.current) {
       trackPageVisit('/', 'BrilliantBot - Home');
     }
-  }, [trackPageVisit, isLoading, loadingConfig]);
+  }, [trackPageVisit, isLoading, adminLoading]);
 
   // Show loading state while auth is initializing
-  if (isLoading || loadingConfig) {
+  if (isLoading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 bg-background">
         <div className="text-center space-y-6 w-full max-w-xs">
@@ -107,7 +91,7 @@ const Index = () => {
             </h1>
             
             <p className="text-sm text-muted-foreground leading-relaxed">
-              {loadingConfig ? 'Loading...' : 'AI-powered diamond trading'}
+              {adminLoading ? 'Checking permissions...' : 'AI-powered diamond trading'}
             </p>
             
             <div className="flex items-center justify-center gap-1">
@@ -127,7 +111,7 @@ const Index = () => {
   }
 
   // If user is admin, show admin navigation
-  if (isAuthenticated && user?.id === adminTelegramId) {
+  if (isAuthenticated && isAdmin) {
     console.log('✅ Admin user detected - showing admin navigation');
     redirectHandledRef.current = true;
     
