@@ -167,42 +167,63 @@ export function BuyerContactDialog({
     try {
       impactOccurred('medium');
       
-      console.log('📤 Sending diamond card message to buyer:', buyerId);
-      
-      // Recompute diamondImages from enriched diamondData at send-time
-      const currentDiamondImages = diamondData
-        .map(d => d.picture)
-        .filter((u) => u && (u.startsWith('http://') || u.startsWith('https://')));
-      
-      // Compute diamondStocks from diamondData
-      const diamondStocks = diamondData.map((d) => d.stock);
-      
-      console.log(`📸 Including ${currentDiamondImages.length} diamond images`);
-      console.log(`💎 Including ${diamondStocks.length} diamond stock numbers`);
+      console.log('📤 Sending diamonds to buyer using send-diamond-to-group:', buyerId);
+      console.log(`💎 Sending ${diamondData.length} diamonds`);
 
-      // Get seller's Telegram username if available
+      // Get seller's username
       const WebApp = (window as any).Telegram?.WebApp;
       const sellerUsername = WebApp?.initDataUnsafe?.user?.username;
+      const sellerFirstName = WebApp?.initDataUnsafe?.user?.first_name || '';
+      const sellerLastName = WebApp?.initDataUnsafe?.user?.last_name || '';
+      const sharerName = `${sellerFirstName}${sellerLastName ? ` ${sellerLastName}` : ''}`.trim() || `User ${sellerTelegramId}`;
 
-      // Send message with diamond cards and inline buttons via Telegram bot
-      const { data, error } = await supabase.functions.invoke('send-seller-message', {
-        body: {
-          telegram_id: buyerId,
-          message: generatedMessage,
-          diamond_images: currentDiamondImages,
-          diamond_stocks: diamondStocks,
-          seller_telegram_id: sellerTelegramId,
-          seller_username: sellerUsername,
-        },
-      });
+      // Send each diamond individually using send-diamond-to-group (same as store)
+      let successCount = 0;
+      let failCount = 0;
 
-      if (error) {
-        console.error('❌ Failed to send message:', error);
-        throw error;
+      for (const diamond of diamondData) {
+        try {
+          console.log(`📤 Sending diamond ${diamond.stock} to buyer...`);
+          
+          const { error } = await supabase.functions.invoke('send-diamond-to-group', {
+            body: {
+              diamond: {
+                id: diamond.id || diamond.stock,
+                stockNumber: diamond.stock,
+                carat: diamond.weight,
+                shape: diamond.shape,
+                color: diamond.color,
+                clarity: diamond.clarity,
+                cut: diamond.cut || 'EXCELLENT',
+                price: diamond.price,
+                imageUrl: diamond.picture,
+                picture: diamond.picture,
+              },
+              sharedBy: sellerTelegramId,
+              sharedByName: sharerName,
+              testMode: false, // Send directly to buyer's chat
+              targetChatId: buyerId, // Override to send to buyer
+            },
+          });
+
+          if (error) {
+            console.error(`❌ Failed to send diamond ${diamond.stock}:`, error);
+            failCount++;
+          } else {
+            console.log(`✅ Diamond ${diamond.stock} sent successfully`);
+            successCount++;
+          }
+
+          // Small delay between sends to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (err) {
+          console.error(`❌ Error sending diamond ${diamond.stock}:`, err);
+          failCount++;
+        }
       }
 
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to send message');
+      if (failCount > 0 && successCount === 0) {
+        throw new Error('Failed to send any diamonds');
       }
 
       // Track the contact (fire and forget)
@@ -212,18 +233,25 @@ export function BuyerContactDialog({
           buyer_telegram_id: buyerId,
           buyer_name: buyerName,
           notification_id: notificationIds[0],
-          diamond_count: diamonds.length,
+          diamond_count: successCount,
           total_value: totalValue,
           message_preview: generatedMessage,
           diamonds_data: diamondData,
         },
       }).catch(err => console.error('⚠️ Failed to track contact:', err));
 
-      console.log('✅ Message sent successfully to buyer:', buyerId);
+      console.log(`✅ Sent ${successCount} diamonds to buyer:`, buyerId);
       notificationOccurred('success');
-      toast.success('ההודעה נשלחה בהצלחה!', {
-        description: `נשלח עם ${diamondData.length} יהלומים`,
-      });
+      
+      if (failCount > 0) {
+        toast.success(`${successCount} יהלומים נשלחו`, {
+          description: `${failCount} נכשלו. אנא נסה שוב למי שנכשל.`,
+        });
+      } else {
+        toast.success('כל היהלומים נשלחו בהצלחה!', {
+          description: `${successCount} יהלומים נשלחו לקונה`,
+        });
+      }
       
       if (onMessageSent) {
         onMessageSent();
@@ -284,58 +312,64 @@ export function BuyerContactDialog({
                 </div>
               </Card>
 
-              {/* Diamond List with Images */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+              {/* Diamond Image Gallery - Prominent Display */}
+              {diamondImages.length > 0 && (
+                <div className="space-y-2">
                   <p className="text-sm font-semibold flex items-center gap-2">
-                    <Diamond className="h-4 w-4" />
-                    יהלומים נבחרים ({diamondData.length})
+                    <ImageIcon className="h-4 w-4 text-primary" />
+                    תמונות היהלומים ({diamondImages.length})
                   </p>
-                  {diamondImages.length > 0 && (
-                    <Badge variant="secondary" className="gap-1">
-                      <ImageIcon className="h-3 w-3" />
-                      {diamondImages.length} תמונות
-                    </Badge>
-                  )}
-                </div>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {diamondData.map((diamond, idx) => (
-                    <Card key={idx} className="p-3 bg-background/50">
-                      <div className="flex items-center gap-3">
-                        {diamond.picture ? (
-                          <div className="w-12 h-12 rounded-lg bg-accent flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            <img 
-                              src={diamond.picture} 
-                              alt={diamond.stock}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
+                  <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto">
+                    {diamondData.filter(d => d.picture).map((diamond, idx) => (
+                      <Card key={idx} className="overflow-hidden bg-background/50 border-primary/20">
+                        <div className="aspect-square relative">
+                          <img 
+                            src={diamond.picture} 
+                            alt={`${diamond.shape} ${diamond.weight}ct`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/200?text=No+Image';
+                            }}
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                            <p className="text-white text-xs font-bold">
+                              {diamond.shape} {diamond.weight}ct
+                            </p>
+                            <p className="text-white/80 text-[10px]">
+                              {diamond.stock}
+                            </p>
                           </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <Diamond className="h-6 w-6 text-primary" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm">
-                            {diamond.shape} {diamond.weight}ct
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {diamond.color} • {diamond.clarity}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            מלאי: {diamond.stock}
-                          </p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-sm text-primary">
-                            {formatPrice(diamond.price)}
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Diamond List Summary */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold flex items-center gap-2">
+                  <Diamond className="h-4 w-4" />
+                  סיכום יהלומים ({diamondData.length})
+                </p>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {diamondData.map((diamond, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 bg-background/30 rounded-lg border border-border/50">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-primary" />
+                        <div>
+                          <p className="font-semibold text-xs">
+                            {diamond.shape} {diamond.weight}ct • {diamond.color} {diamond.clarity}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {diamond.stock}
                           </p>
                         </div>
                       </div>
-                    </Card>
+                      <p className="font-bold text-xs text-primary">
+                        {formatPrice(diamond.price)}
+                      </p>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -381,11 +415,7 @@ export function BuyerContactDialog({
               </div>
 
               <p className="text-xs text-muted-foreground text-center">
-                {diamondImages.length > 0 ? (
-                  <>ההודעה ו-{diamondImages.length} תמונות יהלומים ישלחו דרך הבוט של טלגרם</>
-                ) : (
-                  <>ההודעה תישלח דרך הבוט של טלגרם</>
-                )}
+                כל יהלום יישלח כהודעה נפרדת עם תמונה וכפתורי פעולה לקונה
               </p>
             </>
           )}

@@ -27,6 +27,7 @@ interface DiamondGroupShareRequest {
   sharedBy: number;
   sharedByName?: string;
   testMode?: boolean;
+  targetChatId?: number; // Allow explicit target chat ID
 }
 
 serve(async (req) => {
@@ -40,13 +41,14 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('📥 Full request body:', requestBody);
     
-    const { diamond, sharedBy, sharedByName, testMode }: DiamondGroupShareRequest = requestBody;
+    const { diamond, sharedBy, sharedByName, testMode, targetChatId }: DiamondGroupShareRequest = requestBody;
     
     console.log('📥 Request data:', { 
       diamondStock: diamond.stockNumber,
       sharedBy,
       sharedByName,
-      testMode: !!testMode
+      testMode: !!testMode,
+      targetChatId: targetChatId || 'auto'
     });
 
     if (!diamond || !sharedBy) {
@@ -72,11 +74,12 @@ serve(async (req) => {
       );
     }
 
-    // Determine target chat: personal chat for test mode, group for normal mode
-    const targetChatId = testMode ? sharedBy : (Deno.env.get('B2B_GROUP_ID') || -1002178695748);
+    // Determine target chat: explicit targetChatId takes priority, then test mode, then group
+    const finalTargetChatId = targetChatId || (testMode ? sharedBy : (Deno.env.get('B2B_GROUP_ID') || -1002178695748));
     const messagePrefix = testMode ? '🧪 **TEST MESSAGE** - ' : '';
+    const chatType = targetChatId ? 'specified chat' : (testMode ? 'personal chat' : 'group');
     
-    console.log(`📧 Sending diamond to ${testMode ? 'personal chat' : 'group'}: ${targetChatId}`);
+    console.log(`📧 Sending diamond to ${chatType}: ${finalTargetChatId}`);
 
     // Get sharer's name if not provided
     let sharerName = sharedByName;
@@ -235,7 +238,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
 
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
     console.log('📤 Message payload:', { 
-      chat_id: targetChatId, 
+      chat_id: finalTargetChatId, 
       text: shareMessage.substring(0, 100) + '...', 
       parse_mode: 'Markdown',
       test_mode: !!testMode,
@@ -253,7 +256,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            chat_id: targetChatId,
+            chat_id: finalTargetChatId,
             photo: imageUrl,
             caption: shareMessage,
             parse_mode: 'Markdown',
@@ -271,7 +274,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              chat_id: targetChatId,
+              chat_id: finalTargetChatId,
               text: `${shareMessage}\n\n🖼️ [תמונת היהלום זמינה במערכת]`,
               parse_mode: 'Markdown',
               ...inlineKeyboard
@@ -302,7 +305,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            chat_id: targetChatId,
+            chat_id: finalTargetChatId,
             text: `${shareMessage}\n\n📷 [תמונה זמינה באפליקציה]`,
             parse_mode: 'Markdown',
             ...inlineKeyboard
@@ -316,7 +319,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: targetChatId,
+          chat_id: finalTargetChatId,
           text: shareMessage,
           parse_mode: 'Markdown',
           ...inlineKeyboard
@@ -341,7 +344,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           analytics_data: {
             group_share: !testMode,
             test_share: !!testMode,
-            target_chat_id: targetChatId,
+            target_chat_id: finalTargetChatId,
             share_timestamp: new Date().toISOString(),
             diamond_data: diamond,
             message_id: result.message_id
