@@ -37,42 +37,42 @@ export async function deleteDiamond(diamondId: number): Promise<DeleteDiamondRes
   }
 }
 
-export async function createDiamond(userId: number, diamondData: FastAPIDiamondCreate): Promise<CreateDiamondResponse> {
-  logger.info('Diamond creation started', { userId, diamondData });
+export async function createDiamond(diamondData: FastAPIDiamondCreate): Promise<CreateDiamondResponse> {
+  logger.info('Diamond creation started', { diamondData });
   
   try {
     const response = await http<CreateDiamondResponse>(
-      apiEndpoints.addDiamond(userId),
+      apiEndpoints.addDiamond(),
       {
         method: "POST",
         body: JSON.stringify(diamondData)
       }
     );
     
-    logger.info('Diamond created successfully', { userId, response });
+    logger.info('Diamond created successfully', { response });
     return response;
   } catch (error) {
-    logger.error('Diamond creation failed', error, { userId });
+    logger.error('Diamond creation failed', error);
     throw error;
   }
 }
 
-export async function updateDiamond(diamondId: number, userId: number, diamondData: FastAPIDiamondUpdate): Promise<CreateDiamondResponse> {
-  logger.info('Diamond update started', { diamondId, userId });
+export async function updateDiamond(diamondId: number, diamondData: FastAPIDiamondUpdate): Promise<CreateDiamondResponse> {
+  logger.info('Diamond update started', { diamondId });
   
   try {
     const response = await http<CreateDiamondResponse>(
-      apiEndpoints.updateDiamond(diamondId, userId),
+      apiEndpoints.updateDiamond(diamondId),
       {
         method: "PUT", 
         body: JSON.stringify(diamondData)
       }
     );
     
-    logger.info('Diamond updated successfully', { diamondId, userId, response });
+    logger.info('Diamond updated successfully', { diamondId, response });
     return response;
   } catch (error) {
-    logger.error('Diamond update failed', error, { diamondId, userId });
+    logger.error('Diamond update failed', error, { diamondId });
     throw error;
   }
 }

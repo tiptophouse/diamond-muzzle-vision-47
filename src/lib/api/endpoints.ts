@@ -2,22 +2,23 @@ export const apiEndpoints = {
   // Health check
   alive: () => `/api/v1/alive`,
   
-  // Stone/Diamond management - CORRECTED to match FastAPI spec with pagination support
-  getAllStones: (userId: number, limit?: number, offset?: number) => {
-    let url = `/api/v1/get_all_stones?user_id=${userId}`;
-    if (limit !== undefined) url += `&limit=${limit}`;
-    if (offset !== undefined) url += `&offset=${offset}`;
-    return url;
+  // Stone/Diamond management - All use JWT for user_id
+  getAllStones: (limit?: number, offset?: number) => {
+    let url = `/api/v1/get_all_stones`;
+    const params = [];
+    if (limit !== undefined) params.push(`limit=${limit}`);
+    if (offset !== undefined) params.push(`offset=${offset}`);
+    return url + (params.length ? `?${params.join('&')}` : '');
   },
   
-  // Create diamond - POST /api/v1/add_stone?user_id={user_id}
-  addDiamond: (userId: number) => `/api/v1/add_stone?user_id=${userId}`,
+  // Create diamond - POST /api/v1/add_stone (user_id from JWT)
+  addDiamond: () => `/api/v1/add_stone`,
   
-  // Batch diamond upload - POST /api/v1/diamonds/batch (userId from JWT)
+  // Batch diamond upload - POST /api/v1/diamonds/batch (user_id from JWT)
   addDiamondsBatch: () => `/api/v1/diamonds/batch`,
   
-  // Update diamond - PUT /api/v1/update_stone/{diamond_id}?user_id={user_id}
-  updateDiamond: (diamondId: number, userId: number) => `/api/v1/update_stone/${diamondId}?user_id=${userId}`,
+  // Update diamond - PUT /api/v1/update_stone/{diamond_id} (user_id from JWT)
+  updateDiamond: (diamondId: number) => `/api/v1/update_stone/${diamondId}`,
   
   // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id} (user_id from JWT)
   deleteDiamond: (diamondId: number) => `/api/v1/delete_stone/${diamondId}`,
