@@ -1,6 +1,9 @@
-
-// FastAPI backend configuration - UNIFIED FOR PRODUCTION
-export const API_BASE_URL = "https://api.mazalbot.com"; // ✅ Unified production FastAPI backend
+// ⚠️ CRITICAL: Update this to your actual FastAPI backend URL
+// Current URL returns 404 - replace with your deployed backend URL
+// Examples: Railway: https://your-app.railway.app
+//           Render: https://your-app.onrender.com
+//           Heroku: https://your-app.herokuapp.com
+export const API_BASE_URL = "https://api.mazalbot.com"; // ❌ RETURNING 404 - UPDATE THIS!
 
 let currentUserId: number | null = null;
 

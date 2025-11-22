@@ -1,15 +1,21 @@
 # 🚨 CRITICAL: API Endpoint Configuration
 
-## Current Issue
+## ❌ BLOCKING ISSUE - ALL CRUD OPERATIONS FAIL
 The app is configured to use `https://api.mazalbot.com` but this endpoint is returning **404 Not Found** errors.
 
-## Quick Fix Required
-**Update the API_BASE_URL in `/src/lib/api/config.ts` to point to your working FastAPI backend.**
+**THIS IS WHY ADD/EDIT/DELETE/UPDATE/BLOCK BUTTONS DO NOTHING.**
+
+## ✅ IMMEDIATE FIX REQUIRED
+
+1. Open `/src/lib/api/config.ts`
+2. Replace line 7 with your actual FastAPI backend URL:
 
 ```typescript
-// REPLACE THIS URL WITH YOUR ACTUAL WORKING FASTAPI ENDPOINT
-export const API_BASE_URL = "https://your-actual-api-domain.com";
+export const API_BASE_URL = "https://YOUR-ACTUAL-BACKEND-URL.com";
 ```
+
+3. Test that `/api/v1/alive` returns `true` or `{"status": "ok"}`
+4. Refresh the app - CRUD operations should now work
 
 ## Common FastAPI Deployment URLs
 - **Railway**: `https://your-app.railway.app`
