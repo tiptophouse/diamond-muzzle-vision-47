@@ -1,9 +1,5 @@
-// ⚠️ CRITICAL: Update this to your actual FastAPI backend URL
-// Current URL returns 404 - replace with your deployed backend URL
-// Examples: Railway: https://your-app.railway.app
-//           Render: https://your-app.onrender.com
-//           Heroku: https://your-app.herokuapp.com
-export const API_BASE_URL = "https://api.mazalbot.com"; // ❌ RETURNING 404 - UPDATE THIS!
+// FastAPI Backend - PRODUCTION
+export const API_BASE_URL = "https://api.mazalbot.com";
 
 let currentUserId: number | null = null;
 

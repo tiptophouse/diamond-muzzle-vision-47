@@ -75,8 +75,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     try {
       console.log('🗑️ DELETE: Using diamond ID:', numericDiamondId, 'Type:', typeof numericDiamondId);
       
-      // Use the FastAPI endpoint with JWT authentication (userId is extracted from JWT)
-      const response = await deleteDiamondAPI(numericDiamondId);
+      // Use the FastAPI endpoint with JWT authentication and user_id in URL
+      const response = await deleteDiamondAPI(numericDiamondId, user.id);
       
       if (response.success) {
         console.info('[CRUD SUCCESS]', {

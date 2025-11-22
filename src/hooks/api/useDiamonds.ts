@@ -42,7 +42,7 @@ export function useCreateDiamond() {
   return useMutation({
     mutationFn: ({ data, userId }: { data: any; userId: number }) => {
       console.log('💎 Creating diamond:', data.stockNumber || data.stock_number);
-      return diamondsApi.createDiamond(data);
+      return diamondsApi.createDiamond(userId, data);
     },
     onMutate: async ({ data, userId }) => {
       // Cancel outgoing refetches
@@ -120,7 +120,7 @@ export function useUpdateDiamond() {
       userId: number;
     }) => {
       console.log('✏️ Updating diamond:', diamondId);
-      return diamondsApi.updateDiamond(diamondId, data);
+      return diamondsApi.updateDiamond(diamondId, userId, data);
     },
     onMutate: async ({ diamondId, data, userId }) => {
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
@@ -185,7 +185,7 @@ export function useDeleteDiamond() {
   return useMutation({
     mutationFn: ({ diamondId, userId }: { diamondId: number; userId: number }) => {
       console.log('🗑️ Deleting diamond ID:', diamondId);
-      return diamondsApi.deleteDiamond(diamondId);
+      return diamondsApi.deleteDiamond(diamondId, userId);
     },
     onMutate: async ({ diamondId, userId }) => {
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
