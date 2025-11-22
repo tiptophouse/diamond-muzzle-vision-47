@@ -4,6 +4,8 @@ import { Diamond } from '@/components/inventory/InventoryTable';
 import { deleteDiamond as deleteDiamondAPI } from '@/api/diamonds';
 import { extractDiamondId } from '@/api/diamondTransformers';
 import { useInventoryDataSync } from './useInventoryDataSync';
+import { API_BASE_URL } from '@/lib/api/config';
+import { apiEndpoints } from '@/lib/api/endpoints';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -132,10 +134,14 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         errorMessage = error.message;
       }
       
-      // Show detailed error information
+      // Show detailed error information including request details
+      const requestUrl = `${API_BASE_URL}${apiEndpoints.deleteDiamond(numericDiamondId)}`;
       const errorDetails = `
 Stock: ${stockNumber}
 ID: ${localDiamondId}
+Request URL: ${requestUrl}
+Method: DELETE
+Body: (none - DELETE request)
 Error: ${error.message || error.name || 'Unknown error'}
 ${error.stack ? `\nStack: ${error.stack.substring(0, 200)}` : ''}
       `.trim();
