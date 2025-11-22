@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
 import { Diamond, Package, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ interface DashboardData {
 
 export default function SimpleDashboard() {
   const { user, isAuthenticated } = useTelegramAuth();
+  const { navigation, haptics, isInitialized } = useEnhancedTelegramWebApp();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData>({
@@ -29,6 +31,23 @@ export default function SimpleDashboard() {
     loading: true,
     error: null
   });
+
+  // Configure Telegram back button
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    console.log('📱 Dashboard: Setting up back button');
+    navigation.showBackButton(() => {
+      console.log('📱 Dashboard: Back button clicked');
+      haptics.light();
+      navigate('/');
+    });
+
+    return () => {
+      console.log('📱 Dashboard: Hiding back button');
+      navigation.hideBackButton();
+    };
+  }, [isInitialized, navigation, haptics, navigate]);
 
   const fetchDashboardData = async () => {
     if (!user || !isAuthenticated) {
