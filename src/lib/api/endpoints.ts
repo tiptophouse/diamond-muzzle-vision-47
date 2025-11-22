@@ -10,17 +10,17 @@ export const apiEndpoints = {
     return url;
   },
   
-  // Create diamond - POST /api/v1/diamonds (userId from JWT)
-  addDiamond: () => `/api/v1/diamonds`,
+  // Create diamond - POST /api/v1/add_stone?user_id={user_id}
+  addDiamond: (userId: number) => `/api/v1/add_stone?user_id=${userId}`,
   
   // Batch diamond upload - POST /api/v1/diamonds/batch (userId from JWT)
   addDiamondsBatch: () => `/api/v1/diamonds/batch`,
   
-  // Update diamond - PUT /api/v1/diamonds/{diamond_id} (userId from JWT)
-  updateDiamond: (diamondId: number) => `/api/v1/diamonds/${diamondId}`,
+  // Update diamond - PUT /api/v1/update_stone/{diamond_id}?user_id={user_id}
+  updateDiamond: (diamondId: number, userId: number) => `/api/v1/update_stone/${diamondId}?user_id=${userId}`,
   
-  // Delete diamond endpoint - DELETE /api/v1/delete_stone/{diamond_id}
-  deleteDiamond: (diamondId: number) => `/api/v1/delete_stone/${diamondId}`,
+  // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}
+  deleteDiamond: (diamondId: number, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}`,
   
   // SFTP endpoints - CORRECTED to include proper auth
   sftpProvision: () => `/api/v1/sftp/provision`,
@@ -45,7 +45,8 @@ export const apiEndpoints = {
   getDashboardStats: (userId: number) => `/api/v1/users/${userId}/dashboard/stats`,
   getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
-  getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
+  // Get inventory - GET /api/v1/get_inventory?user_id={user_id}
+  getInventory: (userId: number) => `/api/v1/get_inventory?user_id=${userId}`,
   
   // Payment management endpoints
   removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,

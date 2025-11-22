@@ -162,7 +162,7 @@ export function useAddDiamond(onSuccess?: () => void) {
       
       // Try FastAPI backend at api.mazalbot.com
       try {
-        const endpoint = apiEndpoints.addDiamond();
+        const endpoint = apiEndpoints.addDiamond(user.id);
         console.log('➕ ADD: Using endpoint:', endpoint);
         console.log('➕ ADD: Making POST request to:', `${API_BASE_URL}${endpoint}`);
         console.log('➕ ADD: Payload:', JSON.stringify(diamondDataPayload, null, 2));
