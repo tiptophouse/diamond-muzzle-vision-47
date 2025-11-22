@@ -105,7 +105,7 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onDelete(diamond.diamondId?.toString() || diamond.id)}
+                onClick={() => onDelete(diamond.id)}
                 className="flex-1 h-9 text-sm text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
               >
                 <Trash className="h-4 w-4 mr-2" />
