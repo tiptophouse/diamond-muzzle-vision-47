@@ -24,13 +24,21 @@ export async function deleteDiamond(diamondId: number): Promise<DeleteDiamondRes
   logger.info('Diamond delete operation started', { diamondId });
   
   try {
-    const response = await http<DeleteDiamondResponse>(
+    const response = await http<any>(
       apiEndpoints.deleteDiamond(diamondId), 
       { method: "DELETE" }
     );
     
-    logger.info('Diamond deleted successfully', { diamondId, response });
-    return response;
+    // If we got here, the HTTP request succeeded (2xx status)
+    // Normalize the response to always include success: true
+    const normalizedResponse: DeleteDiamondResponse = {
+      success: true,
+      message: response.message || 'Diamond deleted successfully',
+      deleted_count: response.deleted_count
+    };
+    
+    logger.info('Diamond deleted successfully', { diamondId, normalizedResponse });
+    return normalizedResponse;
   } catch (error) {
     logger.error('Diamond delete operation failed', error, { diamondId });
     throw error;
