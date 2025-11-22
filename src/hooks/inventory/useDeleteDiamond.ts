@@ -18,18 +18,54 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
   const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     if (!user?.id) {
+      const error = 'User authentication required to delete diamonds';
+      console.error('❌ DELETE: User not authenticated - BLOCKING');
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
+        title: "❌ Authentication Error",
+        description: error,
       });
+      alert(`❌ DELETE DIAMOND FAILED\n\n${error}\n\nPlease ensure you're logged in through Telegram.`);
       return false;
     }
 
-    console.log('🗑️ DELETE: Starting delete for diamond:', diamondId);
-    
     const stockNumber = diamondData?.stockNumber || diamondId;
     const localDiamondId = diamondData?.id || diamondId;
+    
+    // Extract numeric diamond ID from the data
+    const numericDiamondId = extractDiamondId(diamondData);
+    
+    // Validate diamond ID BEFORE any action
+    if (!numericDiamondId || typeof numericDiamondId !== 'number') {
+      const error = `Invalid diamond_id: got ${numericDiamondId} (${typeof numericDiamondId}), expected number`;
+      console.error('❌ DELETE VALIDATION FAIL:', error);
+      toast({
+        variant: "destructive",
+        title: "❌ Validation Error",
+        description: error,
+        duration: 10000
+      });
+      alert(`❌ VALIDATION ERROR\n\n${error}\n\nCannot proceed with DELETE.`);
+      return false;
+    }
+
+    console.info('[CRUD START]', { 
+      action: 'DELETE',
+      diamondId: numericDiamondId,
+      stockNumber,
+      userId: user.id,
+      localDiamondId
+    });
+    
+    // Show loading toast
+    toast({
+      title: "⏳ Deleting Diamond...",
+      description: `Removing stock ${stockNumber}`
+    });
+
+    console.log('🗑️ DELETE: Starting delete for diamond:', numericDiamondId);
+    console.log('🗑️ DELETE: Stock number:', stockNumber);
+    console.log('🗑️ DELETE: User ID:', user.id);
 
     // Optimistically remove from UI
     if (removeDiamondFromState) {
@@ -37,24 +73,23 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     }
 
     try {
-      // Extract numeric diamond ID from the data
-      const numericDiamondId = extractDiamondId(diamondData);
-      
-      if (!numericDiamondId) {
-        throw new Error(`Cannot delete diamond: Invalid ID for stock ${stockNumber}`);
-      }
-      
-      console.log('🗑️ DELETE: Using diamond ID:', numericDiamondId);
+      console.log('🗑️ DELETE: Using diamond ID:', numericDiamondId, 'Type:', typeof numericDiamondId);
       
       // Use the FastAPI endpoint with JWT authentication (userId is extracted from JWT)
       const response = await deleteDiamondAPI(numericDiamondId);
       
       if (response.success) {
-        console.log('✅ DELETE: Diamond deleted successfully:', response);
+        console.info('[CRUD SUCCESS]', {
+          action: 'DELETE',
+          diamondId: numericDiamondId,
+          stockNumber,
+          userId: user.id,
+          response
+        });
 
         toast({
-          title: "✅ Diamond Deleted",
-          description: `Diamond ${stockNumber} has been permanently removed from your inventory and will no longer appear in your store.`,
+          title: "✅ Diamond Deleted Successfully",
+          description: `Stock ${stockNumber} removed from inventory`
         });
 
         // Trigger inventory refresh for real-time updates
@@ -68,13 +103,15 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       }
       
     } catch (error: any) {
-      console.error('❌ DELETE: Failed to delete diamond:', error);
-      console.error('❌ DELETE: Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
+      console.error('[CRUD FAIL]', {
+        action: 'DELETE',
+        diamondId: numericDiamondId,
         stockNumber,
-        diamondId: localDiamondId
+        userId: user.id,
+        localDiamondId,
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
       });
       
       // Restore diamond to UI on error

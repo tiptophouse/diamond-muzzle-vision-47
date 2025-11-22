@@ -159,6 +159,16 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         return;
       }
       
+      // CRITICAL: Log full Telegram environment details
+      console.log('🔍 TELEGRAM ENV CHECK:', {
+        href: window.location.href,
+        hasTelegram: !!window.Telegram,
+        hasWebApp: !!window.Telegram?.WebApp,
+        initDataLength: window.Telegram?.WebApp?.initData?.length || 0,
+        initDataPresent: !!window.Telegram?.WebApp?.initData,
+        userIdFromInitData: window.Telegram?.WebApp?.initDataUnsafe?.user?.id || null
+      });
+      
       // Fast environment check
       if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
         throw new Error('not_telegram_environment');
@@ -266,6 +276,19 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       };
 
       const errorMessage = errorMessages[errorType as keyof typeof errorMessages] || 'Authentication failed';
+      
+      // BLOCKING ERROR: Show full-screen red banner for missing initData/Telegram env
+      if (errorType === 'not_telegram_environment' || errorType === 'no_init_data' || errorType === 'invalid_init_data') {
+        console.error('🚨 BLOCKING AUTH ERROR:', { errorType, errorMessage });
+        // Update state to trigger blocking UI in parent component
+        updateState({
+          isLoading: false,
+          error: errorMessage,
+          accessDeniedReason: errorType,
+          isTelegramEnvironment: errorType !== 'not_telegram_environment'
+        });
+        return;
+      }
       
       if (errorType !== 'not_telegram_environment') {
         toast.error(errorMessage, {

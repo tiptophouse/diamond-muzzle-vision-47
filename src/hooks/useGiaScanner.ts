@@ -59,9 +59,20 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
   const processWithOCR = useCallback(async (imageData: string) => {
     try {
       setIsFetchingGIA(true);
+      
+      console.info('[GIA UPLOAD START]', {
+        imageSize: imageData.length,
+        timestamp: new Date().toISOString()
+      });
+      
       toast({
         title: "Processing Certificate",
         description: "Extracting diamond data with AI...",
+      });
+
+      console.info('[GIA UPLOAD REQUEST]', {
+        endpoint: 'extract-gia-data',
+        imageDataLength: imageData.length
       });
 
       const { data, error } = await supabase.functions.invoke('extract-gia-data', {
@@ -69,8 +80,19 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
       });
 
       if (error) {
+        console.error('[GIA UPLOAD FAIL]', {
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
         throw new Error(error.message || 'Failed to extract certificate data');
       }
+
+      console.info('[GIA PARSE RESULT]', {
+        success: data?.success,
+        hasData: !!data?.data,
+        certificateNumber: data?.data?.certificateNumber,
+        parsedData: JSON.stringify(data?.data).substring(0, 300)
+      });
 
       if (data?.success && data?.data) {
         // Add certificate URL to the data if it was uploaded
@@ -79,21 +101,31 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
           certificateUrl: data.data.certificate_url || data.data.certificateUrl
         };
         
+        console.info('[GIA UPLOAD SUCCESS]', {
+          certificateNumber: enhancedData.certificateNumber,
+          hasImage: !!enhancedData.certificateUrl
+        });
+        
         onScanSuccess(enhancedData);
         stopScanning();
         toast({
-          title: "✅ Success! 💎",
-          description: "GIA certificate data extracted and image uploaded successfully",
+          title: "✅ GIA Diamond Uploaded",
+          description: "Certificate data extracted successfully",
         });
       } else {
         throw new Error('No data extracted from certificate');
       }
 
     } catch (error) {
-      console.error('Error extracting certificate data:', error);
+      console.error('[GIA UPLOAD FAIL]', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
+      
       toast({
         variant: "destructive",
-        title: "Extraction Failed",
+        title: "❌ GIA Upload Failed",
         description: error instanceof Error ? error.message : "Failed to extract certificate data",
       });
     } finally {
