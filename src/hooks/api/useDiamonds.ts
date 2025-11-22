@@ -185,7 +185,7 @@ export function useDeleteDiamond() {
   return useMutation({
     mutationFn: ({ diamondId, userId }: { diamondId: number; userId: number }) => {
       console.log('🗑️ Deleting diamond ID:', diamondId);
-      return diamondsApi.deleteDiamond(diamondId, userId);
+      return diamondsApi.deleteDiamond(diamondId);
     },
     onMutate: async ({ diamondId, userId }) => {
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
