@@ -23,13 +23,13 @@ export function FloatingNotificationButton({ className }: FloatingNotificationBu
   };
 
   return (
-    <div className={cn("fixed z-50", className)}>
+    <div className={cn("fixed z-40 pointer-events-none", className)}>
       <Button
         onClick={handleClick}
         size="lg"
         className={cn(
           // Base styling with Telegram theme integration
-          "relative h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg hover:shadow-xl",
+          "relative h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg hover:shadow-xl pointer-events-auto",
           "transition-all duration-200 hover:scale-105 active:scale-95",
           // Use Telegram button colors or fallback to primary
           "bg-[var(--tg-theme-button-color,hsl(var(--primary)))]",

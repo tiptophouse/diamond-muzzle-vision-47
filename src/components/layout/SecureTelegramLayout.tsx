@@ -84,7 +84,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
       </main>
 
       {/* Bottom Navigation - Telegram Mini App Optimized */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-50 pb-safe-or-4">
+      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-40 pb-safe-or-4">
         <div className="grid grid-cols-5 max-w-screen-sm mx-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;

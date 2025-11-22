@@ -34,7 +34,7 @@ export function FloatingAdminButton({ className }: FloatingAdminButtonProps) {
   };
 
   return (
-    <div className={cn("fixed z-50", className)}>
+    <div className={cn("fixed z-40 pointer-events-none", className)}>
       <Button
         onClick={handleClick}
         onMouseDown={() => setIsPressed(true)}
@@ -44,7 +44,7 @@ export function FloatingAdminButton({ className }: FloatingAdminButtonProps) {
         variant="secondary"
         className={cn(
           // Base styling with admin-specific colors
-          "relative h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg hover:shadow-xl",
+          "relative h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg hover:shadow-xl pointer-events-auto",
           "transition-all duration-200 hover:scale-105 active:scale-95",
           // Admin theme colors
           "bg-orange-500 hover:bg-orange-600 text-white",
