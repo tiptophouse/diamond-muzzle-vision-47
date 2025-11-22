@@ -7,6 +7,7 @@ import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
 import { RTLProvider } from './contexts/RTLContext';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
+import { TelegramMiniApp } from './components/TelegramMiniApp';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
@@ -57,8 +58,9 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <RTLProvider>
-          <TelegramAuthProvider>
+        <TelegramMiniApp>
+          <RTLProvider>
+            <TelegramAuthProvider>
             <Router>
               <TutorialProvider>
                 <InteractiveWizardProvider>
@@ -266,7 +268,8 @@ function App() {
             </TutorialProvider>
           </Router>
         </TelegramAuthProvider>
-        </RTLProvider>
+          </RTLProvider>
+        </TelegramMiniApp>
       </QueryClientProvider>
     </ErrorBoundary>
   );
