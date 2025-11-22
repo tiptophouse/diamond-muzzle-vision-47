@@ -25,7 +25,7 @@ export function useGetAllStones(userId: number) {
   return useQuery({
     queryKey: diamondKeys.list(userId),
     queryFn: async () => {
-      const endpoint = apiEndpoints.getAllStones(userId);
+      const endpoint = apiEndpoints.getAllStones();
       return http<any[]>(endpoint, { method: 'GET' });
     },
     enabled: !!userId,
@@ -42,7 +42,7 @@ export function useCreateDiamond() {
   return useMutation({
     mutationFn: ({ data, userId }: { data: any; userId: number }) => {
       console.log('💎 Creating diamond:', data.stockNumber || data.stock_number);
-      return diamondsApi.createDiamond(userId, data);
+      return diamondsApi.createDiamond(data);
     },
     onMutate: async ({ data, userId }) => {
       // Cancel outgoing refetches
@@ -120,7 +120,7 @@ export function useUpdateDiamond() {
       userId: number;
     }) => {
       console.log('✏️ Updating diamond:', diamondId);
-      return diamondsApi.updateDiamond(diamondId, userId, data);
+      return diamondsApi.updateDiamond(diamondId, data);
     },
     onMutate: async ({ diamondId, data, userId }) => {
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });

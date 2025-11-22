@@ -49,7 +49,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       console.log('📝 UPDATE: Starting update for diamond:', numericId);
       console.log('📝 UPDATE: Form data received:', data);
       
-      const endpoint = apiEndpoints.updateDiamond(numericId, user.id);
+      const endpoint = apiEndpoints.updateDiamond(numericId);
       console.log('📝 UPDATE: Using endpoint:', endpoint);
       console.log('📝 UPDATE: User ID:', user.id, 'type:', typeof user.id);
       console.log('📝 UPDATE: Diamond ID:', numericId, 'type:', typeof numericId);

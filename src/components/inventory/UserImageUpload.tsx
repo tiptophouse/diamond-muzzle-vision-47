@@ -42,7 +42,7 @@ export function UserImageUpload({ diamond, onUpdate }: UserImageUploadProps) {
         throw new Error('Invalid diamond ID');
       }
       
-      const endpoint = apiEndpoints.updateDiamond(numericId, user.id);
+      const endpoint = apiEndpoints.updateDiamond(numericId);
       const response = await api.put(endpoint, updateData);
 
       if (response.data) {

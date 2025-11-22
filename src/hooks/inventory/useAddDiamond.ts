@@ -162,7 +162,7 @@ export function useAddDiamond(onSuccess?: () => void) {
       
       // Try FastAPI backend at api.mazalbot.com
       try {
-        const endpoint = apiEndpoints.addDiamond(user.id);
+        const endpoint = apiEndpoints.addDiamond();
         console.log('➕ ADD: Using endpoint:', endpoint);
         console.log('➕ ADD: Making POST request to:', `${API_BASE_URL}${endpoint}`);
         console.log('➕ ADD: Payload:', JSON.stringify(diamondDataPayload, null, 2));
@@ -190,7 +190,7 @@ export function useAddDiamond(onSuccess?: () => void) {
           await new Promise(resolve => setTimeout(resolve, 1500));
           
           // Fetch fresh inventory to verify
-          const verifyEndpoint = apiEndpoints.getAllStones(user.id, 100, 0);
+          const verifyEndpoint = apiEndpoints.getAllStones(100, 0);
           const verifyResponse = await api.get(verifyEndpoint);
           
           if (verifyResponse.error) {
