@@ -167,64 +167,38 @@ export function BuyerContactDialog({
     try {
       impactOccurred('medium');
       
-      console.log('📤 Sending diamonds to buyer using send-diamond-to-group:', buyerId);
-      console.log(`💎 Sending ${diamondData.length} diamonds`);
+      console.log('📤 Sending message to buyer personal chat:', buyerId);
+      console.log(`💎 Sending ${diamondData.length} diamonds with AI message`);
 
-      // Get seller's username
-      const WebApp = (window as any).Telegram?.WebApp;
-      const sellerUsername = WebApp?.initDataUnsafe?.user?.username;
-      const sellerFirstName = WebApp?.initDataUnsafe?.user?.first_name || '';
-      const sellerLastName = WebApp?.initDataUnsafe?.user?.last_name || '';
-      const sharerName = `${sellerFirstName}${sellerLastName ? ` ${sellerLastName}` : ''}`.trim() || `User ${sellerTelegramId}`;
+      // Map diamonds to the format expected by send-rich-diamond-message
+      const diamondsToSend = diamondData.map(d => ({
+        stock_number: d.stock,
+        shape: d.shape,
+        carat: d.weight,
+        color: d.color,
+        clarity: d.clarity,
+        cut: d.cut || 'EXCELLENT',
+        price: d.price,
+        picture: d.picture,
+        certificate_url: d.certificate_url,
+      }));
 
-      // Send each diamond individually using send-diamond-to-group (same as store)
-      let successCount = 0;
-      let failCount = 0;
+      // Send AI message + all diamonds in one call to buyer's personal chat
+      const { error } = await supabase.functions.invoke('send-rich-diamond-message', {
+        body: {
+          telegram_id: buyerId, // ✅ Direct to buyer's personal chat
+          message: generatedMessage, // AI-generated message
+          diamonds: diamondsToSend, // All diamonds at once
+        },
+      });
 
-      for (const diamond of diamondData) {
-        try {
-          console.log(`📤 Sending diamond ${diamond.stock} to buyer...`);
-          
-          const { error } = await supabase.functions.invoke('send-diamond-to-group', {
-            body: {
-              diamond: {
-                id: diamond.id || diamond.stock,
-                stockNumber: diamond.stock,
-                carat: diamond.weight,
-                shape: diamond.shape,
-                color: diamond.color,
-                clarity: diamond.clarity,
-                cut: diamond.cut || 'EXCELLENT',
-                price: diamond.price,
-                imageUrl: diamond.picture,
-                picture: diamond.picture,
-              },
-              sharedBy: sellerTelegramId,
-              sharedByName: sharerName,
-              testMode: false, // Send directly to buyer's chat
-              targetChatId: buyerId, // Override to send to buyer
-            },
-          });
-
-          if (error) {
-            console.error(`❌ Failed to send diamond ${diamond.stock}:`, error);
-            failCount++;
-          } else {
-            console.log(`✅ Diamond ${diamond.stock} sent successfully`);
-            successCount++;
-          }
-
-          // Small delay between sends to avoid rate limits
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (err) {
-          console.error(`❌ Error sending diamond ${diamond.stock}:`, err);
-          failCount++;
-        }
+      if (error) {
+        console.error('❌ Failed to send message to buyer:', error);
+        throw error;
       }
 
-      if (failCount > 0 && successCount === 0) {
-        throw new Error('Failed to send any diamonds');
-      }
+      console.log('✅ Message and diamonds sent successfully to buyer:', buyerId);
+
 
       // Track the contact (fire and forget)
       supabase.functions.invoke('track-buyer-contact', {
@@ -233,25 +207,17 @@ export function BuyerContactDialog({
           buyer_telegram_id: buyerId,
           buyer_name: buyerName,
           notification_id: notificationIds[0],
-          diamond_count: successCount,
+          diamond_count: diamondData.length,
           total_value: totalValue,
           message_preview: generatedMessage,
           diamonds_data: diamondData,
         },
       }).catch(err => console.error('⚠️ Failed to track contact:', err));
 
-      console.log(`✅ Sent ${successCount} diamonds to buyer:`, buyerId);
       notificationOccurred('success');
-      
-      if (failCount > 0) {
-        toast.success(`${successCount} יהלומים נשלחו`, {
-          description: `${failCount} נכשלו. אנא נסה שוב למי שנכשל.`,
-        });
-      } else {
-        toast.success('כל היהלומים נשלחו בהצלחה!', {
-          description: `${successCount} יהלומים נשלחו לקונה`,
-        });
-      }
+      toast.success('ההודעה נשלחה בהצלחה!', {
+        description: `${diamondData.length} יהלומים נשלחו לצ'אט האישי של הקונה`,
+      });
       
       if (onMessageSent) {
         onMessageSent();
@@ -415,7 +381,7 @@ export function BuyerContactDialog({
               </div>
 
               <p className="text-xs text-muted-foreground text-center">
-                כל יהלום יישלח כהודעה נפרדת עם תמונה וכפתורי פעולה לקונה
+                ההודעה וכל היהלומים יישלחו לצ'אט האישי של הקונה עם תמונות וכפתורי פעולה
               </p>
             </>
           )}
