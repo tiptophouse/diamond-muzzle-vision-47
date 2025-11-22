@@ -7,7 +7,7 @@ let connectivityCache: { isHealthy: boolean; lastChecked: number } | null = null
 const CONNECTIVITY_CACHE_DURATION = 30000; // 30 seconds
 
 // Test backend health with timeout
-async function testBackendHealth(): Promise<boolean> {
+async function testBackendHealth(token?: string): Promise<boolean> {
   // Check cache first
   if (connectivityCache && (Date.now() - connectivityCache.lastChecked < CONNECTIVITY_CACHE_DURATION)) {
     console.log('🔍 HTTP: Using cached backend health status:', connectivityCache.isHealthy);
@@ -23,13 +23,17 @@ async function testBackendHealth(): Promise<boolean> {
     const response = await fetch(`${API_BASE_URL}/api/v1/alive`, {
       method: 'GET',
       mode: 'cors',
-      headers: { 'Accept': 'application/json' },
+      headers: {
+        'Accept': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
       signal: controller.signal,
     });
     
     clearTimeout(timeoutId);
     
-    const isHealthy = response.ok;
+    // Treat any non-5xx HTTP response as "healthy" (server reachable)
+    const isHealthy = response.status < 500;
     console.log('🏥 HTTP: Backend health result:', isHealthy, 'Status:', response.status);
     
     // Cache the result
@@ -123,7 +127,7 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
 
   // Test backend health for non-auth requests
   if (!endpoint.includes('/api/v1/sign-in/')) {
-    const isBackendHealthy = await testBackendHealth();
+    const isBackendHealthy = await testBackendHealth(token);
     if (!isBackendHealthy) {
       console.error('❌ HTTP: Backend is not healthy for:', endpoint);
       
