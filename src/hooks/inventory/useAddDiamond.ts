@@ -11,19 +11,33 @@ export function useAddDiamond(onSuccess?: () => void) {
   const { user } = useTelegramAuth();
 
   const addDiamond = async (data: DiamondFormData) => {
-    console.log('🔵 ADD DIAMOND: Starting upload process');
-    console.log('🔵 User ID:', user?.id);
-    console.log('🔵 Form Data:', data);
-    
     if (!user?.id) {
-      console.error('❌ ADD DIAMOND: User not authenticated');
+      console.error('❌ ADD: User not authenticated - BLOCKING');
+      const error = 'User authentication required to add diamonds';
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "User not authenticated. Please refresh the app.",
+        title: "❌ Authentication Error",
+        description: error,
       });
+      alert(`❌ ADD DIAMOND FAILED\n\n${error}\n\nPlease ensure you're logged in through Telegram.`);
       return false;
     }
+
+    console.info('[CRUD START]', { 
+      action: 'ADD',
+      userId: user.id,
+      stockNumber: data.stockNumber,
+      payload: JSON.stringify(data).substring(0, 500)
+    });
+
+    // Show loading toast
+    toast({
+      title: "⏳ Adding Diamond...",
+      description: "Creating new diamond in inventory"
+    });
+
+    console.log('📝 ADD: Starting diamond add');
+    console.log('📝 ADD: User ID:', user.id, 'Form data:', data);
 
     try {
       console.log('📝 Processing form data:', data);
@@ -160,7 +174,13 @@ export function useAddDiamond(onSuccess?: () => void) {
           throw new Error(response.error);
         }
 
-        console.log('✅ ADD: FastAPI POST response:', response.data);
+        console.info('[CRUD SUCCESS]', {
+          action: 'ADD',
+          userId: user.id,
+          stockNumber: data.stockNumber,
+          diamondId: (response.data as any)?.diamond_id || (response.data as any)?.id,
+          response: response.data
+        });
 
         // CRITICAL: Verify the stone was actually created by fetching inventory
         console.log('🔍 ADD: Verifying stone was created...');
@@ -195,10 +215,10 @@ export function useAddDiamond(onSuccess?: () => void) {
         }
         
         // Success! Show confirmation (even if verification had issues)
-        console.log('✅ ADD DIAMOND: Upload successful!');
+        console.log('✅ ADD: Upload successful!');
         toast({
-          title: "✅ Diamond Added Successfully!",
-          description: `Stone "${data.stockNumber}" has been added to your inventory`,
+          title: "✅ Diamond Added Successfully",
+          description: `Stock ${data.stockNumber} added to inventory`
         });
         
         // Send notification with direct link to the specific diamond
@@ -235,10 +255,13 @@ export function useAddDiamond(onSuccess?: () => void) {
         return true;
         
       } catch (apiError) {
-        console.error('❌ ADD: FastAPI add failed:', apiError);
-        console.error('❌ ADD: Error details:', {
-          message: apiError instanceof Error ? apiError.message : 'Unknown',
-          stack: apiError instanceof Error ? apiError.stack : 'N/A'
+        console.error('[CRUD FAIL]', {
+          action: 'ADD',
+          userId: user.id,
+          stockNumber: data.stockNumber,
+          error: apiError instanceof Error ? apiError.message : String(apiError),
+          stack: apiError instanceof Error ? apiError.stack : undefined,
+          timestamp: new Date().toISOString()
         });
         
         // Parse and show specific backend validation errors
@@ -264,14 +287,22 @@ export function useAddDiamond(onSuccess?: () => void) {
           }
         }
         
-        console.error('❌ ADD: Showing error to user:', errorMessage);
+        const errorDetails = `
+Action: ADD
+Stock: ${data.stockNumber}
+User ID: ${user.id}
+Error: ${errorMessage}
+        `.trim();
         
         // Show specific error message to user with API details
         toast({
           variant: "destructive",
-          title: "❌ Failed to Add Diamond",
-          description: errorMessage,
+          title: "❌ Add Diamond Failed",
+          description: errorDetails,
+          duration: 10000
         });
+
+        alert(`❌ ADD DIAMOND FAILED\n\n${errorDetails}`);
         
         // Fallback to localStorage with clear messaging
         console.log('🔄 ADD: Falling back to localStorage...');
@@ -321,15 +352,33 @@ export function useAddDiamond(onSuccess?: () => void) {
       }
       
     } catch (error) {
-      console.error('❌ ADD: Unexpected error:', error);
+      console.error('[CRUD FAIL]', {
+        action: 'ADD',
+        userId: user.id,
+        stockNumber: data.stockNumber,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
       
       const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
       
+      const errorDetails = `
+Action: ADD
+Stock: ${data.stockNumber}
+User ID: ${user.id}
+Error: ${errorMessage}
+${error instanceof Error && error.stack ? `\nStack: ${error.stack.substring(0, 200)}` : ''}
+      `.trim();
+      
       toast({
         variant: "destructive",
-        title: "❌ Upload Failed",
-        description: errorMessage,
+        title: "❌ Add Diamond Failed",
+        description: errorDetails,
+        duration: 10000
       });
+
+      alert(`❌ ADD DIAMOND FAILED\n\n${errorDetails}`);
       
       return false;
     }

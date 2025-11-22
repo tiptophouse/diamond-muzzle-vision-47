@@ -67,8 +67,19 @@ function getDetailedError(error: any, response?: Response): string {
 export async function http<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const fullUrl = `${API_BASE_URL}${endpoint}`;
   const method = options.method || 'GET';
+  const startTime = Date.now();
   
-  console.log('🔑 HTTP: Making request to:', fullUrl, 'Method:', method);
+  // Import getCurrentUserId for logging
+  const { getCurrentUserId } = await import('@/lib/api/config');
+  const userId = getCurrentUserId();
+  
+  console.log('📤 HTTP REQUEST:', {
+    method,
+    url: fullUrl,
+    userId: userId || 'NOT_SET',
+    body: options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : null,
+    timestamp: new Date().toISOString()
+  });
 
   // Check authentication for protected endpoints
   let token = getBackendAuthToken();
@@ -157,8 +168,15 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
 
   try {
     const response = await requestFn();
+    const responseTime = Date.now() - startTime;
     
-    console.log('📡 HTTP: Response status:', response.status);
+    console.log('📥 HTTP RESPONSE:', {
+      status: response.status,
+      statusText: response.statusText,
+      url: fullUrl,
+      responseTime: `${responseTime}ms`,
+      timestamp: new Date().toISOString()
+    });
     
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -256,14 +274,27 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
     }
     
     // Success toasts handled by component-level code for better context
-    console.log(`✅ HTTP: ${method} successful for ${endpoint}`);
+    console.log('✅ HTTP SUCCESS:', {
+      method,
+      endpoint,
+      status: response.status,
+      data: data,
+      responseTime: `${responseTime}ms`
+    });
     
-    console.log('✅ HTTP: Request successful');
     return data;
     
   } catch (error) {
     const detailedError = getDetailedError(error);
-    console.error('❌ HTTP: Request error:', detailedError);
+    console.error('❌ HTTP ERROR:', {
+      method,
+      url: fullUrl,
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      detailedError,
+      timestamp: new Date().toISOString()
+    });
     
     // Show user-friendly error messages
     if (error instanceof Error) {

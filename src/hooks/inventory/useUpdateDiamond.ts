@@ -11,28 +11,48 @@ export function useUpdateDiamond(onSuccess?: () => void) {
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
     if (!user?.id) {
-      console.error('❌ UPDATE: User not authenticated');
+      console.error('❌ UPDATE: User not authenticated - BLOCKING');
+      const error = 'User authentication required to update diamonds';
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
+        title: "❌ Authentication Error",
+        description: error,
       });
+      alert(`❌ UPDATE DIAMOND FAILED\n\n${error}\n\nPlease ensure you're logged in through Telegram.`);
       return false;
     }
 
+    // Parse and validate diamond ID
+    const numericId = parseInt(diamondId);
+    if (isNaN(numericId) || typeof numericId !== 'number') {
+      const error = `Invalid diamond_id: got ${diamondId} (${typeof diamondId}), expected number`;
+      console.error('❌ UPDATE VALIDATION FAIL:', error);
+      alert(`❌ VALIDATION ERROR\n\n${error}\n\nCannot proceed with UPDATE.`);
+      return false;
+    }
+
+    console.info('[CRUD START]', { 
+      action: 'UPDATE',
+      diamondId: numericId,
+      userId: user.id,
+      stockNumber: data.stockNumber,
+      payload: JSON.stringify(data).substring(0, 500)
+    });
+
+    // Show loading toast
+    toast({
+      title: "⏳ Updating Diamond...",
+      description: `Updating stock ${data.stockNumber}`
+    });
+
     try {
-      console.log('📝 UPDATE: Starting update for diamond:', diamondId);
+      console.log('📝 UPDATE: Starting update for diamond:', numericId);
       console.log('📝 UPDATE: Form data received:', data);
-      
-      // Use the FastAPI diamond ID if it's a number, otherwise parse it
-      const numericId = parseInt(diamondId);
-      if (isNaN(numericId)) {
-        throw new Error('Invalid diamond ID');
-      }
       
       const endpoint = apiEndpoints.updateDiamond(numericId);
       console.log('📝 UPDATE: Using endpoint:', endpoint);
       console.log('📝 UPDATE: User ID:', user.id, 'type:', typeof user.id);
+      console.log('📝 UPDATE: Diamond ID:', numericId, 'type:', typeof numericId);
       
       // Prepare update data according to FastAPI schema - ensure all numbers are integers
       const updateData = {
@@ -82,26 +102,52 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         throw new Error(response.error);
       }
 
-      console.log('✅ UPDATE: FastAPI response successful:', response.data);
+      console.info('[CRUD SUCCESS]', {
+        action: 'UPDATE',
+        diamondId: numericId,
+        userId: user.id,
+        stockNumber: data.stockNumber,
+        response: response.data
+      });
 
       toast({
-        title: "✅ Success",
-        description: "Diamond updated successfully",
+        title: "✅ Diamond Updated Successfully",
+        description: `Stock ${data.stockNumber} updated`
       });
       
       if (onSuccess) onSuccess();
       return true;
         
     } catch (error) {
-      console.error('❌ UPDATE: API update failed:', error);
+      console.error('[CRUD FAIL]', {
+        action: 'UPDATE',
+        diamondId: numericId,
+        userId: user.id,
+        stockNumber: data.stockNumber,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
       
       const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
       
+      const errorDetails = `
+Action: UPDATE
+Diamond ID: ${numericId}
+Stock: ${data.stockNumber}
+User ID: ${user.id}
+Error: ${errorMessage}
+${error instanceof Error && error.stack ? `\nStack: ${error.stack.substring(0, 200)}` : ''}
+      `.trim();
+      
       toast({
         variant: "destructive",
-        title: "❌ Failed to Update Diamond",
-        description: errorMessage,
+        title: "❌ Update Diamond Failed",
+        description: errorDetails,
+        duration: 10000
       });
+
+      alert(`❌ UPDATE DIAMOND FAILED\n\n${errorDetails}`);
       
       return false;
     }
