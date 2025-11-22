@@ -69,10 +69,11 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Main Content Area */}
-      <main className="flex-1 pb-20">
-        {children}
-      </main>
+       {/* Main Content Area */}
+-      <main className="flex-1 pb-20">
++      <main className="flex-1 pb-20 pt-safe-or-3">
+         {children}
+       </main>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
