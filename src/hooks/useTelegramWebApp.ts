@@ -99,24 +99,35 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
   const hapticFeedbackWrapper = {
     impact: (style: 'light' | 'medium' | 'heavy' = 'medium') => {
       try {
-        hapticFeedback.impactOccurred(style);
+        if (hapticFeedback && typeof hapticFeedback.impactOccurred === 'function') {
+          hapticFeedback.impactOccurred(style);
+        } else if (webApp?.HapticFeedback?.impactOccurred) {
+          webApp.HapticFeedback.impactOccurred(style);
+        }
       } catch (e) {
-        // Fallback for older versions or non-Telegram environments
-        webApp?.HapticFeedback?.impactOccurred(style);
+        console.warn('Haptic feedback not available:', e);
       }
     },
     notification: (type: 'error' | 'success' | 'warning') => {
       try {
-        hapticFeedback.notificationOccurred(type);
+        if (hapticFeedback && typeof hapticFeedback.notificationOccurred === 'function') {
+          hapticFeedback.notificationOccurred(type);
+        } else if (webApp?.HapticFeedback?.notificationOccurred) {
+          webApp.HapticFeedback.notificationOccurred(type);
+        }
       } catch (e) {
-        webApp?.HapticFeedback?.notificationOccurred(type);
+        console.warn('Haptic feedback not available:', e);
       }
     },
     selection: () => {
       try {
-        hapticFeedback.selectionChanged();
+        if (hapticFeedback && typeof hapticFeedback.selectionChanged === 'function') {
+          hapticFeedback.selectionChanged();
+        } else if (webApp?.HapticFeedback?.selectionChanged) {
+          webApp.HapticFeedback.selectionChanged();
+        }
       } catch (e) {
-        webApp?.HapticFeedback?.selectionChanged();
+        console.warn('Haptic feedback not available:', e);
       }
     }
   };
