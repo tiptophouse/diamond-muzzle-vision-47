@@ -17,12 +17,8 @@ interface UserDetailsModalProps {
 }
 
 interface SubscriptionStatus {
-  success?: boolean;
-  is_active?: boolean;
-  subscription_type?: string;
-  expiration_date?: string;
-  payment_url?: string;
-  message?: string;
+  has_active_subscription: boolean;
+  message: string;
 }
 
 export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProps) {
@@ -167,16 +163,16 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                       </div>
                     ) : subscriptionStatus ? (
                       <div className="flex items-center gap-1">
-                        {subscriptionStatus.is_active ? (
+                        {subscriptionStatus.has_active_subscription ? (
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         ) : (
                           <XCircle className="h-4 w-4 text-gray-400" />
                         )}
                         <Badge 
-                          variant={subscriptionStatus.is_active ? "default" : "secondary"}
-                          className={subscriptionStatus.is_active ? 'bg-green-600' : 'bg-gray-400'}
+                          variant={subscriptionStatus.has_active_subscription ? "default" : "secondary"}
+                          className={subscriptionStatus.has_active_subscription ? 'bg-green-600' : 'bg-gray-400'}
                         >
-                          {subscriptionStatus.is_active ? 'PAID' : 'NOT PAID'}
+                          {subscriptionStatus.has_active_subscription ? 'PAID' : 'NOT PAID'}
                         </Badge>
                       </div>
                     ) : (
@@ -187,21 +183,11 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Subscription Type</label>
-                  <div className="text-sm font-semibold">
-                    {loadingSubscription ? (
-                      <span className="text-gray-400">Loading...</span>
-                    ) : (
-                      subscriptionStatus?.subscription_type || 'none'
-                    )}
-                  </div>
-                </div>
-                <div>
                   <label className="text-sm font-medium text-gray-600">Payment Status</label>
                   <div className="text-sm font-semibold">
                     {loadingSubscription ? (
                       <span className="text-gray-400">Loading...</span>
-                    ) : subscriptionStatus?.is_active ? (
+                    ) : subscriptionStatus?.has_active_subscription ? (
                       <span className="text-green-600 font-bold">Active</span>
                     ) : (
                       <span className="text-gray-500">Inactive</span>
@@ -209,15 +195,6 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                   </div>
                 </div>
               </div>
-              
-              {subscriptionStatus?.expiration_date && (
-                <div className="pt-2 border-t border-gray-200">
-                  <label className="text-sm font-medium text-gray-600">Subscription Expiration</label>
-                  <div className="text-sm font-semibold text-orange-600">
-                    {new Date(subscriptionStatus.expiration_date).toLocaleDateString()}
-                  </div>
-                </div>
-              )}
               
               {subscriptionStatus?.message && (
                 <div className="pt-2 border-t border-gray-200">
