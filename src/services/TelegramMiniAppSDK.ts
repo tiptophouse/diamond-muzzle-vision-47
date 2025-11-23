@@ -249,7 +249,7 @@ class TelegramMiniAppSDK {
     if (typeof window === 'undefined') return;
 
     const webApp = window.Telegram?.WebApp;
-    this.webApp = webApp as TelegramWebApp || null;
+    this.webApp = (webApp as unknown) as TelegramWebApp || null;
     
     if (!this.webApp) {
       console.warn('🔸 Telegram WebApp not available - running in development mode');
