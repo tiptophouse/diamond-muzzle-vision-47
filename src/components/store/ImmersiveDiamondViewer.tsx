@@ -9,6 +9,7 @@ import { useTelegramSensors } from '@/hooks/useTelegramSensors';
 import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { useTelegramAdvanced } from '@/hooks/useTelegramAdvanced';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +49,7 @@ export function ImmersiveDiamondViewer({ diamond, isOwner, onBack }: ImmersiveDi
   const { webApp } = useTelegramWebApp();
   const { haptic } = useTelegramSDK();
   const { user } = useTelegramAuth();
+  const { shareStory, features } = useTelegramAdvanced();
   
   const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
   const [zoom, setZoom] = useState(1);
@@ -256,8 +258,13 @@ Can we discuss this further?`;
   const handleShareToStory = async () => {
     haptic?.impact?.('medium');
 
-    if (!webApp?.shareToStory) {
-      toast.error('Story sharing not available on this device');
+    if (!features.hasStorySharing) {
+      toast.error('Story sharing not available on this device (requires Telegram 7.2+)');
+      return;
+    }
+
+    if (!diamond.imageUrl) {
+      toast.error('No image available for sharing');
       return;
     }
 
@@ -266,14 +273,19 @@ Can we discuss this further?`;
       const botUsername = 'BrilliantBot_bot'; // Your bot username
       const deepLink = `https://t.me/${botUsername}?start=diamond_${diamond.stockNumber}_${user?.id || 'guest'}_story`;
       
-      // Share to Telegram Story with widget link
-      await webApp.shareToStory(diamond.imageUrl, {
+      // Share to Telegram Story with widget link using the proper hook
+      const success = await shareStory(diamond.imageUrl, {
         text: `💎 ${diamond.carat}ct ${diamond.shape} Diamond - $${diamond.price.toLocaleString()}`,
-        widget_link: {
+        widgetLink: {
           url: deepLink,
-          name: 'View Diamond'
+          name: '💎 View Diamond'
         }
       });
+
+      if (!success) {
+        toast.error('Failed to share to story');
+        return;
+      }
 
       // Track story share in database
       await supabase.from('diamond_story_shares').insert({
