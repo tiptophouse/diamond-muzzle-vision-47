@@ -46,24 +46,34 @@ export function CreateAuctionModal({
   const { user } = useTelegramAuth();
 
   const handleCreateAuction = async () => {
+    console.log('🚀 handleCreateAuction CALLED');
+    
     if (!startingPrice || Number(startingPrice) <= 0) {
-      toast({ title: 'שגיאה', description: 'נא להזין מחיר התחלתי תקין', variant: 'destructive' });
+      console.error('❌ Validation failed: Invalid starting price');
+      const errorMsg = 'נא להזין מחיר התחלתי תקין';
+      toast({ title: 'שגיאה', description: errorMsg, variant: 'destructive' });
+      alert(errorMsg); // Backup alert
       hapticFeedback.notification('error');
       return;
     }
 
     const userId = user?.id;
     if (!userId) {
-      toast({ title: 'שגיאה', description: 'לא ניתן לזהות משתמש', variant: 'destructive' });
+      console.error('❌ Validation failed: No user ID');
+      const errorMsg = 'לא ניתן לזהות משתמש';
+      toast({ title: 'שגיאה', description: errorMsg, variant: 'destructive' });
+      alert(errorMsg); // Backup alert
       hapticFeedback.notification('error');
       return;
     }
 
-    console.log('🔨 Creating auction with seller_telegram_id:', userId);
+    console.log('✅ Validation passed');
+    console.log('🔨 Creating auction with:', { stockNumber, startingPrice, minIncrement, durationHours, userId });
     setIsSubmitting(true);
     hapticFeedback.impact('light');
 
     try {
+      console.log('📡 Calling createAuction...');
       // Step 1: Create auction
       const auction = await createAuction({
         stock_number: stockNumber,
@@ -124,15 +134,26 @@ export function CreateAuctionModal({
 
       onOpenChange(false);
       onSuccess?.(auction.id);
-    } catch (error) {
-      console.error('Failed to create auction:', error);
+    } catch (error: any) {
+      console.error('❌ AUCTION CREATION FAILED:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        response: error?.response,
+        code: error?.code
+      });
+      
       hapticFeedback.notification('error');
+      
+      const errorMsg = error?.message || 'לא ניתן ליצור מכרז כרגע';
       toast({ 
-        title: 'שגיאה', 
-        description: 'לא ניתן ליצור מכרז כרגע', 
+        title: 'שגיאה ביצירת מכרז', 
+        description: errorMsg, 
         variant: 'destructive' 
       });
+      alert(`שגיאה: ${errorMsg}`); // Backup alert
     } finally {
+      console.log('🏁 Auction creation flow finished');
       setIsSubmitting(false);
     }
   };
