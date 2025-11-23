@@ -56,11 +56,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <SidebarInset className="flex-1">
           {/* Top Navigation Bar with iOS safe area */}
           <header 
-            className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm"
+            className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm"
             style={{ paddingTop: 'var(--admin-safe-area-top, 0px)' }}
           >
             <div className="flex items-center gap-4 px-6">
-              <SidebarTrigger className="h-8 w-8 hover:bg-sidebar-accent" />
+              <SidebarTrigger className="h-8 w-8 hover:bg-sidebar-accent pointer-events-auto z-50" style={{ isolation: 'isolate' }} />
               
               <div className="hidden h-6 w-px bg-border md:block" />
               

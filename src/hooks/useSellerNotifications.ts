@@ -29,7 +29,7 @@ export function useSellerNotifications(options: UseSellerNotificationsOptions = 
     setLoading(true);
     try {
       const { data, error } = await api.get<SellerNotificationSchema[]>(
-        apiEndpoints.getSellerNotifications(userId, { limit, offset: fetchOffset })
+        apiEndpoints.getSellerNotifications({ limit, offset: fetchOffset })
       );
       
       if (error) {
@@ -54,12 +54,9 @@ export function useSellerNotifications(options: UseSellerNotificationsOptions = 
    * Fetch notification count
    */
   const fetchNotificationCount = async () => {
-    const userId = getCurrentUserId();
-    if (!userId) return;
-
     try {
       const { data, error } = await api.get<{ total: number }>(
-        apiEndpoints.getSellerNotificationsCount(userId)
+        apiEndpoints.getSellerNotificationsCount()
       );
       
       if (error) {

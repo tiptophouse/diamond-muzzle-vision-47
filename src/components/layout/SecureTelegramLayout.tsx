@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Home, Package, Store, Bot, BarChart3, Shield, Sparkles } from 'lucide-react';
+import { Home, Package, Store, Bot, BarChart3, Sparkles } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { cn } from '@/lib/utils';
@@ -83,29 +83,16 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col ios-scroll">
-      {/* Security Header - Compact for Mobile */}
-      <div className="bg-primary/5 border-b border-primary/10 px-4 py-3 pt-safe">
-        <div className="flex items-center justify-between max-w-screen-sm mx-auto">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Shield className="h-4 w-4 text-primary" />
-            <span className="font-medium">JWT Secured</span>
-          </div>
-          <div className="text-sm text-muted-foreground font-medium">
-            {user?.first_name}
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-background flex flex-col ios-scroll w-full">
       {/* Main Content Area with Telegram Mini App optimization */}
       <main className="flex-1 pb-20 ios-scroll overflow-y-auto">
         {children}
       </main>
 
-      {/* Bottom Navigation - Telegram Mini App Optimized with lower z-index for Telegram SDK compatibility */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-30 pb-safe-or-4 pointer-events-auto" style={{ WebkitTapHighlightColor: 'transparent' }}>
-        <div className="grid grid-cols-5 max-w-screen-sm mx-auto">
-          {navigationItems.map((item) => {
+      {/* Bottom Navigation - Optimized for Telegram Mini App (Compact 4-item layout) */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-20 pb-safe-or-4 pointer-events-auto" style={{ WebkitTapHighlightColor: 'transparent' }}>
+        <div className="grid grid-cols-4 max-w-screen-sm mx-auto">
+          {navigationItems.slice(0, 4).map((item) => {
             const Icon = item.icon;
             const active = isActive(item.activePattern);
             
@@ -115,7 +102,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
                 to={item.to}
                 onClick={() => handleNavClick(item.label)}
                 className={cn(
-                  "flex flex-col items-center justify-center py-3 px-2 min-h-[60px] text-sm transition-colors duration-200 touch-manipulation relative pointer-events-auto",
+                  "flex flex-col items-center justify-center py-2 px-1 min-h-[56px] text-sm transition-colors duration-200 touch-manipulation relative pointer-events-auto",
                   "active:scale-95 focus:outline-none",
                   active 
                     ? "text-primary bg-primary/5" 
@@ -124,18 +111,20 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
               >
                 <Icon 
                   className={cn(
-                    "h-5 w-5 mb-1",
+                    "h-4 w-4 mb-1",
                     active && "text-primary"
                   )} 
                 />
-                <span className={cn(
-                  "font-medium text-xs leading-tight",
-                  active && "text-primary"
-                )}>
+                <span 
+                  className={cn(
+                    "text-[10px] font-medium truncate",
+                    active && "text-primary font-semibold"
+                  )}
+                >
                   {item.label}
                 </span>
                 {item.badge && (
-                  <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full font-bold animate-pulse flex items-center gap-1">
+                  <div className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[9px] px-1 py-0.5 rounded-full font-bold animate-pulse flex items-center gap-0.5">
                     <Sparkles className="h-2 w-2" />
                     {item.badge}
                   </div>
