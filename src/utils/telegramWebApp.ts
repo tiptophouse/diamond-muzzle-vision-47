@@ -1,18 +1,7 @@
+import { TelegramWebApp } from '../types/telegram';
 
-// Telegram WebApp utility functions for secure authentication
-export interface TelegramWebApp {
-  initData: string;
-  initDataUnsafe: any;
-  ready: () => void;
-  expand: () => void;
-  themeParams: any;
-  BackButton?: {
-    show: () => void;
-    hide: () => void;
-    onClick: (callback: () => void) => void;
-  };
-  close?: () => void;
-}
+// Re-export TelegramWebApp type from types
+export type { TelegramWebApp };
 
 declare global {
   interface Window {
