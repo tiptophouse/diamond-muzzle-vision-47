@@ -2,7 +2,8 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Camera } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Camera, AlertCircle, RefreshCw, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { QRCodeScanner } from '@/components/inventory/QRCodeScanner';
@@ -106,8 +107,10 @@ export function DiamondForm({
 
   const { 
     isSubmitting, 
-    uploadSuccess, 
+    uploadSuccess,
+    uploadError,
     setUploadSuccess,
+    setUploadError,
     handleSubmit: submitForm,
     handleReset 
   } = useDiamondFormLogic({
@@ -173,6 +176,39 @@ export function DiamondForm({
   return (
     <>
       <div className="space-y-3">
+        {/* Error Alert */}
+        {uploadError && (
+          <Alert variant="destructive" className="border-2">
+            <AlertCircle className="h-5 w-5" />
+            <AlertTitle className="font-bold">שגיאה בהעלאת יהלום</AlertTitle>
+            <AlertDescription className="mt-2">
+              <p className="mb-3">{uploadError}</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setUploadError(null);
+                    form.handleSubmit(onFormSubmit)();
+                  }}
+                  className="bg-background hover:bg-accent"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  נסה שוב
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setUploadError(null)}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  סגור
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {showScanButton && (
           <Card className="border-primary/20">
             <CardContent className="p-3">
