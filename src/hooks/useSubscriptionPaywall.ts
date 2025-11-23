@@ -9,49 +9,106 @@ interface SubscriptionStatus {
   message: string;
 }
 
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [1000, 2000, 4000]; // Exponential backoff
+const isDevelopment = import.meta.env.DEV;
+
 export function useSubscriptionPaywall() {
-  const { user } = useTelegramAuth();
+  const { user, isAuthenticated } = useTelegramAuth();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (user?.id) {
-      checkSubscriptionStatus();
-    } else {
-      setIsLoading(false);
+    if (user?.id && isAuthenticated) {
+      checkSubscriptionWithRetry();
+    } else if (!user?.id) {
+      // No user yet, stay in loading state
+      setIsLoading(true);
+      setIsBlocked(false);
     }
-  }, [user?.id]);
+  }, [user?.id, isAuthenticated]);
 
-  const checkSubscriptionStatus = async () => {
+  const checkSubscriptionWithRetry = async (attempt = 0) => {
     if (!user?.id) {
       setIsLoading(false);
+      setIsBlocked(false);
       return;
     }
 
     setIsLoading(true);
+    setRetryCount(attempt);
+
     try {
-      console.log('🔍 Checking subscription status from FastAPI:', user.id);
+      console.log('🔍 SUBSCRIPTION CHECK:', {
+        userId: user.id,
+        attempt: attempt + 1,
+        maxRetries: MAX_RETRIES,
+        timestamp: new Date().toISOString()
+      });
       
       // Call FastAPI directly with JWT authentication
       const data = await http<SubscriptionStatus>('/api/v1/user/active-subscription', {
         method: 'GET',
       });
 
-      console.log('✅ Subscription status:', data);
+      console.log('✅ Subscription response:', data);
       setSubscriptionStatus(data);
-      setIsBlocked(!data?.has_active_subscription);
+      
+      // CRITICAL: Only block if backend explicitly says no subscription
+      const shouldBlock = !data?.has_active_subscription;
+      setIsBlocked(shouldBlock);
+      
+      console.log('🚪 PAYWALL DECISION:', {
+        isBlocked: shouldBlock,
+        hasSubscription: data?.has_active_subscription,
+        message: data?.message,
+        timestamp: new Date().toISOString()
+      });
+      
+      setIsLoading(false);
     } catch (error: any) {
-      console.error('❌ Error checking subscription:', error);
-      // On error, block access for safety
-      setIsBlocked(true);
+      const errorMessage = error?.message || String(error);
+      console.error(`❌ Subscription check error (attempt ${attempt + 1}/${MAX_RETRIES}):`, {
+        error: errorMessage,
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
+
+      // Auth errors (401/403) - JWT not ready or expired, retry
+      if ((errorMessage.includes('401') || errorMessage.includes('403')) && attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAYS[attempt];
+        console.log(`⏳ Auth not ready, retrying in ${delay}ms...`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return checkSubscriptionWithRetry(attempt + 1);
+      }
+      
+      // Network errors or max retries reached - FAIL OPEN (don't block)
+      console.warn('⚠️ FAIL-OPEN: Failed to verify subscription, allowing access by default', {
+        reason: attempt >= MAX_RETRIES ? 'max retries' : 'network error',
+        isDevelopment
+      });
+      
+      // In development, always fail open
+      if (isDevelopment) {
+        console.warn('🔧 DEV MODE: Allowing access despite subscription check failure');
+      }
+      
+      // Default to NOT blocking - fail-open for reliability
+      setIsBlocked(false);
       setSubscriptionStatus({
         has_active_subscription: false,
-        message: error?.message || 'Failed to verify subscription status'
+        message: 'Unable to verify subscription status. Granting temporary access.'
       });
-    } finally {
       setIsLoading(false);
     }
+  };
+
+  const checkSubscriptionStatus = () => {
+    setRetryCount(0);
+    return checkSubscriptionWithRetry(0);
   };
 
   const requestPaymentLink = async () => {
