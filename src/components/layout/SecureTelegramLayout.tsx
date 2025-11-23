@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { Home, Package, Store, Bot, BarChart3, Shield, Sparkles } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 interface SecureTelegramLayoutProps {
   children: React.ReactNode;
@@ -50,9 +51,27 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
 
   const isActive = (pattern: RegExp) => pattern.test(location.pathname);
 
-  const handleNavClick = () => {
+  const handleNavClick = (label: string) => {
     selectionChanged();
+    logger.telegramAction('bottom_nav_click', { destination: label, from: location.pathname });
   };
+
+  // Ensure Telegram WebApp is configured properly
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+      
+      // Configure for Telegram Mini App
+      tg.ready();
+      tg.expand();
+      
+      logger.telegramAction('layout_mounted', { 
+        platform: (tg as any).platform || 'unknown',
+        version: (tg as any).version || 'unknown',
+        path: location.pathname
+      });
+    }
+  }, [location.pathname]);
 
   // Don't render navigation for unauthenticated users
   if (!isAuthenticated) {
@@ -79,12 +98,12 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
       </div>
 
       {/* Main Content Area with Telegram Mini App optimization */}
-      <main className="flex-1 pb-24 ios-scroll overflow-y-auto">
+      <main className="flex-1 pb-20 ios-scroll overflow-y-auto">
         {children}
       </main>
 
-      {/* Bottom Navigation - Telegram Mini App Optimized */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-40 pb-safe-or-4">
+      {/* Bottom Navigation - Telegram Mini App Optimized with lower z-index for Telegram SDK compatibility */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-30 pb-safe-or-4 pointer-events-auto" style={{ WebkitTapHighlightColor: 'transparent' }}>
         <div className="grid grid-cols-5 max-w-screen-sm mx-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;
@@ -94,10 +113,10 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
               <Link
                 key={item.to}
                 to={item.to}
-                onClick={handleNavClick}
+                onClick={() => handleNavClick(item.label)}
                 className={cn(
-                  "flex flex-col items-center justify-center py-4 px-3 min-h-[64px] text-sm transition-colors duration-200 touch-manipulation relative",
-                  "active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                  "flex flex-col items-center justify-center py-3 px-2 min-h-[60px] text-sm transition-colors duration-200 touch-manipulation relative pointer-events-auto",
+                  "active:scale-95 focus:outline-none",
                   active 
                     ? "text-primary bg-primary/5" 
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -105,7 +124,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
               >
                 <Icon 
                   className={cn(
-                    "h-6 w-6 mb-1",
+                    "h-5 w-5 mb-1",
                     active && "text-primary"
                   )} 
                 />
@@ -116,7 +135,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
                   {item.label}
                 </span>
                 {item.badge && (
-                  <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-bold animate-pulse flex items-center gap-1">
+                  <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full font-bold animate-pulse flex items-center gap-1">
                     <Sparkles className="h-2 w-2" />
                     {item.badge}
                   </div>
