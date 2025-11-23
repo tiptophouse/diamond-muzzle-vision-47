@@ -32,25 +32,15 @@ export function useStartParamRouter() {
           
           console.log('💎 Routing to diamond:', { stockNumber, ownerId });
           
-          // CRITICAL FIX: Route to correct page based on ownership
-          // Get current user from Telegram WebApp
-          const currentUserId = (webApp as any)?.initDataUnsafe?.user?.id;
-          
-          if (ownerId && currentUserId && parseInt(ownerId) === currentUserId) {
-            // User's own diamond → go to inventory with highlight
-            navigate(`/inventory?highlight=${stockNumber}`);
-            console.log('✅ Routing to inventory (own diamond)');
-          } else if (ownerId) {
-            // Someone else's diamond → go to store filtered by seller
-            navigate(`/store?seller=${ownerId}&diamond=${stockNumber}`);
-            console.log('✅ Routing to store (other seller)');
-          } else {
-            // No owner specified → fallback to public view
-            const queryParams = new URLSearchParams();
-            queryParams.set('shared', 'true');
-            navigate(`/public/diamond/${stockNumber}?${queryParams.toString()}`);
-            console.log('✅ Routing to public view (no owner)');
+          // Route to public diamond page with tracking params
+          const queryParams = new URLSearchParams();
+          queryParams.set('shared', 'true');
+          if (ownerId) {
+            queryParams.set('from', ownerId);
+            queryParams.set('verify', 'true');
           }
+          
+          navigate(`/public/diamond/${stockNumber}?${queryParams.toString()}`);
           
           // Haptic feedback
           if (webApp.HapticFeedback) {
