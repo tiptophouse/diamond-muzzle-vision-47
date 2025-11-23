@@ -12,6 +12,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
 import { EnhancedTelegramAdminGuard } from './components/admin/EnhancedTelegramAdminGuard';
+import { SubscriptionPaywall } from './components/paywall/SubscriptionPaywall';
 import { registerServiceWorker } from './lib/serviceWorker';
 import Index from './pages/Index';
 // Lazy load heavy components to improve initial loading speed
@@ -64,10 +65,11 @@ function App() {
             <Router>
               <TutorialProvider>
                 <InteractiveWizardProvider>
-                  <SecureTelegramLayout>
-                  <StartParamInitializer />
-                  <FloatingUploadButton />
-                  <Routes>
+                  <SubscriptionPaywall>
+                    <SecureTelegramLayout>
+                      <StartParamInitializer />
+                      <FloatingUploadButton />
+                      <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
                     <PublicRoute>
@@ -262,9 +264,10 @@ function App() {
                   <Route path="/diagnostic" element={<Diagnostic />} />
 
                   <Route path="*" element={<NotFound />} />
-                </Routes>
-                </SecureTelegramLayout>
-              </InteractiveWizardProvider>
+              </Routes>
+            </SecureTelegramLayout>
+          </SubscriptionPaywall>
+            </InteractiveWizardProvider>
             </TutorialProvider>
           </Router>
         </TelegramAuthProvider>
