@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import WebApp from '@twa-dev/sdk';
+import { init, miniApp, themeParams, viewport, initData, backButton, mainButton, hapticFeedback, popup } from '@telegram-apps/sdk';
 import { TelegramWebApp } from '@/types/telegram';
 
 interface UseTelegramWebAppReturn {
@@ -29,56 +29,64 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp as TelegramWebApp;
-      
-      // Initialize the WebApp
-      tg.ready();
-      tg.expand();
-      
-      // Set theme colors for better integration
-      if (tg.setHeaderColor) tg.setHeaderColor('#ffffff');
-      if (tg.setBackgroundColor) tg.setBackgroundColor('#f8fafc');
-      
-      // Handle viewport changes for better responsiveness
-      const handleViewportChange = () => {
-        // Update CSS custom properties for responsive design
-        if (tg.viewportHeight) {
-          document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
-        }
-        if (tg.viewportStableHeight) {
-          document.documentElement.style.setProperty('--tg-stable-height', `${tg.viewportStableHeight}px`);
-        }
+      try {
+        // Initialize SDK v3.11
+        init();
         
-        // Force re-render of components that depend on viewport
-        setWebApp({ ...tg });
-      };
-      
-      // Listen for viewport changes
-      tg.onEvent('viewportChanged', handleViewportChange);
-      
-      // Set initial viewport
-      handleViewportChange();
-      
-      setWebApp(tg);
-      setUser(tg.initDataUnsafe?.user || null);
-      setIsReady(true);
-      
-      // Enable closing confirmation for better UX
-      if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
-      
-      console.log('🚀 Telegram WebApp initialized:', {
-        version: tg.version,
-        platform: tg.platform,
-        viewportHeight: tg.viewportHeight,
-        viewportStableHeight: tg.viewportStableHeight,
-        user: tg.initDataUnsafe?.user,
-        themeParams: tg.themeParams
-      });
-      
-      // Cleanup function
-      return () => {
-        tg.offEvent('viewportChanged', handleViewportChange);
-      };
+        // Mount core components synchronously to avoid race conditions
+        miniApp.mountSync();
+        themeParams.mount();
+        viewport.mount();
+        
+        const tg = window.Telegram.WebApp as TelegramWebApp;
+        
+        // Set theme colors for better integration
+        if (tg.setHeaderColor) tg.setHeaderColor('#ffffff');
+        if (tg.setBackgroundColor) tg.setBackgroundColor('#f8fafc');
+        
+        // Handle viewport changes for better responsiveness
+        const handleViewportChange = () => {
+          // Update CSS custom properties for responsive design
+          const vp = viewport.height();
+          const stableHeight = viewport.stableHeight();
+          
+          if (vp) {
+            document.documentElement.style.setProperty('--tg-viewport-height', `${vp}px`);
+          }
+          if (stableHeight) {
+            document.documentElement.style.setProperty('--tg-stable-height', `${stableHeight}px`);
+          }
+          
+          // Force re-render of components that depend on viewport
+          setWebApp({ ...tg });
+        };
+        
+        // Set initial viewport
+        handleViewportChange();
+        
+        setWebApp(tg);
+        setUser(initData.user() || null);
+        setIsReady(true);
+        
+        // Enable closing confirmation for better UX
+        if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
+        
+        console.log('🚀 Telegram WebApp initialized with SDK v3.11:', {
+          version: tg.version,
+          platform: tg.platform,
+          viewportHeight: viewport.height(),
+          viewportStableHeight: viewport.stableHeight(),
+          user: initData.user(),
+          themeParams: tg.themeParams
+        });
+        
+        return () => {
+          // Cleanup viewport listeners if needed
+        };
+      } catch (error) {
+        console.error('❌ Failed to initialize Telegram SDK:', error);
+        setIsReady(true);
+      }
     } else {
       // Fallback for development - set reasonable defaults
       console.log('📱 Running outside Telegram, using mock data');
@@ -88,19 +96,32 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
     }
   }, []);
 
-  const hapticFeedback = {
+  const hapticFeedbackWrapper = {
     impact: (style: 'light' | 'medium' | 'heavy' = 'medium') => {
-      webApp?.HapticFeedback?.impactOccurred(style);
+      try {
+        hapticFeedback.impactOccurred(style);
+      } catch (e) {
+        // Fallback for older versions or non-Telegram environments
+        webApp?.HapticFeedback?.impactOccurred(style);
+      }
     },
     notification: (type: 'error' | 'success' | 'warning') => {
-      webApp?.HapticFeedback?.notificationOccurred(type);
+      try {
+        hapticFeedback.notificationOccurred(type);
+      } catch (e) {
+        webApp?.HapticFeedback?.notificationOccurred(type);
+      }
     },
     selection: () => {
-      webApp?.HapticFeedback?.selectionChanged();
+      try {
+        hapticFeedback.selectionChanged();
+      } catch (e) {
+        webApp?.HapticFeedback?.selectionChanged();
+      }
     }
   };
 
-  const mainButton = {
+  const mainButtonWrapper = {
     show: (text: string, onClick: () => void, color = '#007AFF') => {
       if (webApp?.MainButton) {
         // Detach previous handler if exists
@@ -139,7 +160,7 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
     }
   };
 
-  const backButton = {
+  const backButtonWrapper = {
     show: (onClick: () => void) => {
       if (webApp?.BackButton) {
         // Detach previous handler if exists
@@ -168,15 +189,17 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
   };
 
   const showAlert = (message: string) => {
-    webApp?.showAlert(message);
+    if (webApp?.showAlert) {
+      webApp.showAlert(message);
+    } else {
+      alert(message);
+    }
   };
 
   const showConfirm = (message: string) => {
     return new Promise<boolean>((resolve) => {
       if (webApp?.showConfirm) {
-        webApp.showConfirm(message);
-        // Note: Telegram doesn't provide promise-based confirm, this is simplified
-        resolve(true);
+        webApp.showConfirm(message, (confirmed) => resolve(confirmed));
       } else {
         resolve(window.confirm(message));
       }
@@ -222,9 +245,9 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
     webApp,
     user,
     isReady,
-    hapticFeedback,
-    mainButton,
-    backButton,
+    hapticFeedback: hapticFeedbackWrapper,
+    mainButton: mainButtonWrapper,
+    backButton: backButtonWrapper,
     showAlert,
     showConfirm,
     share,
@@ -238,6 +261,6 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
       button_text_color: ''
     },
     platform: webApp?.platform || 'unknown',
-    version: webApp?.version || '1.0'
+    version: webApp?.version || '3.11'
   };
 }

@@ -8,11 +8,25 @@ export interface TelegramUser {
   is_premium?: boolean;
   photo_url?: string;
   phone_number?: string;
+  allows_write_to_pm?: boolean;
+  added_to_attachment_menu?: boolean;
 }
 
 export interface TelegramInitData {
   query_id?: string;
   user?: TelegramUser;
+  receiver?: TelegramUser;
+  chat?: {
+    id: number;
+    type: string;
+    title?: string;
+    username?: string;
+    photo_url?: string;
+  };
+  chat_type?: string;
+  chat_instance?: string;
+  start_param?: string;
+  can_send_after?: number;
   auth_date: number;
   hash: string;
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { initData as sdkInitData } from '@telegram-apps/sdk';
 import { TelegramUser } from '@/types/telegram';
 import { signInToBackend, clearBackendAuthToken } from '@/lib/api/auth';
 import { setCurrentUserId } from '@/lib/api/config';
@@ -97,9 +98,19 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
     console.log('⏳ AUTH: Waiting for Telegram initData...');
     
     while (Date.now() - startTime < maxWaitTime) {
-      if (window.Telegram?.WebApp?.initData && window.Telegram.WebApp.initData.length > 50) {
-        console.log('✅ AUTH: initData is now available');
-        return window.Telegram.WebApp.initData;
+      try {
+        // Try new SDK v3.11 API first
+        const rawInitData = sdkInitData.raw();
+        if (rawInitData && rawInitData.length > 50) {
+          console.log('✅ AUTH: initData available from SDK v3.11');
+          return rawInitData;
+        }
+      } catch (e) {
+        // Fallback to window.Telegram.WebApp
+        if (window.Telegram?.WebApp?.initData && window.Telegram.WebApp.initData.length > 50) {
+          console.log('✅ AUTH: initData available from fallback');
+          return window.Telegram.WebApp.initData;
+        }
       }
       await new Promise(resolve => setTimeout(resolve, checkInterval));
     }
@@ -160,13 +171,23 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       }
       
       // CRITICAL: Log full Telegram environment details
-      console.log('🔍 TELEGRAM ENV CHECK:', {
+      let initDataFromSDK: string | null = null;
+      try {
+        initDataFromSDK = sdkInitData.raw();
+      } catch (e) {
+        // SDK not initialized yet
+      }
+      
+      console.log('🔍 TELEGRAM ENV CHECK (SDK v3.11):', {
         href: window.location.href,
         hasTelegram: !!window.Telegram,
         hasWebApp: !!window.Telegram?.WebApp,
-        initDataLength: window.Telegram?.WebApp?.initData?.length || 0,
-        initDataPresent: !!window.Telegram?.WebApp?.initData,
-        userIdFromInitData: window.Telegram?.WebApp?.initDataUnsafe?.user?.id || null
+        sdkInitDataLength: initDataFromSDK?.length || 0,
+        sdkInitDataPresent: !!initDataFromSDK,
+        fallbackInitDataLength: window.Telegram?.WebApp?.initData?.length || 0,
+        fallbackInitDataPresent: !!window.Telegram?.WebApp?.initData,
+        userIdFromSDK: sdkInitData.user()?.id || null,
+        userIdFromFallback: window.Telegram?.WebApp?.initDataUnsafe?.user?.id || null
       });
       
       // Fast environment check
