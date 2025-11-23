@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { initData } from '@telegram-apps/sdk';
 import { TelegramUser } from '@/types/telegram';
 import { signInToBackend, clearBackendAuthToken } from '@/lib/api/auth';
 import { setCurrentUserId } from '@/lib/api/config';
@@ -21,26 +22,27 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const startTime = useRef(Date.now());
   
   const [state, setState] = useState<OptimizedAuthState>(() => {
-    // Try to restore from cache for instant load - but verify Telegram environment
-    const cachedAuth = tokenManager.getCachedAuthState();
-    if (cachedAuth && tokenManager.isValid()) {
-      // Verify we still have valid Telegram environment with initData
-      if (!window.Telegram?.WebApp?.initData) {
-        console.warn('⚠️ AUTH: Cached auth exists but no initData - clearing cache');
-        tokenManager.clear();
-        return {
-          user: null,
-          isLoading: true,
-          error: null,
-          isTelegramEnvironment: false,
-          isAuthenticated: false,
-          accessDeniedReason: null,
-          loadTime: 0
-        };
-      }
-      
-      console.log('⚡ AUTH: Instant load from cache with valid initData');
-      setCurrentUserId(cachedAuth.userId);
+      // Try to restore from cache for instant load - but verify Telegram environment
+      const cachedAuth = tokenManager.getCachedAuthState();
+      if (cachedAuth && tokenManager.isValid()) {
+        // Verify we still have valid Telegram environment with initData using new SDK
+        const rawInitData = initData.raw();
+        if (!rawInitData && !window.Telegram?.WebApp?.initData) {
+          console.warn('⚠️ AUTH: Cached auth exists but no initData - clearing cache');
+          tokenManager.clear();
+          return {
+            user: null,
+            isLoading: true,
+            error: null,
+            isTelegramEnvironment: false,
+            isAuthenticated: false,
+            accessDeniedReason: null,
+            loadTime: 0
+          };
+        }
+        
+        console.log('⚡ AUTH: Instant load from cache with valid initData');
+        setCurrentUserId(cachedAuth.userId);
       
       // Set session context for RLS (non-blocking, fire-and-forget)
       void (async () => {
@@ -97,9 +99,13 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
     console.log('⏳ AUTH: Waiting for Telegram initData...');
     
     while (Date.now() - startTime < maxWaitTime) {
-      if (window.Telegram?.WebApp?.initData && window.Telegram.WebApp.initData.length > 50) {
+      // Try new SDK first, then fallback to window.Telegram
+      const rawInitData = initData.raw();
+      const fallbackInitData = window.Telegram?.WebApp?.initData;
+      
+      if ((rawInitData && rawInitData.length > 50) || (fallbackInitData && fallbackInitData.length > 50)) {
         console.log('✅ AUTH: initData is now available');
-        return window.Telegram.WebApp.initData;
+        return rawInitData || fallbackInitData;
       }
       await new Promise(resolve => setTimeout(resolve, checkInterval));
     }
@@ -186,16 +192,16 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       }
 
       // Wait for initData to be populated (with timeout)
-      const initData = await waitForInitData(3000);
+      const rawInitData = await waitForInitData(3000);
       
       // STRICT initData validation - must have minimum length and required fields
-      if (!initData || initData.length < 50) {
+      if (!rawInitData || rawInitData.length < 50) {
         console.error('❌ AUTH: Invalid or missing Telegram initData after wait');
         throw new Error('no_init_data');
       }
 
       // Validate initData structure contains required Telegram fields
-      const initDataParams = new URLSearchParams(initData);
+      const initDataParams = new URLSearchParams(rawInitData);
       if (!initDataParams.get('user') || !initDataParams.get('hash') || !initDataParams.get('auth_date')) {
         console.error('❌ AUTH: Telegram initData missing required fields (user, hash, auth_date)');
         throw new Error('invalid_init_data');
@@ -207,14 +213,14 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       clearBackendAuthToken();
       
       // Authenticate with backend using the waited-for initData
-      const jwtToken = await signInToBackend(initData);
+      const jwtToken = await signInToBackend(rawInitData);
       
       if (!jwtToken) {
         throw new Error('backend_auth_failed');
       }
 
       // Extract and validate user data using centralized validation
-      const userData = extractTelegramUser(initData);
+      const userData = extractTelegramUser(rawInitData);
       if (!userData) {
         throw new Error('invalid_user_data');
       }
@@ -325,9 +331,10 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   useEffect(() => {
     const handleTokenRefresh = async (event: CustomEvent) => {
       console.log('🔄 AUTH: Token refresh requested');
-      if (window.Telegram?.WebApp?.initData) {
+      const rawInitData = initData.raw() || window.Telegram?.WebApp?.initData;
+      if (rawInitData) {
         try {
-          const newToken = await signInToBackend(window.Telegram.WebApp.initData);
+          const newToken = await signInToBackend(rawInitData);
           if (newToken && state.user) {
             tokenManager.setToken(newToken, state.user.id);
             tokenManager.cacheAuthState(state.user, newToken);

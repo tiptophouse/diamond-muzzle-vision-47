@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import WebApp from '@twa-dev/sdk';
+import { init, miniApp, themeParams, viewport, initData } from '@telegram-apps/sdk';
 import { TelegramWebApp } from '@/types/telegram';
 
 interface UseTelegramWebAppReturn {
@@ -29,56 +29,86 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp as TelegramWebApp;
-      
-      // Initialize the WebApp
-      tg.ready();
-      tg.expand();
-      
-      // Set theme colors for better integration
-      if (tg.setHeaderColor) tg.setHeaderColor('#ffffff');
-      if (tg.setBackgroundColor) tg.setBackgroundColor('#f8fafc');
-      
-      // Handle viewport changes for better responsiveness
-      const handleViewportChange = () => {
-        // Update CSS custom properties for responsive design
-        if (tg.viewportHeight) {
-          document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
-        }
-        if (tg.viewportStableHeight) {
-          document.documentElement.style.setProperty('--tg-stable-height', `${tg.viewportStableHeight}px`);
+      try {
+        console.log('🚀 Initializing @telegram-apps/sdk v3.11...');
+        
+        // Initialize the new SDK
+        init();
+        
+        // Mount core components synchronously for immediate availability
+        if (miniApp.mount.isAvailable()) {
+          miniApp.mount();
+          miniApp.ready();
         }
         
-        // Force re-render of components that depend on viewport
-        setWebApp({ ...tg });
-      };
-      
-      // Listen for viewport changes
-      tg.onEvent('viewportChanged', handleViewportChange);
-      
-      // Set initial viewport
-      handleViewportChange();
-      
-      setWebApp(tg);
-      setUser(tg.initDataUnsafe?.user || null);
-      setIsReady(true);
-      
-      // Enable closing confirmation for better UX
-      if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
-      
-      console.log('🚀 Telegram WebApp initialized:', {
-        version: tg.version,
-        platform: tg.platform,
-        viewportHeight: tg.viewportHeight,
-        viewportStableHeight: tg.viewportStableHeight,
-        user: tg.initDataUnsafe?.user,
-        themeParams: tg.themeParams
-      });
-      
-      // Cleanup function
-      return () => {
-        tg.offEvent('viewportChanged', handleViewportChange);
-      };
+        if (themeParams.mount.isAvailable()) {
+          themeParams.mount();
+        }
+        
+        if (viewport.mount.isAvailable()) {
+          viewport.mount();
+          viewport.expand();
+        }
+
+        const tg = window.Telegram.WebApp as TelegramWebApp;
+        
+        // Set theme colors for better integration
+        if (tg.setHeaderColor) tg.setHeaderColor('#ffffff');
+        if (tg.setBackgroundColor) tg.setBackgroundColor('#f8fafc');
+        
+        // Handle viewport changes for better responsiveness
+        const handleViewportChange = () => {
+          if (viewport.height()) {
+            document.documentElement.style.setProperty('--tg-viewport-height', `${viewport.height()}px`);
+          }
+          if (viewport.stableHeight()) {
+            document.documentElement.style.setProperty('--tg-stable-height', `${viewport.stableHeight()}px`);
+          }
+          
+          setWebApp({ ...tg });
+        };
+        
+        // Listen for viewport changes
+        if (tg.onEvent) {
+          tg.onEvent('viewportChanged', handleViewportChange);
+        }
+        
+        // Set initial viewport
+        handleViewportChange();
+        
+        setWebApp(tg);
+        
+        // Get user from new SDK's initData
+        const userData = initData.user();
+        setUser(userData || tg.initDataUnsafe?.user || null);
+        setIsReady(true);
+        
+        // Enable closing confirmation for better UX
+        if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
+        
+        console.log('✅ @telegram-apps/sdk v3.11 initialized:', {
+          version: tg.version,
+          platform: tg.platform,
+          viewportHeight: viewport.height(),
+          viewportStableHeight: viewport.stableHeight(),
+          user: userData,
+          themeParams: tg.themeParams
+        });
+        
+        // Cleanup function
+        return () => {
+          if (tg.offEvent) {
+            tg.offEvent('viewportChanged', handleViewportChange);
+          }
+        };
+      } catch (error) {
+        console.error('❌ Failed to initialize @telegram-apps/sdk:', error);
+        // Fallback to window.Telegram.WebApp if SDK init fails
+        const tg = window.Telegram.WebApp as TelegramWebApp;
+        setWebApp(tg);
+        setUser(tg.initDataUnsafe?.user || null);
+        setIsReady(true);
+      }
     } else {
       // Fallback for development - set reasonable defaults
       console.log('📱 Running outside Telegram, using mock data');
