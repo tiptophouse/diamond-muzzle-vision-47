@@ -258,21 +258,16 @@ export function useInventoryData() {
     fetchData();
   }, [fetchData]);
 
-  // Initial load when user is available with retry mechanism
+  // Initial load when user is available
   useEffect(() => {
     if (authLoading) {
       console.log('⏳ INVENTORY HOOK: Waiting for auth...');
-      setLoading(true);
       return;
     }
     
     if (user) {
       console.log('👤 INVENTORY HOOK: User available, fetching data for:', user.id);
-      // Add small delay to ensure backend is ready after auth
-      const timeoutId = setTimeout(() => {
-        fetchData();
-      }, 100);
-      return () => clearTimeout(timeoutId);
+      fetchData();
     } else {
       console.log('🚫 INVENTORY HOOK: No user, clearing data');
       setLoading(false);

@@ -89,10 +89,10 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
     }
   }, []);
 
-  // Helper function to wait for initData to be available with extended timeout
-  const waitForInitData = useCallback(async (maxWaitTime: number = 5000): Promise<string | null> => {
+  // Helper function to wait for initData to be available
+  const waitForInitData = useCallback(async (maxWaitTime: number = 3000): Promise<string | null> => {
     const startTime = Date.now();
-    const checkInterval = 150;
+    const checkInterval = 100;
     
     console.log('⏳ AUTH: Waiting for Telegram initData...');
     
@@ -111,7 +111,7 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const authenticateWithBackoff = useCallback(async (attempt: number = 0): Promise<void> => {
     if (initializedRef.current || !mountedRef.current) return;
 
-    const delay = Math.min(1000 * Math.pow(1.5, attempt), 3000);
+    const delay = Math.min(500 * Math.pow(1.5, attempt), 2000);
     if (attempt > 0) {
       console.log(`🔄 AUTH: Retry attempt ${attempt} after ${delay}ms delay`);
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -185,8 +185,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         console.warn('⚠️ AUTH: WebApp init warning:', e);
       }
 
-      // Wait for initData to be populated (with extended timeout for slow connections)
-      const initData = await waitForInitData(5000);
+      // Wait for initData to be populated (with timeout)
+      const initData = await waitForInitData(3000);
       
       // STRICT initData validation - must have minimum length and required fields
       if (!initData || initData.length < 50) {

@@ -66,7 +66,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col ios-scroll">
       {/* Security Header - Compact for Mobile */}
-      <div className="bg-primary/5 border-b border-primary/10 px-4 py-3 pt-safe mt-4">
+      <div className="bg-primary/5 border-b border-primary/10 px-4 py-3 pt-safe">
         <div className="flex items-center justify-between max-w-screen-sm mx-auto">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Shield className="h-4 w-4 text-primary" />

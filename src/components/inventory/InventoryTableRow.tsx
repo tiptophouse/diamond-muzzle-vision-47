@@ -103,7 +103,7 @@ export const InventoryTableRow = memo(function InventoryTableRow({ diamond, onEd
             <Button
               variant="ghost"  
               size="sm"
-              onClick={() => onDelete(diamond.id)}
+              onClick={() => onDelete(diamond.diamondId?.toString() || diamond.id)}
               className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
             >
               <Trash className="h-4 w-4" />
