@@ -4,10 +4,25 @@ import type { AuctionSchema, AuctionBidSchema, AuctionCreateRequest } from '@/ty
 export async function createAuction(
   request: AuctionCreateRequest & { seller_telegram_id: number }
 ): Promise<AuctionSchema> {
+  console.log('🔵 createAuction STARTED with:', request);
+  
   const endsAt = new Date();
   endsAt.setHours(endsAt.getHours() + request.duration_hours);
 
+  console.log('📡 Setting user context for RLS...');
+  // Set user context for RLS
+  const { error: contextError } = await supabase.rpc('set_user_context', {
+    telegram_id: request.seller_telegram_id
+  });
+
+  if (contextError) {
+    console.error('❌ Failed to set user context:', contextError);
+    throw new Error(`Auth context failed: ${contextError.message}`);
+  }
+  console.log('✅ User context set');
+
   // First, get the diamond details to store snapshot
+  console.log('📡 Fetching diamond from inventory...');
   const { data: diamond, error: fetchError } = await supabase
     .from('inventory' as any)
     .select('*')
@@ -17,10 +32,15 @@ export async function createAuction(
     .single();
 
   if (fetchError || !diamond) {
+    console.error('❌ Diamond not found:', fetchError);
     throw new Error('Diamond not found in your inventory');
   }
+  
+  const diamondRecord = diamond as any;
+  console.log('✅ Diamond found:', diamondRecord.stock_number);
 
   // Create auction
+  console.log('📡 Creating auction record...');
   const { data, error } = await (supabase as any)
     .from('auctions')
     .insert([{
@@ -37,11 +57,11 @@ export async function createAuction(
 
   if (error) {
     console.error('❌ Failed to create auction:', error);
-    throw error;
+    throw new Error(`Auction creation failed: ${error.message}`);
   }
+  console.log('✅ Auction record created:', data.id);
 
   // Store diamond snapshot
-  const diamondRecord = diamond as any;
   const { error: diamondError } = await supabase
     .from('auction_diamonds' as any)
     .insert({
