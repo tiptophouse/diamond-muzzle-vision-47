@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTelegramWebApp } from './useTelegramWebApp';
 
 /**
  * Telegram Haptic Feedback Hook
@@ -15,38 +16,37 @@ import { useCallback } from 'react';
  */
 
 export function useTelegramHapticFeedback() {
+  const { webApp } = useTelegramWebApp();
+
   const impactOccurred = useCallback((style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {
     try {
-      const tg = window.Telegram?.WebApp as any;
-      if (tg?.HapticFeedback) {
-        tg.HapticFeedback.impactOccurred(style);
+      if (webApp?.HapticFeedback) {
+        webApp.HapticFeedback.impactOccurred(style);
       }
     } catch (error) {
       console.warn('Haptic feedback failed:', error);
     }
-  }, []);
+  }, [webApp]);
 
   const notificationOccurred = useCallback((type: 'error' | 'success' | 'warning' = 'success') => {
     try {
-      const tg = window.Telegram?.WebApp as any;
-      if (tg?.HapticFeedback) {
-        tg.HapticFeedback.notificationOccurred(type);
+      if (webApp?.HapticFeedback) {
+        webApp.HapticFeedback.notificationOccurred(type);
       }
     } catch (error) {
       console.warn('Haptic feedback failed:', error);
     }
-  }, []);
+  }, [webApp]);
 
   const selectionChanged = useCallback(() => {
     try {
-      const tg = window.Telegram?.WebApp as any;
-      if (tg?.HapticFeedback) {
-        tg.HapticFeedback.selectionChanged();
+      if (webApp?.HapticFeedback) {
+        webApp.HapticFeedback.selectionChanged();
       }
     } catch (error) {
       console.warn('Haptic feedback failed:', error);
     }
-  }, []);
+  }, [webApp]);
 
   return {
     impactOccurred,
