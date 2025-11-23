@@ -107,40 +107,64 @@ export function ActionFocusedDashboard({ allDiamonds }: ActionFocusedDashboardPr
     <div className="space-y-6 pb-20">
       {/* Quick Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+        <Card 
+          className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            hapticFeedback.impact('light');
+            navigate('/inventory');
+          }}
+        >
           <div className="flex items-center gap-2 mb-2">
             <Gem className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium text-muted-foreground">Diamonds</span>
+            <span className="text-xs font-medium text-muted-foreground">My Diamonds</span>
           </div>
           <div className="text-xl font-bold text-foreground">{quickStats.diamondCount}</div>
           <div className="text-xs text-muted-foreground">{formatValue(quickStats.totalValue)} total</div>
         </Card>
 
-        <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+        <Card 
+          className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            hapticFeedback.impact('light');
+            navigate('/notifications');
+          }}
+        >
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="h-4 w-4 text-green-600" />
-            <span className="text-xs font-medium text-muted-foreground">Today</span>
+            <span className="text-xs font-medium text-muted-foreground">Matches</span>
           </div>
           <div className="text-xl font-bold text-foreground">{quickStats.dailyMatches}</div>
-          <div className="text-xs text-muted-foreground">new matches</div>
+          <div className="text-xs text-muted-foreground">New</div>
         </Card>
 
-        <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+        <Card 
+          className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20 cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            hapticFeedback.impact('light');
+            navigate('/inventory');
+          }}
+        >
           <div className="flex items-center gap-2 mb-2">
             <HandHeart className="h-4 w-4 text-blue-600" />
-            <span className="text-xs font-medium text-muted-foreground">This Month</span>
+            <span className="text-xs font-medium text-muted-foreground">Portfolio Value</span>
           </div>
-          <div className="text-xl font-bold text-foreground">{quickStats.dealsThisMonth}</div>
-          <div className="text-xs text-muted-foreground">deals closed</div>
+          <div className="text-xl font-bold text-foreground">{formatValue(quickStats.totalValue)}</div>
+          <div className="text-xs text-muted-foreground">Growing</div>
         </Card>
 
-        <Card className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
+        <Card 
+          className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20 cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            hapticFeedback.impact('light');
+            navigate('/insights');
+          }}
+        >
           <div className="flex items-center gap-2 mb-2">
             <Calendar className="h-4 w-4 text-orange-600" />
             <span className="text-xs font-medium text-muted-foreground">Revenue</span>
           </div>
-          <div className="text-xl font-bold text-foreground">{formatValue(quickStats.totalValue * 0.15)}</div>
-          <div className="text-xs text-muted-foreground">potential monthly</div>
+          <div className="text-xl font-bold text-foreground">$0</div>
+          <div className="text-xs text-muted-foreground">Monthly</div>
         </Card>
       </div>
 
