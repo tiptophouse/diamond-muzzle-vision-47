@@ -53,13 +53,6 @@ export function SubscriptionPaywall({ children, loadingFallback }: SubscriptionP
                 </div>
               </div>
               
-              {subscriptionStatus?.subscription_type && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Type</span>
-                  <span className="text-sm font-semibold">{subscriptionStatus.subscription_type}</span>
-                </div>
-              )}
-              
               {subscriptionStatus?.message && (
                 <div className="pt-2 border-t border-border">
                   <p className="text-sm text-muted-foreground">{subscriptionStatus.message}</p>

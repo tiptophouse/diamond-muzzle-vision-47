@@ -4,12 +4,8 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { toast } from 'sonner';
 
 interface SubscriptionStatus {
-  success?: boolean;
-  is_active?: boolean;
-  subscription_type?: string;
-  expiration_date?: string;
-  payment_url?: string;
-  message?: string;
+  has_active_subscription: boolean;
+  message: string;
 }
 
 export function useSubscriptionPaywall() {
@@ -44,7 +40,7 @@ export function useSubscriptionPaywall() {
       } else {
         console.log('✅ Subscription status:', data);
         setSubscriptionStatus(data);
-        setIsBlocked(!data?.is_active);
+        setIsBlocked(!data?.has_active_subscription);
       }
     } catch (error) {
       console.error('❌ Exception checking subscription:', error);

@@ -30,14 +30,13 @@ serve(async (req) => {
 
     console.log(`🔍 Checking subscription status for user ${user_id}`);
 
-    // Call FastAPI endpoint
+    // Call FastAPI endpoint (GET method, user_id inferred from JWT)
     const response = await fetch(`${backendUrl}/api/v1/user/active-subscription`, {
-      method: 'POST',
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${backendToken}`,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ user_id })
+      }
     });
 
     if (!response.ok) {
@@ -46,8 +45,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'Failed to fetch subscription status',
-          is_active: false,
-          subscription_type: 'none'
+          has_active_subscription: false,
+          message: 'Unable to verify subscription status'
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -66,8 +65,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        is_active: false,
-        subscription_type: 'none'
+        has_active_subscription: false,
+        message: 'System error checking subscription'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
