@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { http } from '@/api/http';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SubscriptionStatus {
   has_active_subscription: boolean;
@@ -17,6 +18,8 @@ export function useSubscriptionPaywall() {
   useEffect(() => {
     if (user?.id) {
       checkSubscriptionStatus();
+    } else {
+      setIsLoading(false);
     }
   }, [user?.id]);
 
@@ -28,23 +31,24 @@ export function useSubscriptionPaywall() {
 
     setIsLoading(true);
     try {
-      console.log('🔍 Checking subscription status for paywall:', user.id);
+      console.log('🔍 Checking subscription status from FastAPI:', user.id);
       
-      const { data, error } = await supabase.functions.invoke('check-subscription-status', {
-        body: { user_id: user.id }
+      // Call FastAPI directly with JWT authentication
+      const data = await http<SubscriptionStatus>('/api/v1/user/active-subscription', {
+        method: 'GET',
       });
 
-      if (error) {
-        console.error('❌ Error checking subscription:', error);
-        setIsBlocked(true);
-      } else {
-        console.log('✅ Subscription status:', data);
-        setSubscriptionStatus(data);
-        setIsBlocked(!data?.has_active_subscription);
-      }
-    } catch (error) {
-      console.error('❌ Exception checking subscription:', error);
+      console.log('✅ Subscription status:', data);
+      setSubscriptionStatus(data);
+      setIsBlocked(!data?.has_active_subscription);
+    } catch (error: any) {
+      console.error('❌ Error checking subscription:', error);
+      // On error, block access for safety
       setIsBlocked(true);
+      setSubscriptionStatus({
+        has_active_subscription: false,
+        message: error?.message || 'Failed to verify subscription status'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +63,7 @@ export function useSubscriptionPaywall() {
     try {
       console.log('📤 Requesting payment link via Telegram bot...');
       
+      // Call edge function to trigger Telegram bot
       const { data, error } = await supabase.functions.invoke('send-telegram-bot-command', {
         body: { 
           telegram_id: user.id,
@@ -73,7 +78,7 @@ export function useSubscriptionPaywall() {
         console.log('✅ Payment request sent:', data);
         toast.success('Payment link sent to your Telegram chat! Check your messages.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Exception requesting payment:', error);
       toast.error('Failed to send payment request');
     }
