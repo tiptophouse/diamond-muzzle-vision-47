@@ -59,12 +59,18 @@ export function BuyerContactDialog({
   const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
 
   useEffect(() => {
+    console.log('🔵 Dialog useEffect triggered:', { open, diamondsCount: diamonds.length, buyerId, buyerName });
     if (open && diamonds.length > 0) {
+      console.log('🟢 Calling fetchDiamondsAndGenerate...');
       fetchDiamondsAndGenerate();
+    } else {
+      console.log('🔴 Dialog NOT calling fetchDiamondsAndGenerate:', { open, diamondsEmpty: diamonds.length === 0 });
     }
   }, [open, diamonds]);
 
   const fetchDiamondsAndGenerate = async () => {
+    console.log('🟢 fetchDiamondsAndGenerate STARTED');
+    console.log('🔵 Input data:', { buyerId, buyerName, diamondsCount: diamonds.length, sellerTelegramId });
     setLoading(true);
     try {
       console.log('🔍 Fetching full diamond data from FastAPI...');
@@ -120,6 +126,11 @@ export function BuyerContactDialog({
       }
 
       console.log('✅ AI message generated successfully');
+      console.log('📊 Generated data:', { 
+        messageLength: data.message?.length, 
+        diamondsCount: data.diamonds?.length,
+        totalValue: data.totalValue 
+      });
       setGeneratedMessage(data.message);
       setDiamondData(data.diamonds);
       setTotalValue(data.totalValue);
@@ -127,9 +138,15 @@ export function BuyerContactDialog({
       toast.success('הודעה נוצרה בהצלחה!', {
         description: `עם ${images.length} תמונות יהלומים`,
       });
+      console.log('🟢 fetchDiamondsAndGenerate COMPLETED successfully');
       
     } catch (error: any) {
-      console.error('❌ Failed to generate message:', error);
+      console.error('❌ fetchDiamondsAndGenerate FAILED:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        status: error?.status,
+        stack: error?.stack
+      });
       
       if (error?.message?.includes('LOVABLE_API_KEY')) {
         toast.error('שירות ה-AI לא מוגדר. צור קשר עם התמיכה.');
@@ -139,10 +156,11 @@ export function BuyerContactDialog({
         toast.error('נגמר הקרדיט של ה-AI. הוסף עוד קרדיט.');
       } else {
         toast.error('שגיאה ביצירת ההודעה', {
-          description: 'נסה שוב מאוחר יותר',
+          description: error?.message || 'נסה שוב מאוחר יותר',
         });
       }
     } finally {
+      console.log('🔵 fetchDiamondsAndGenerate FINALLY block, setting loading=false');
       setLoading(false);
     }
   };
