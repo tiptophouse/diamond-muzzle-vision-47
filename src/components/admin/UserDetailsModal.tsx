@@ -1,12 +1,14 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Crown, Phone, Shield, Calendar, Clock, TrendingUp, DollarSign } from 'lucide-react';
+import { Crown, Phone, Shield, Calendar, Clock, TrendingUp, DollarSign, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface UserDetailsModalProps {
   user: any;
@@ -14,9 +16,52 @@ interface UserDetailsModalProps {
   onClose: () => void;
 }
 
+interface SubscriptionStatus {
+  success?: boolean;
+  is_active?: boolean;
+  subscription_type?: string;
+  expiration_date?: string;
+  payment_url?: string;
+  message?: string;
+}
+
 export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProps) {
   const { isUserBlocked } = useBlockedUsers();
   const blocked = isUserBlocked(user.telegram_id);
+  
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+
+  useEffect(() => {
+    if (isOpen && user?.telegram_id) {
+      fetchSubscriptionStatus();
+    }
+  }, [isOpen, user?.telegram_id]);
+
+  const fetchSubscriptionStatus = async () => {
+    setLoadingSubscription(true);
+    try {
+      console.log('🔍 Fetching subscription status for user:', user.telegram_id);
+      
+      const { data, error } = await supabase.functions.invoke('check-subscription-status', {
+        body: { user_id: user.telegram_id }
+      });
+
+      if (error) {
+        console.error('❌ Error fetching subscription:', error);
+        toast.error('Failed to fetch subscription status');
+        setSubscriptionStatus(null);
+      } else {
+        console.log('✅ Subscription data:', data);
+        setSubscriptionStatus(data);
+      }
+    } catch (error) {
+      console.error('❌ Exception fetching subscription:', error);
+      setSubscriptionStatus(null);
+    } finally {
+      setLoadingSubscription(false);
+    }
+  };
 
   // Get real display name
   const getDisplayName = () => {
@@ -105,7 +150,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Status</label>
+                  <label className="text-sm font-medium text-gray-600">Account Status</label>
                   <div>
                     <Badge variant={blocked ? "destructive" : "default"} className={blocked ? 'bg-red-600' : 'bg-green-600'}>
                       {blocked ? 'Blocked' : 'Active'}
@@ -113,22 +158,75 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Premium</label>
-                  <div>
-                    <Badge variant={user.is_premium ? "default" : "secondary"} className={user.is_premium ? 'bg-yellow-600' : 'bg-gray-400'}>
-                      {user.is_premium ? 'Premium' : 'Free'}
-                    </Badge>
+                  <label className="text-sm font-medium text-gray-600">Subscription Status</label>
+                  <div className="flex items-center gap-2">
+                    {loadingSubscription ? (
+                      <div className="flex items-center gap-1 text-sm">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <span className="text-gray-500">Checking...</span>
+                      </div>
+                    ) : subscriptionStatus ? (
+                      <div className="flex items-center gap-1">
+                        {subscriptionStatus.is_active ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-gray-400" />
+                        )}
+                        <Badge 
+                          variant={subscriptionStatus.is_active ? "default" : "secondary"}
+                          className={subscriptionStatus.is_active ? 'bg-green-600' : 'bg-gray-400'}
+                        >
+                          {subscriptionStatus.is_active ? 'PAID' : 'NOT PAID'}
+                        </Badge>
+                      </div>
+                    ) : (
+                      <Badge variant="secondary" className="bg-gray-400">
+                        Unknown
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Subscription</label>
-                  <div className="text-sm font-semibold">{user.subscription_status || 'free'}</div>
+                  <label className="text-sm font-medium text-gray-600">Subscription Type</label>
+                  <div className="text-sm font-semibold">
+                    {loadingSubscription ? (
+                      <span className="text-gray-400">Loading...</span>
+                    ) : (
+                      subscriptionStatus?.subscription_type || 'none'
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Payment Status</label>
-                  <div className="text-sm font-semibold">{user.payment_status || 'none'}</div>
+                  <div className="text-sm font-semibold">
+                    {loadingSubscription ? (
+                      <span className="text-gray-400">Loading...</span>
+                    ) : subscriptionStatus?.is_active ? (
+                      <span className="text-green-600 font-bold">Active</span>
+                    ) : (
+                      <span className="text-gray-500">Inactive</span>
+                    )}
+                  </div>
                 </div>
               </div>
+              
+              {subscriptionStatus?.expiration_date && (
+                <div className="pt-2 border-t border-gray-200">
+                  <label className="text-sm font-medium text-gray-600">Subscription Expiration</label>
+                  <div className="text-sm font-semibold text-orange-600">
+                    {new Date(subscriptionStatus.expiration_date).toLocaleDateString()}
+                  </div>
+                </div>
+              )}
+              
+              {subscriptionStatus?.message && (
+                <div className="pt-2 border-t border-gray-200">
+                  <label className="text-sm font-medium text-gray-600">Subscription Info</label>
+                  <div className="text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                    {subscriptionStatus.message}
+                  </div>
+                </div>
+              )}
               
               {user.notes && (
                 <div>
