@@ -264,11 +264,11 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         return authenticateWithBackoff(retryCount.current);
       }
 
-      console.error('❌ AUTH: Authentication failed:', errorType);
+      console.error('❌ AUTH: Authentication failed after max retries:', errorType);
       
       const errorMessages = {
         'not_telegram_environment': 'This app only works inside Telegram WebApp',
-        'no_init_data': 'Missing Telegram authentication data',
+        'no_init_data': 'Cannot access Telegram initData. Please open this app from Telegram.',
         'invalid_init_data': 'Invalid Telegram authentication data',
         'backend_auth_failed': 'Backend authentication failed',
         'invalid_user_data': 'Invalid user data',
@@ -280,6 +280,13 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       // BLOCKING ERROR: Show full-screen red banner for missing initData/Telegram env
       if (errorType === 'not_telegram_environment' || errorType === 'no_init_data' || errorType === 'invalid_init_data') {
         console.error('🚨 BLOCKING AUTH ERROR:', { errorType, errorMessage });
+        
+        // Show blocking toast
+        toast.error(errorMessage, {
+          duration: Infinity,
+          description: 'This app must be opened from Telegram Mini App. Please close and reopen from Telegram.',
+        });
+        
         // Update state to trigger blocking UI in parent component
         updateState({
           isLoading: false,

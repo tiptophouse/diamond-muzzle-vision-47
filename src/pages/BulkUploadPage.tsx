@@ -103,65 +103,32 @@ export default function BulkUploadPage() {
         picture: row.picture || ''
       }));
 
-      // Send diamonds one by one to the single diamond endpoint
-      console.log(`📤 Sending ${diamondsData.length} diamonds one by one to FastAPI...`);
-      let successCount = 0;
-      let failureCount = 0;
-      const errors: any[] = [];
+      // Use the batch upload endpoint for efficiency
+      console.log(`📤 Uploading ${diamondsData.length} diamonds via batch endpoint...`);
+      
+      const result = await http<{ created: number; diamonds: any[] }>('/api/v1/diamonds/batch', {
+        method: 'POST',
+        body: JSON.stringify(diamondsData)
+      });
 
-      for (let i = 0; i < diamondsData.length; i++) {
-        const diamond = diamondsData[i];
-        try {
-          const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds?user_id=${user.id}`;
-          
-          console.log(`📤 Sending diamond ${i + 1}/${diamondsData.length}:`, diamond.stock);
-          
-          const response = await fetch(fastApiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify(diamond)
-          });
+      const successCount = result.created || diamondsData.length;
+      const failureCount = 0;
 
-          if (response.ok) {
-            successCount++;
-            console.log(`✅ Diamond ${diamond.stock} uploaded successfully`);
-          } else {
-            failureCount++;
-            const errorData = await response.json();
-            errors.push({ stock: diamond.stock, error: errorData.detail || 'Upload failed' });
-            console.error(`❌ Diamond ${diamond.stock} failed:`, errorData);
-          }
-        } catch (error) {
-          failureCount++;
-          errors.push({ stock: diamond.stock, error: error instanceof Error ? error.message : 'Unknown error' });
-          console.error(`❌ Diamond ${diamond.stock} error:`, error);
-        }
-      }
+      setUploadResults({
+        successCount,
+        failureCount,
+        totalAttempted: diamondsData.length,
+        errors: [],
+        uploadedDiamonds: result.diamonds || diamondsData
+      });
 
-      if (successCount > 0) {
-        setUploadResults({
-          successCount,
-          failureCount,
-          totalAttempted: diamondsData.length,
-          errors: errors.map((err, index) => ({
-            row: index + 1,
-            error: err.error,
-            data: { stock: err.stock }
-          })),
-          uploadedDiamonds: diamondsData.slice(0, successCount)
-        });
-
-        toast({
-          title: `✅ Upload completed!`,
-          description: `${successCount} diamonds uploaded successfully${failureCount > 0 ? `, ${failureCount} failed` : ''}.`,
-        });
-        hapticFeedback?.notification('success');
-      } else {
-        throw new Error('All diamonds failed to upload');
-      }
+      toast({
+        title: "✅ Upload successful!",
+        description: `Successfully uploaded ${successCount} diamonds.`,
+      });
+      
+      hapticFeedback?.notification('success');
+      console.log(`✅ Batch upload complete: ${successCount} diamonds`);
     } catch (error) {
       console.error('Upload error:', error);
       toast({

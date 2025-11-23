@@ -23,9 +23,9 @@ export const apiEndpoints = {
   // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id} (user_id from JWT)
   deleteDiamond: (diamondId: number) => `/api/v1/delete_stone/${diamondId}`,
   
-  // SFTP endpoints - CORRECTED to include proper auth
+  // SFTP endpoints - JWT-based auth (no user_id in URL)
   sftpProvision: () => `/api/v1/sftp/provision`,
-  sftpStatus: (telegramId: number) => `/api/v1/sftp/status/${telegramId}`,
+  sftpStatus: () => `/api/v1/sftp/status`,
   sftpTestConnection: () => `/api/v1/sftp/test-connection`,
   sftpDeactivate: () => `/api/v1/sftp/deactivate`,
   
@@ -55,19 +55,19 @@ export const apiEndpoints = {
   getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
   getPaymentStats: () => `/api/v1/payments/stats`,
 
-  // Search endpoints - ADDED (buyer-centric view)
-  getSearchResults: (userId: number, limit: number = 10, offset: number = 0) => `/api/v1/get_search_results?user_id=${userId}&limit=${limit}&offset=${offset}`,
-  getSearchResultsCount: (userId: number) => `/api/v1/get_search_results_count?user_id=${userId}`,
+  // Search endpoints - JWT-based (no user_id in URL)
+  getSearchResults: (limit: number = 10, offset: number = 0) => `/api/v1/get_search_results?limit=${limit}&offset=${offset}`,
+  getSearchResultsCount: () => `/api/v1/get_search_results_count`,
   
-  // Seller notification endpoints - ADDED (seller-centric view)
-  sellerNotifications: (userId: number, limit: number = 20, offset: number = 0) => `/api/v1/seller/notifications?user_id=${userId}&limit=${limit}&offset=${offset}`,
-  sellerNotificationsCount: (userId: number) => `/api/v1/seller/notifications/count?user_id=${userId}`,
-  getSellerNotifications: (userId: number, params?: { limit?: number; offset?: number }) => {
+  // Seller notification endpoints - JWT-based (no user_id in URL)
+  sellerNotifications: (limit: number = 20, offset: number = 0) => `/api/v1/seller/notifications?limit=${limit}&offset=${offset}`,
+  sellerNotificationsCount: () => `/api/v1/seller/notifications/count`,
+  getSellerNotifications: (params?: { limit?: number; offset?: number }) => {
     const limit = params?.limit || 50;
     const offset = params?.offset || 0;
-    return `/api/v1/seller/notifications?user_id=${userId}&limit=${limit}&offset=${offset}`;
+    return `/api/v1/seller/notifications?limit=${limit}&offset=${offset}`;
   },
-  getSellerNotificationsCount: (userId: number) => `/api/v1/seller/notifications/count?user_id=${userId}`,
+  getSellerNotificationsCount: () => `/api/v1/seller/notifications/count`,
   
   // Billing & Subscriptions - ADDED
   getBilling: () => `/api/v1/billing`,
