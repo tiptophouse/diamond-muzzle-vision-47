@@ -10,6 +10,7 @@ interface CacheOptions {
   ttl?: number; // Time to live in milliseconds
   compression?: boolean; // Compress large data
   syncAcrossDevices?: boolean; // Default true with CloudStorage
+  backgroundRefresh?: boolean; // Enable background refresh
 }
 
 interface CachedData<T> {
@@ -27,9 +28,11 @@ export function useTelegramCloudCache<T = any>(
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [isFresh, setIsFresh] = useState(false); // True if data is from valid cache
+  const [isRefreshing, setIsRefreshing] = useState(false); // True during background refresh
   
   const cacheVersion = useRef(1);
-  const { ttl = 3600000, compression = false } = options; // Default 1 hour TTL
+  const { ttl = 3600000, compression = false, backgroundRefresh = false } = options; // Default 1 hour TTL
 
   // Compress data if needed
   const compressData = useCallback((data: string): string => {
@@ -76,6 +79,7 @@ export function useTelegramCloudCache<T = any>(
       if (success) {
         setData(value);
         setLastSync(new Date());
+        setIsFresh(true);
         setError(null);
       }
       
@@ -100,6 +104,7 @@ export function useTelegramCloudCache<T = any>(
       
       if (!serialized) {
         setData(null);
+        setIsFresh(false);
         setIsLoading(false);
         return null;
       }
@@ -113,6 +118,7 @@ export function useTelegramCloudCache<T = any>(
         console.log('Cache expired, removing:', key);
         await cloudStorage.removeItem(key);
         setData(null);
+        setIsFresh(false);
         setIsLoading(false);
         return null;
       }
@@ -122,30 +128,34 @@ export function useTelegramCloudCache<T = any>(
         console.log('Cache version mismatch, removing:', key);
         await cloudStorage.removeItem(key);
         setData(null);
+        setIsFresh(false);
         setIsLoading(false);
         return null;
       }
 
       setData(cached.value);
       setLastSync(new Date(cached.timestamp));
+      setIsFresh(true);
       setIsLoading(false);
       return cached.value;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load from cloud');
       setError(error);
       console.error('CloudStorage load error:', error);
+      setIsFresh(false);
       setIsLoading(false);
       return null;
     }
   }, [key, cloudStorage, isInitialized, ttl, decompressData]);
 
-  // Remove data from cloud
+  // Remove data from cloud (alias for backward compatibility)
   const remove = useCallback(async (): Promise<boolean> => {
     try {
       const success = await cloudStorage.removeItem(key);
       if (success) {
         setData(null);
         setLastSync(null);
+        setIsFresh(false);
         setError(null);
       }
       return success;
@@ -157,10 +167,27 @@ export function useTelegramCloudCache<T = any>(
     }
   }, [key, cloudStorage]);
 
-  // Refresh data from cloud
-  const refresh = useCallback(async (): Promise<T | null> => {
+  // Clear cache (same as remove, for consistency)
+  const clear = remove;
+
+  // Refresh data from cloud with background refresh support
+  const refresh = useCallback(async (fetchFn?: () => Promise<T>): Promise<T | null> => {
+    if (fetchFn && backgroundRefresh) {
+      setIsRefreshing(true);
+      try {
+        const freshData = await fetchFn();
+        await save(freshData);
+        setIsRefreshing(false);
+        return freshData;
+      } catch (err) {
+        console.error('Background refresh failed:', err);
+        setIsRefreshing(false);
+        return data;
+      }
+    }
+    
     return await load();
-  }, [load]);
+  }, [load, save, backgroundRefresh, data]);
 
   // Check if data exists
   const exists = useCallback(async (): Promise<boolean> => {
@@ -210,11 +237,14 @@ export function useTelegramCloudCache<T = any>(
   return {
     data,
     isLoading,
+    isFresh,
+    isRefreshing,
     error,
     lastSync,
     save,
     load,
     remove,
+    clear,
     refresh,
     exists,
     getInfo,

@@ -5,11 +5,11 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryDataSync } from "./inventory/useInventoryDataSync";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { detectFancyColor } from "@/utils/fancyColorUtils";
+import { useTelegramCloudCache } from "./useTelegramCloudCache";
 
 // Telegram memory management
 const tg = getTelegramWebApp();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-let dataCache: { data: Diamond[], timestamp: number } | null = null;
 
 export function useStoreData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
@@ -17,6 +17,12 @@ export function useStoreData() {
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // CloudStorage cache for persistent caching across sessions
+  const cloudCache = useTelegramCloudCache<Diamond[]>('diamond_inventory', {
+    ttl: CACHE_DURATION,
+    compression: true
+  });
 
   // Helper function to parse numbers from various formats
   const parseNumber = useCallback((value: any): number => {
@@ -320,10 +326,17 @@ export function useStoreData() {
         return;
       }
 
-      if (useCache && dataCache && (Date.now() - dataCache.timestamp) < CACHE_DURATION) {
-        console.log('✅ STORE DATA: Using cached data');
-        setDiamonds(dataCache.data);
+      // Try CloudStorage cache first (persistent across sessions)
+      if (useCache && cloudCache.data && cloudCache.isFresh) {
+        console.log('⚡ STORE DATA: Using CloudStorage cached data');
+        setDiamonds(cloudCache.data);
         setLoading(false);
+        
+        // Refresh in background
+        if (!cloudCache.isRefreshing) {
+          console.log('🔄 STORE DATA: Refreshing cache in background');
+          setTimeout(() => fetchStoreData(false), 100);
+        }
         return;
       }
 
@@ -371,14 +384,14 @@ export function useStoreData() {
             user2084882603Diamonds: transformedDiamonds.filter(d => d.stockNumber === '105604')
           });
           
-          dataCache = {
-            data: transformedDiamonds,
-            timestamp: Date.now()
-          };
+          // Save to CloudStorage for persistent caching
+          await cloudCache.save(transformedDiamonds);
+          console.log('💾 STORE DATA: Saved to CloudStorage cache');
 
         setDiamonds(transformedDiamonds);
       } else {
         setDiamonds([]);
+        await cloudCache.clear();
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load store diamonds';
@@ -387,7 +400,7 @@ export function useStoreData() {
     } finally {
       setLoading(false);
     }
-  }, [transformData, user]);
+  }, [transformData, user, cloudCache]);
 
   // Telegram memory optimization
   useEffect(() => {
@@ -426,19 +439,19 @@ export function useStoreData() {
       console.log('🔄 STORE DATA: Inventory change detected');
       if (user && !authLoading) {
         console.log('🔄 STORE DATA: Refreshing data after inventory change');
-        dataCache = null; // Clear cache to force fresh fetch
+        cloudCache.clear(); // Clear CloudStorage cache
         fetchStoreData(false);
       }
     });
 
     return unsubscribe;
-  }, [user, authLoading, subscribeToInventoryChanges, fetchStoreData]);
+  }, [user, authLoading, subscribeToInventoryChanges, fetchStoreData, cloudCache]);
 
   const refetch = useCallback(() => {
     console.log('🔄 STORE DATA: Manual refetch requested');
-    dataCache = null; // Clear cache to force fresh fetch
+    cloudCache.clear(); // Clear CloudStorage cache
     return fetchStoreData(false);
-  }, [fetchStoreData]);
+  }, [fetchStoreData, cloudCache]);
 
   return {
     diamonds,
