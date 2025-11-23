@@ -19,6 +19,7 @@ export function useDiamondFormLogic({ form, onSuccess }: UseDiamondFormLogicProp
   const { user } = useTelegramAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   
   const createDiamond = useCreateDiamond();
 
@@ -42,6 +43,7 @@ export function useDiamondFormLogic({ form, onSuccess }: UseDiamondFormLogicProp
     }
 
     setIsSubmitting(true);
+    setUploadError(null);
     console.log('🔵 FORM: Starting diamond form submission');
     console.log('🔵 FORM: Stock Number:', data.stockNumber);
     console.log('🔵 FORM: User ID:', user.id);
@@ -57,7 +59,7 @@ export function useDiamondFormLogic({ form, onSuccess }: UseDiamondFormLogicProp
       onSuccess?.();
     } catch (error) {
       console.error('❌ Form submission error:', error);
-      // Error toast is already handled by useCreateDiamond
+      setUploadError(error instanceof Error ? error.message : 'שגיאה לא ידועה');
     } finally {
       setIsSubmitting(false);
     }
@@ -69,13 +71,16 @@ export function useDiamondFormLogic({ form, onSuccess }: UseDiamondFormLogicProp
   const handleReset = useCallback(() => {
     form.reset();
     setUploadSuccess(false);
+    setUploadError(null);
     console.log('🔄 Form reset to defaults');
   }, [form]);
 
   return {
     isSubmitting,
     uploadSuccess,
+    uploadError,
     setUploadSuccess,
+    setUploadError,
     handleSubmit,
     handleReset,
   };
