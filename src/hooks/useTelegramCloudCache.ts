@@ -34,33 +34,17 @@ export function useTelegramCloudCache<T = any>(
   const cacheVersion = useRef(1);
   const { ttl = 3600000, compression = false, backgroundRefresh = false } = options; // Default 1 hour TTL
 
-  // Compress data if needed
+  // Compress data if needed (disabled - CloudStorage handles efficiently)
   const compressData = useCallback((data: string): string => {
-    if (!compression || data.length < 100) return data;
-    
-    try {
-      // Simple RLE compression for repeated patterns
-      return data.replace(/(.)\1{2,}/g, (match, char) => {
-        return `${char}${match.length}`;
-      });
-    } catch {
-      return data;
-    }
-  }, [compression]);
+    // CloudStorage is already optimized, no need for custom compression
+    return data;
+  }, []);
 
-  // Decompress data
+  // Decompress data (disabled - CloudStorage handles efficiently)
   const decompressData = useCallback((data: string): string => {
-    if (!compression) return data;
-    
-    try {
-      // Reverse RLE compression
-      return data.replace(/(.)\d+/g, (match, char, count) => {
-        return char.repeat(parseInt(count, 10));
-      });
-    } catch {
-      return data;
-    }
-  }, [compression]);
+    // CloudStorage is already optimized, no need for custom decompression
+    return data;
+  }, []);
 
   // Save data to cloud
   const save = useCallback(async (value: T): Promise<boolean> => {
@@ -71,51 +55,58 @@ export function useTelegramCloudCache<T = any>(
         version: cacheVersion.current,
       };
 
-      let serialized = JSON.stringify(cacheData);
-      serialized = compressData(serialized);
+      const serialized = JSON.stringify(cacheData);
+      console.log('💾 CloudCache: Saving to key:', key, 'size:', serialized.length, 'items:', Array.isArray(value) ? value.length : 'N/A');
 
       const success = await cloudStorage.setItem(key, serialized);
       
       if (success) {
+        console.log('✅ CloudCache: Successfully saved to key:', key);
         setData(value);
         setLastSync(new Date());
         setIsFresh(true);
         setError(null);
+      } else {
+        console.error('❌ CloudCache: Failed to save to key:', key);
       }
       
       return success;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to save to cloud');
       setError(error);
-      console.error('CloudStorage save error:', error);
+      console.error('❌ CloudCache: Save error for key:', key, error);
       return false;
     }
-  }, [key, cloudStorage, compressData]);
+  }, [key, cloudStorage]);
 
   // Load data from cloud
   const load = useCallback(async (): Promise<T | null> => {
-    if (!isInitialized) return null;
+    if (!isInitialized) {
+      console.log('⏳ CloudCache: Not initialized yet for key:', key);
+      return null;
+    }
 
     setIsLoading(true);
     setError(null);
 
     try {
-      let serialized = await cloudStorage.getItem(key);
+      const serialized = await cloudStorage.getItem(key);
       
       if (!serialized) {
+        console.log('📭 CloudCache: No cached data found for key:', key);
         setData(null);
         setIsFresh(false);
         setIsLoading(false);
         return null;
       }
 
-      serialized = decompressData(serialized);
+      console.log('📦 CloudCache: Found cached data for key:', key, 'size:', serialized.length);
       const cached: CachedData<T> = JSON.parse(serialized);
 
       // Check TTL
       const isExpired = ttl && (Date.now() - cached.timestamp) > ttl;
       if (isExpired) {
-        console.log('Cache expired, removing:', key);
+        console.log('⏰ CloudCache: Cache expired for key:', key);
         await cloudStorage.removeItem(key);
         setData(null);
         setIsFresh(false);
@@ -125,7 +116,7 @@ export function useTelegramCloudCache<T = any>(
 
       // Check version
       if (cached.version !== cacheVersion.current) {
-        console.log('Cache version mismatch, removing:', key);
+        console.log('🔄 CloudCache: Version mismatch for key:', key);
         await cloudStorage.removeItem(key);
         setData(null);
         setIsFresh(false);
@@ -133,6 +124,7 @@ export function useTelegramCloudCache<T = any>(
         return null;
       }
 
+      console.log('✅ CloudCache: Valid cache loaded for key:', key, 'items:', Array.isArray(cached.value) ? cached.value.length : 'N/A');
       setData(cached.value);
       setLastSync(new Date(cached.timestamp));
       setIsFresh(true);
@@ -141,12 +133,12 @@ export function useTelegramCloudCache<T = any>(
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load from cloud');
       setError(error);
-      console.error('CloudStorage load error:', error);
+      console.error('❌ CloudCache: Load error for key:', key, error);
       setIsFresh(false);
       setIsLoading(false);
       return null;
     }
-  }, [key, cloudStorage, isInitialized, ttl, decompressData]);
+  }, [key, cloudStorage, isInitialized, ttl]);
 
   // Remove data from cloud (alias for backward compatibility)
   const remove = useCallback(async (): Promise<boolean> => {
@@ -213,7 +205,7 @@ export function useTelegramCloudCache<T = any>(
         return { exists: false, timestamp: null, isExpired: false, size: null };
       }
 
-      const cached: CachedData<T> = JSON.parse(decompressData(serialized));
+      const cached: CachedData<T> = JSON.parse(serialized);
       const isExpired = ttl && (Date.now() - cached.timestamp) > ttl;
 
       return {
@@ -225,14 +217,15 @@ export function useTelegramCloudCache<T = any>(
     } catch {
       return { exists: false, timestamp: null, isExpired: false, size: null };
     }
-  }, [key, cloudStorage, ttl, decompressData]);
+  }, [key, cloudStorage, ttl]);
 
-  // Auto-load on mount
+  // Auto-load on mount (fixed dependency)
   useEffect(() => {
     if (isInitialized) {
       load();
     }
-  }, [isInitialized, load]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInitialized]); // Only re-run when isInitialized changes
 
   return {
     data,
