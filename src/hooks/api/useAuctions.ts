@@ -253,12 +253,14 @@ export function useAuction(auctionId: string | null) {
         .order('created_at', { ascending: false })
         .limit(10);
 
+      if (!auction) return null;
+
       return {
-        ...auction,
+        ...(auction as any),
         diamond: diamond || null,
         bids: bids || [],
         bid_count: bids?.length || 0,
-      };
+      } as AuctionSchema;
     },
     enabled: !!auctionId,
   });
