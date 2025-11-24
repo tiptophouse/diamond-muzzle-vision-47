@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Diamond } from '@/components/inventory/InventoryTable';
@@ -19,117 +19,131 @@ export function InventoryTableView({
   onDelete,
   onStoreToggle
 }: InventoryTableViewProps) {
-  if (diamonds.length === 0) {
-    return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p>No diamonds found</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="grid gap-3">
-      {diamonds.map((diamond) => (
-        <Card key={diamond.id} className="p-4">
-          <div className="flex gap-4">
-            {/* Image */}
-            <div className="flex-shrink-0 w-24 h-24 rounded-md overflow-hidden bg-muted">
-              <OptimizedDiamondImage
-                imageUrl={diamond.picture}
-                gem360Url={diamond.gem360Url}
-                stockNumber={diamond.stockNumber}
-                shape={diamond.shape}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              {/* Header */}
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="min-w-0">
-                  <div className="font-semibold text-base mb-1">
-                    #{diamond.stockNumber}
+    <div className="border rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-16">תמונה</TableHead>
+              <TableHead>מלאי #</TableHead>
+              <TableHead>צורה</TableHead>
+              <TableHead>משקל</TableHead>
+              <TableHead>צבע</TableHead>
+              <TableHead>ניקיון</TableHead>
+              <TableHead>חיתוך</TableHead>
+              <TableHead>מחיר</TableHead>
+              <TableHead>סך הכל</TableHead>
+              <TableHead>סטטוס</TableHead>
+              <TableHead>חנות</TableHead>
+              <TableHead className="w-32">פעולות</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {diamonds.map((diamond) => (
+              <TableRow key={diamond.id} className="hover:bg-muted/30">
+                <TableCell>
+                  <div className="w-12 h-12 rounded-lg overflow-hidden">
+                    <OptimizedDiamondImage
+                      imageUrl={diamond.picture}
+                      gem360Url={diamond.gem360Url}
+                      stockNumber={diamond.stockNumber}
+                      shape={diamond.shape}
+                      className="w-full h-full"
+                    />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-foreground">{diamond.shape}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {diamond.carat?.toFixed(2) || 'N/A'}ct
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="text-right">
-                  <div className="font-bold text-base mb-1">
-                    ${diamond.price?.toLocaleString() || '0'}
-                  </div>
-                  <Badge variant={diamond.status === 'Available' ? 'default' : 'secondary'}>
+                </TableCell>
+                <TableCell className="font-medium">{diamond.stockNumber}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{diamond.shape}</Badge>
+                </TableCell>
+                <TableCell>{diamond.carat?.toFixed(2) || 'N/A'}</TableCell>
+                <TableCell>
+                  <Badge 
+                    variant="secondary"
+                    className="bg-yellow-100 text-yellow-800"
+                  >
+                    {diamond.color}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-800"
+                  >
+                    {diamond.clarity}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant="secondary"
+                    className="bg-green-100 text-green-800"
+                  >
+                    {diamond.cut || 'N/A'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-medium">
+                  ${diamond.price?.toLocaleString() || '0'}
+                </TableCell>
+                <TableCell className="font-semibold">
+                  ${(diamond.price || 0).toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={diamond.status === 'Available' ? 'default' : 'secondary'}
+                    className={diamond.status === 'Available' ? 'bg-green-600' : ''}
+                  >
                     {diamond.status}
                   </Badge>
-                </div>
-              </div>
-
-              {/* Details */}
-              <div className="flex items-center gap-2 mb-3">
-                <Badge variant="outline" className="text-xs">
-                  {diamond.color}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {diamond.clarity}
-                </Badge>
-                {diamond.cut && (
-                  <Badge variant="outline" className="text-xs">
-                    {diamond.cut}
-                  </Badge>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9"
-                  onClick={() => onStoreToggle(diamond.stockNumber, !diamond.store_visible)}
-                >
-                  <Eye className={`h-4 w-4 mr-1 ${diamond.store_visible ? 'text-primary' : ''}`} />
-                  <span className="text-xs">Store</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9"
-                  onClick={() => onEdit(diamond)}
-                >
-                  <Edit2 className="h-4 w-4 mr-1" />
-                  <span className="text-xs">Edit</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 text-destructive"
-                  onClick={() => onDelete(diamond.id)}
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  <span className="text-xs">Delete</span>
-                </Button>
-                {diamond.certificateUrl && (
+                </TableCell>
+                <TableCell>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9"
-                    asChild
+                    onClick={() => onStoreToggle(diamond.stockNumber, !diamond.store_visible)}
                   >
-                    <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
+                    {diamond.store_visible ? (
+                      <Eye className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </Card>
-      ))}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEdit(diamond)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDelete(diamond.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    {diamond.certificateUrl && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                      >
+                        <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

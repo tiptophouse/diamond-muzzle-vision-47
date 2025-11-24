@@ -174,7 +174,7 @@ export default function InventoryPage() {
 
   return (
     <TelegramMiniAppLayout>
-      <div className="px-3 py-3 pb-20 space-y-3 max-w-full overflow-hidden">
+      <div className="p-4 space-y-4 max-w-full overflow-hidden">
         <InventoryHeader 
           totalCount={displayDiamonds.length}
           onRefresh={handleRefresh}
@@ -182,7 +182,7 @@ export default function InventoryPage() {
           onAddDiamond={handleAddDiamond}
         />
         
-        <div className="space-y-3 w-full">
+        <div className="space-y-4 w-full">
           <InventorySearch
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -212,9 +212,9 @@ export default function InventoryPage() {
 
         {/* Edit Diamond Modal */}
         <Dialog open={!!editingDiamond} onOpenChange={() => setEditingDiamond(null)}>
-          <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[85vh] overflow-y-auto p-4">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-base">Edit - #{editingDiamond?.stockNumber}</DialogTitle>
+              <DialogTitle>Edit Diamond - #{editingDiamond?.stockNumber}</DialogTitle>
             </DialogHeader>
             {editingDiamond && (
               <DiamondForm
@@ -229,9 +229,9 @@ export default function InventoryPage() {
 
         {/* Add Diamond Modal */}
         <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-          <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[85vh] overflow-y-auto p-4">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-base">Add New Diamond</DialogTitle>
+              <DialogTitle>Add New Diamond</DialogTitle>
             </DialogHeader>
             <DiamondForm
               onSubmit={handleAddSubmit}
@@ -243,7 +243,7 @@ export default function InventoryPage() {
 
         {/* Add Success Modal */}
         <Dialog open={showAddSuccess} onOpenChange={setShowAddSuccess}>
-          <DialogContent className="w-[calc(100vw-2rem)] max-w-md border-none bg-transparent shadow-none">
+          <DialogContent className="max-w-md border-none bg-transparent shadow-none">
             <UploadSuccessCard
               title="Diamond Added Successfully"
               description="Your diamond has been added to your inventory and is ready to share."
