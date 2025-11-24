@@ -46,6 +46,12 @@ export function CreateAuctionModal({
   const { hapticFeedback } = useTelegramWebApp();
   const { user } = useTelegramAuth();
   const { shareToGroups, isSharing } = useAuctionViralMechanics();
+  
+  // Safety check: Don't render if user context is not available
+  if (!user) {
+    console.error('❌ User context not available in CreateAuctionModal');
+    return null;
+  }
 
   const handleCreateAuction = async () => {
     console.log('🚀 handleCreateAuction CALLED');
