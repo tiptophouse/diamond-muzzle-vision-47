@@ -99,13 +99,26 @@ export function useCreateDiamond() {
       // Show detailed error information including request details
       const transformedData = transformToFastAPICreate(variables.data);
       const requestUrl = `${API_BASE_URL}${apiEndpoints.addDiamond()}`;
+      
+      // Properly stringify error details
+      const errorMessage = typeof error === 'object' 
+        ? JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
+        : String(error);
+      
       const errorDetails = `
 Stock: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
+
 Request URL: ${requestUrl}
 Method: POST
-Body: ${JSON.stringify(transformedData, null, 2).substring(0, 500)}
-Error: ${error.message || error.name || 'Unknown error'}
-${error.stack ? `\nStack: ${error.stack.substring(0, 200)}` : ''}
+
+Body: 
+${JSON.stringify(transformedData, null, 2)}
+
+Error Details:
+${errorMessage}
+
+Original Data:
+${JSON.stringify(variables.data, null, 2).substring(0, 300)}
       `.trim();
       
       toast({
