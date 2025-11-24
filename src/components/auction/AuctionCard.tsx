@@ -6,6 +6,7 @@ import { AuctionWithDiamond } from "@/hooks/useAuctionsData";
 import { useNavigate } from "react-router-dom";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { useRealtimeAuctionViews } from "@/hooks/useRealtimeAuctionViews";
+import { useRealtimeAuctionBids } from "@/hooks/useRealtimeAuctionBids";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { toast } from "sonner";
 
@@ -18,6 +19,11 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   const tg = getTelegramWebApp();
   const { user } = useTelegramAuth();
   const { viewCount, uniqueViewers } = useRealtimeAuctionViews(auction.id);
+  const { currentPrice, bidCount, lastBidTime } = useRealtimeAuctionBids(auction.id);
+
+  // Use realtime price if available, otherwise fall back to auction prop
+  const displayPrice = currentPrice || auction.current_price;
+  const displayBidCount = bidCount || auction.bid_count;
 
   const timeRemaining = () => {
     const now = new Date();
@@ -93,10 +99,17 @@ export function AuctionCard({ auction }: AuctionCardProps) {
           </div>
         )}
         <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
-          <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm">
-            <Eye className="h-3 w-3 mr-1" />
-            {viewCount}
-          </Badge>
+          <div className="flex gap-2">
+            <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm">
+              <Eye className="h-3 w-3 mr-1" />
+              {viewCount}
+            </Badge>
+            {lastBidTime && (
+              <Badge variant="default" className="bg-red-500 text-white animate-pulse">
+                🔴 LIVE
+              </Badge>
+            )}
+          </div>
           <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm">
             <Clock className="h-3 w-3 mr-1" />
             {timeRemaining()}
@@ -130,19 +143,19 @@ export function AuctionCard({ auction }: AuctionCardProps) {
           </div>
         )}
 
-        {/* Price Info */}
+        {/* Price Info - REAL-TIME */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Current Bid</span>
-            <span className="text-lg font-bold text-foreground">
-              ${auction.current_price.toLocaleString()}
+            <span className="text-lg font-bold text-foreground transition-all duration-300">
+              ${displayPrice.toLocaleString()}
             </span>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Starting: ${auction.starting_price.toLocaleString()}</span>
             <div className="flex items-center gap-1">
               <TrendingUp className="h-3 w-3" />
-              <span>{auction.bid_count} bids</span>
+              <span className="transition-all duration-300">{displayBidCount} bids</span>
             </div>
           </div>
         </div>

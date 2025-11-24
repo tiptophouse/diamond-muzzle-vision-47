@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { createAuction } from '@/lib/auctions';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useAuctionViralMechanics } from '@/hooks/useAuctionViralMechanics';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DiamondData {
@@ -44,6 +45,13 @@ export function CreateAuctionModal({
   const { toast } = useToast();
   const { hapticFeedback } = useTelegramWebApp();
   const { user } = useTelegramAuth();
+  const { shareToGroups, isSharing } = useAuctionViralMechanics();
+  
+  // Safety check: Don't render if user context is not available
+  if (!user) {
+    console.error('❌ User context not available in CreateAuctionModal');
+    return null;
+  }
 
   const handleCreateAuction = async () => {
     console.log('🚀 handleCreateAuction CALLED');
@@ -74,64 +82,81 @@ export function CreateAuctionModal({
 
     try {
       console.log('📡 Calling createAuction...');
-      // Step 1: Create auction
+      
+      // Step 1: Prepare diamond snapshot from FastAPI data
+      const diamondSnapshot = {
+        stock_number: diamond.stockNumber,
+        shape: diamond.shape,
+        weight: diamond.carat,
+        color: diamond.color,
+        clarity: diamond.clarity,
+        cut: diamond.cut,
+        picture: diamond.picture,
+        total_price: diamond.price,
+      };
+      
+      // Step 2: Create auction with snapshot
       const auction = await createAuction({
         stock_number: stockNumber,
         starting_price: Number(startingPrice),
         min_increment: Number(minIncrement),
         duration_hours: Number(durationHours),
         seller_telegram_id: userId,
+        diamond_snapshot: diamondSnapshot,
       });
 
       console.log('✅ Auction created:', auction.id);
+      
+      hapticFeedback.notification('success');
+      toast({
+        title: '✅ מכרז נוצר בהצלחה!',
+        description: `מכרז ${stockNumber} נפתח`,
+        duration: 2000,
+      });
 
-      // Step 2: Send message to test group
-      try {
-        const endsAt = new Date();
-        endsAt.setHours(endsAt.getHours() + Number(durationHours));
+      // Step 2: AUTO-SHARE TO MULTIPLE GROUPS (VIRAL MECHANICS)
+      const endsAt = new Date();
+      endsAt.setHours(endsAt.getHours() + Number(durationHours));
 
-        const diamondDescription = `💎 ${diamond.carat}ct ${diamond.shape}
+      const diamondDescription = `💎 ${diamond.carat}ct ${diamond.shape}
 🎨 Color: ${diamond.color} | Clarity: ${diamond.clarity}
 ✨ Cut: ${diamond.cut}
 📦 Stock: ${diamond.stockNumber}`;
 
-        const { error: sendError } = await supabase.functions.invoke('send-auction-message', {
-          body: {
-            auction_id: auction.id,
-            stock_number: stockNumber,
-            diamond_description: diamondDescription,
-            current_price: Number(startingPrice),
-            min_increment: Number(minIncrement),
-            currency: 'USD',
-            ends_at: endsAt.toISOString(),
-            image_url: diamond.picture || undefined,
-          }
-        });
+      console.log('📤 Starting auto-share to Telegram groups...');
+      
+      const sharedSuccessfully = await shareToGroups({
+        auctionId: auction.id,
+        stockNumber,
+        diamondDescription,
+        currentPrice: Number(startingPrice),
+        minIncrement: Number(minIncrement),
+        currency: 'USD',
+        endsAt: endsAt.toISOString(),
+        imageUrl: diamond.picture,
+        groupIds: [-1002178695748], // Test group for auction auto-sharing
+      });
 
-        if (sendError) {
-          console.error('Failed to send auction message:', sendError);
-          toast({ 
-            title: '⚠️ המכרז נוצר', 
-            description: 'אך השיתוף לקבוצה נכשל. ניתן לשתף ידנית.',
-            variant: 'default'
-          });
-        } else {
-          console.log('✅ Auction message sent to group');
-          hapticFeedback.notification('success');
-          toast({ 
-            title: '✅ המכרז נוצר ושותף בהצלחה!', 
-            description: 'המכרז נשלח לקבוצת הבדיקה' 
-          });
-        }
-      } catch (shareError) {
-        console.error('Error sharing auction:', shareError);
+      if (!sharedSuccessfully) {
+        console.error('⚠️ Sharing to groups failed but auction was created');
         toast({ 
           title: '⚠️ המכרז נוצר', 
-          description: 'אך השיתוף לקבוצה נכשל',
-          variant: 'default'
+          description: 'אך השיתוף לטלגרם נכשל. בדוק לוגים.',
+          variant: 'default',
+          duration: 5000,
         });
+        // Don't close modal on sharing failure - let user retry
+        return;
       }
 
+      console.log('✅ Auction shared successfully to Telegram groups');
+      hapticFeedback.notification('success');
+      toast({
+        title: '🎉 מכרז שותף בהצלחה!',
+        description: 'המכרז נשלח לטלגרם עם כפתורי הצעה',
+        duration: 3000,
+      });
+      
       onOpenChange(false);
       onSuccess?.(auction.id);
     } catch (error: any) {
@@ -207,10 +232,10 @@ export function CreateAuctionModal({
 
           <Button
             onClick={handleCreateAuction}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSharing}
             className="w-full"
           >
-            {isSubmitting ? 'יוצר מכרז...' : '🔨 צור מכרז'}
+            {isSubmitting || isSharing ? 'יוצר ומשתף...' : '🔨 צור מכרז'}
           </Button>
         </div>
       </DialogContent>
