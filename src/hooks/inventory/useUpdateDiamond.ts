@@ -152,7 +152,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       // Get JWT token info using the correct auth method
       const jwtToken = getBackendAuthToken();
       const tokenInfo = jwtToken 
-        ? `Present (${jwtToken.substring(0, 10)}...${jwtToken.substring(jwtToken.length - 10)})`
+        ? `Bearer ${jwtToken}`
         : '❌ MISSING - Authentication Error';
       
       console.error('[CRUD FAIL]', {
