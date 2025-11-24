@@ -165,18 +165,51 @@ export function CreateAuctionModal({
         message: error?.message,
         stack: error?.stack,
         response: error?.response,
-        code: error?.code
+        data: error?.response?.data,
+        code: error?.code,
+        hint: error?.hint,
+        details: error?.details
       });
       
       hapticFeedback.notification('error');
       
-      const errorMsg = error?.message || 'לא ניתן ליצור מכרז כרגע';
+      // Build detailed error message for user
+      let errorMsg = error?.message || 'לא ניתן ליצור מכרז כרגע';
+      let debugInfo = '';
+      
+      if (error?.hint) {
+        debugInfo += `\nHint: ${error.hint}`;
+      }
+      if (error?.details) {
+        debugInfo += `\nDetails: ${error.details}`;
+      }
+      if (error?.code) {
+        debugInfo += `\nCode: ${error.code}`;
+      }
+      
+      const fullError = `${errorMsg}${debugInfo}`;
+      
+      // Show detailed error in toast
       toast({ 
         title: 'שגיאה ביצירת מכרז', 
-        description: errorMsg, 
-        variant: 'destructive' 
+        description: fullError, 
+        variant: 'destructive',
+        duration: 10000 // Longer duration for debugging
       });
-      alert(`שגיאה: ${errorMsg}`); // Backup alert
+      
+      // Show alert with full debug info
+      alert(`❌ שגיאה ביצירת מכרז:\n\n${fullError}\n\nבדוק את הקונסול לפרטים נוספים`);
+      
+      // Log to console for easy copy-paste
+      console.error('=== COPY THIS ERROR INFO ===');
+      console.error(JSON.stringify({
+        error: errorMsg,
+        hint: error?.hint,
+        details: error?.details,
+        code: error?.code,
+        stack: error?.stack
+      }, null, 2));
+      console.error('=========================');
     } finally {
       console.log('🏁 Auction creation flow finished');
       setIsSubmitting(false);
