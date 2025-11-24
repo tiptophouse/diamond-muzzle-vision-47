@@ -30,10 +30,10 @@ export function InventoryTableView({
   return (
     <div className="grid gap-3">
       {diamonds.map((diamond) => (
-        <Card key={diamond.id} className="p-3 hover:shadow-md transition-shadow">
-          <div className="flex gap-3">
+        <Card key={diamond.id} className="p-4">
+          <div className="flex gap-4">
             {/* Image */}
-            <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden">
+            <div className="flex-shrink-0 w-24 h-24 rounded-md overflow-hidden bg-muted">
               <OptimizedDiamondImage
                 imageUrl={diamond.picture}
                 gem360Url={diamond.gem360Url}
@@ -46,44 +46,39 @@ export function InventoryTableView({
             {/* Content */}
             <div className="flex-1 min-w-0">
               {/* Header */}
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-sm truncate">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0">
+                  <div className="font-semibold text-base mb-1">
                     #{diamond.stockNumber}
                   </div>
-                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                    <Badge variant="outline" className="text-xs px-1.5 py-0">
-                      {diamond.shape}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-foreground">{diamond.shape}</span>
+                    <span className="text-sm text-muted-foreground">
                       {diamond.carat?.toFixed(2) || 'N/A'}ct
                     </span>
                   </div>
                 </div>
                 
-                <div className="text-right flex-shrink-0">
-                  <div className="font-bold text-sm">
+                <div className="text-right">
+                  <div className="font-bold text-base mb-1">
                     ${diamond.price?.toLocaleString() || '0'}
                   </div>
-                  <Badge 
-                    variant={diamond.status === 'Available' ? 'default' : 'secondary'}
-                    className={`text-xs mt-1 ${diamond.status === 'Available' ? 'bg-green-600' : ''}`}
-                  >
+                  <Badge variant={diamond.status === 'Available' ? 'default' : 'secondary'}>
                     {diamond.status}
                   </Badge>
                 </div>
               </div>
 
               {/* Details */}
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-yellow-100 text-yellow-800">
+              <div className="flex items-center gap-2 mb-3">
+                <Badge variant="outline" className="text-xs">
                   {diamond.color}
                 </Badge>
-                <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-blue-100 text-blue-800">
+                <Badge variant="outline" className="text-xs">
                   {diamond.clarity}
                 </Badge>
                 {diamond.cut && (
-                  <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-green-100 text-green-800">
+                  <Badge variant="outline" className="text-xs">
                     {diamond.cut}
                   </Badge>
                 )}
@@ -94,39 +89,35 @@ export function InventoryTableView({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2"
+                  className="h-9"
                   onClick={() => onStoreToggle(diamond.stockNumber, !diamond.store_visible)}
                 >
-                  {diamond.store_visible ? (
-                    <Eye className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <span className="text-xs ml-1">Store</span>
+                  <Eye className={`h-4 w-4 mr-1 ${diamond.store_visible ? 'text-primary' : ''}`} />
+                  <span className="text-xs">Store</span>
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2"
+                  className="h-9"
                   onClick={() => onEdit(diamond)}
                 >
-                  <Edit2 className="h-4 w-4" />
-                  <span className="text-xs ml-1">Edit</span>
+                  <Edit2 className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Edit</span>
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2 text-destructive hover:text-destructive"
+                  className="h-9 text-destructive"
                   onClick={() => onDelete(diamond.id)}
                 >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="text-xs ml-1">Delete</span>
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Delete</span>
                 </Button>
                 {diamond.certificateUrl && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 px-2"
+                    className="h-9"
                     asChild
                   >
                     <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
