@@ -140,6 +140,42 @@ export function CreateAuctionModal({
       if (!sharedSuccessfully) {
         console.error('⚠️ Sharing to groups failed but auction was created');
         
+        // Get detailed error from window storage
+        const lastError = (window as any).lastAuctionShareError;
+        
+        const errorDetails = lastError ? `
+📍 GROUP ID: ${lastError.groupId}
+📍 AUCTION ID: ${lastError.auctionId}
+⏰ TIMESTAMP: ${lastError.timestamp}
+
+${lastError.error ? `
+🔴 EDGE FUNCTION ERROR:
+Message: ${lastError.error.message || 'Unknown'}
+Status: ${lastError.error.status || 'N/A'}
+Code: ${lastError.error.code || 'N/A'}
+Details: ${lastError.error.details || 'N/A'}
+Hint: ${lastError.error.hint || 'N/A'}
+
+Full Error:
+${lastError.error.fullError}
+` : ''}
+
+${lastError.responseData ? `
+🔴 RESPONSE DATA ERROR:
+Success Value: ${lastError.responseData.successValue}
+Error: ${lastError.responseData.error || 'N/A'}
+Message: ${lastError.responseData.message || 'N/A'}
+
+Full Response:
+${lastError.responseData.data}
+` : ''}
+
+🔍 WHERE TO FIND LOGS IN SUPABASE:
+1. Go to: https://supabase.com/dashboard/project/uhhljqgxhdhbbhpohxll/functions/send-auction-message/logs
+2. Look for timestamp: ${lastError?.timestamp || 'recent'}
+3. Search for auction ID: ${auction.id}
+        `.trim() : 'No detailed error captured';
+        
         const shareFailMsg = 'המכרז נוצר בהצלחה אך השיתוף לטלגרם נכשל. בדוק לוגים.';
         
         toast({ 
@@ -149,8 +185,17 @@ export function CreateAuctionModal({
           duration: 5000,
         });
         
-        // Show alert for visibility
-        alert(`⚠️ שים לב:\n\n${shareFailMsg}\n\nמזהה מכרז: ${auction.id}`);
+        // Show detailed alert
+        alert(`⚠️ שים לב: המכרז נוצר אך השיתוף נכשל
+
+מזהה מכרז: ${auction.id}
+
+${errorDetails}
+
+💡 TIP: העתק את הטקסט הזה ושלח למפתח לבדיקה.`);
+        
+        // Clear the error
+        (window as any).lastAuctionShareError = null;
         
         // Still close modal and call success - auction was created
         onOpenChange(false);
