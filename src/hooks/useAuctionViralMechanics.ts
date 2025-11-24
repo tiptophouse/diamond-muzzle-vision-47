@@ -26,7 +26,21 @@ export function useAuctionViralMechanics() {
   const [isSharing, setIsSharing] = useState(false);
   const { toast } = useToast();
   const { hapticFeedback } = useTelegramWebApp();
-  const { user } = useTelegramAuth();
+  const authContext = useTelegramAuth();
+  
+  // Defensive check: Return safe fallback if auth context is unavailable
+  if (!authContext || !authContext.user) {
+    console.warn('⚠️ useAuctionViralMechanics: Auth context not available');
+    return {
+      shareToGroups: async () => false,
+      checkBidWarMode: async () => ({ extended: false }),
+      announceWinner: async () => false,
+      sendLoserConsolation: async () => false,
+      isSharing: false,
+    };
+  }
+
+  const { user } = authContext;
 
   /**
    * Auto-share auction to multiple Telegram groups
