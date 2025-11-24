@@ -105,6 +105,7 @@ export function CreateAuctionModal({
         currency: 'USD',
         endsAt: endsAt.toISOString(),
         imageUrl: diamond.picture,
+        groupIds: [-1002178695748], // Test group for auction auto-sharing
       });
 
       if (!sharedSuccessfully) {
