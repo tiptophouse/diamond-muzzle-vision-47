@@ -2,7 +2,7 @@
 import { memo, useState, useCallback, useMemo } from "react";
 import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
-import { InventoryTable } from "@/components/inventory/InventoryTable";
+import { InventoryTableView } from "@/components/inventory/InventoryTableView";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 import { InventorySearch } from "@/components/inventory/InventorySearch";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
@@ -195,14 +195,11 @@ export default function InventoryPage() {
           />
           
           <div className="w-full">
-            <InventoryTable
-              data={filteredDiamonds}
-              loading={false}
+            <InventoryTableView
+              diamonds={filteredDiamonds}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onStoreToggle={handleStoreToggle}
-              onImageUpdate={handleRefresh}
-              data-tutorial="inventory-table"
             />
             
             <InventoryPagination
