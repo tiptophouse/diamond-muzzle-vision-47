@@ -18,7 +18,7 @@ export interface DiamondFormData {
   length?: number;
   width?: number;
   depth?: number;
-  ratio?: number;
+  ratio: number;
   
   // Detailed Grading
   tablePercentage?: number;

@@ -74,7 +74,7 @@ export function transformToFastAPICreate(formData: DiamondFormData): FastAPIDiam
     length: formData.length || null,
     width: formData.width || null,
     depth: formData.depth || null,
-    ratio: formData.ratio || 1.01, // Default ratio if not provided
+    ratio: formData.ratio || null,
     cut: formData.cut || null,
     polish: (formData.polish || 'Good').toUpperCase(),
     symmetry: (formData.symmetry || 'Good').toUpperCase(),
