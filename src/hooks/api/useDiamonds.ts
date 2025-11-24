@@ -8,6 +8,7 @@ import type { DiamondCreateRequest, DiamondUpdateRequest } from '@/types/fastapi
 import * as diamondsApi from '@/api/diamonds';
 import { apiEndpoints } from '@/lib/api/endpoints';
 import { http } from '@/api/http';
+import { transformToFastAPICreate, transformToFastAPIUpdate } from '@/api/diamondTransformers';
 
 // Query keys
 export const diamondKeys = {
@@ -42,7 +43,8 @@ export function useCreateDiamond() {
   return useMutation({
     mutationFn: ({ data, userId }: { data: any; userId: number }) => {
       console.log('💎 Creating diamond:', data.stockNumber || data.stock_number);
-      return diamondsApi.createDiamond(data);
+      const transformedData = transformToFastAPICreate(data);
+      return diamondsApi.createDiamond(transformedData);
     },
     onMutate: async ({ data, userId }) => {
       // Cancel outgoing refetches
@@ -120,7 +122,8 @@ export function useUpdateDiamond() {
       userId: number;
     }) => {
       console.log('✏️ Updating diamond:', diamondId);
-      return diamondsApi.updateDiamond(diamondId, data);
+      const transformedData = transformToFastAPIUpdate(data);
+      return diamondsApi.updateDiamond(diamondId, transformedData);
     },
     onMutate: async ({ diamondId, data, userId }) => {
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
