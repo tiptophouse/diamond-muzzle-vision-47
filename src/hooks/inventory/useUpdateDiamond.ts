@@ -1,6 +1,6 @@
 
 import { useToast } from '@/hooks/use-toast';
-import { api, apiEndpoints } from '@/lib/api';
+import { api, apiEndpoints, getBackendAuthToken } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { roundToInteger } from '@/utils/numberUtils';
@@ -49,6 +49,25 @@ export function useUpdateDiamond(onSuccess?: () => void) {
     try {
       console.log('📝 UPDATE: Starting update for diamond:', numericId);
       console.log('📝 UPDATE: Form data received:', data);
+      
+      // Verify JWT token before making request using the correct auth method
+      const jwtToken = getBackendAuthToken();
+      console.log('🔐 UPDATE: JWT Token Check:', {
+        exists: !!jwtToken,
+        preview: jwtToken ? `${jwtToken.substring(0, 15)}...${jwtToken.substring(jwtToken.length - 10)}` : '❌ MISSING',
+        length: jwtToken?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+      
+      if (!jwtToken) {
+        console.error('❌ UPDATE: No JWT token available - request will fail');
+        toast({
+          variant: "destructive",
+          title: "❌ Authentication Required",
+          description: 'JWT token is missing. Please refresh the app.',
+        });
+        return false;
+      }
       
       const endpoint = apiEndpoints.updateDiamond(numericId);
       console.log('📝 UPDATE: Using endpoint:', endpoint);
@@ -130,11 +149,11 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       const responseDetails = (error as any)?.responseDetails;
       const statusCode = (error as any)?.status || 'Unknown';
       
-      // Get JWT token info
-      const jwtToken = localStorage.getItem('jwt_token');
+      // Get JWT token info using the correct auth method
+      const jwtToken = getBackendAuthToken();
       const tokenInfo = jwtToken 
         ? `Present (${jwtToken.substring(0, 10)}...${jwtToken.substring(jwtToken.length - 10)})`
-        : 'Missing';
+        : '❌ MISSING - Authentication Error';
       
       console.error('[CRUD FAIL]', {
         action: 'UPDATE',
@@ -143,6 +162,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         stockNumber: data.stockNumber,
         error: errorMessage,
         statusCode,
+        hasToken: !!jwtToken,
         responseDetails,
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString()
