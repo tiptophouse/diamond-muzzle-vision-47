@@ -38,7 +38,7 @@ export async function createAuction(
 
   // Create auction using atomic RPC function (handles context + insert in one transaction)
   console.log('📡 Creating auction record with context...');
-  const { data, error } = await supabase.rpc('create_auction_with_context', {
+  const { data, error } = await (supabase as any).rpc('create_auction_with_context', {
     p_stock_number: request.stock_number,
     p_starting_price: request.starting_price,
     p_min_increment: request.min_increment,
@@ -51,14 +51,14 @@ export async function createAuction(
     console.error('❌ Failed to create auction:', error);
     throw new Error(`Auction creation failed: ${error.message}`);
   }
-  console.log('✅ Auction record created:', data.id);
+  console.log('✅ Auction record created:', (data as any).id);
 
   // Store diamond snapshot (passed from frontend)
   const snapshot = request.diamond_snapshot;
   const { error: diamondError } = await supabase
     .from('auction_diamonds' as any)
     .insert({
-      auction_id: data.id,
+      auction_id: (data as any).id,
       stock_number: snapshot.stock_number,
       shape: snapshot.shape,
       weight: snapshot.weight,
