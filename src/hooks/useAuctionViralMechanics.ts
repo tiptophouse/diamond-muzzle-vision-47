@@ -38,12 +38,14 @@ export function useAuctionViralMechanics() {
 
     try {
       // Default test groups - replace with your actual group IDs
-      const targetGroups = options.groupIds || [
-        // Add your group IDs here, e.g.:
-        // -1001234567890,
-        // -1009876543210,
-        // -1005555555555,
-      ];
+      const targetGroups = options.groupIds || [];
+
+      // If no groups specified, just mark as success (auction created but not shared)
+      if (targetGroups.length === 0) {
+        console.log('⚠️ No target groups specified, skipping auto-share');
+        setIsSharing(false);
+        return true; // Still return success since auction was created
+      }
 
       const sharePromises = targetGroups.map(async (groupId) => {
         try {

@@ -147,7 +147,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Current Bid</span>
-            <span className="text-lg font-bold text-foreground animate-in fade-in duration-300">
+            <span className="text-lg font-bold text-foreground transition-all duration-300">
               ${displayPrice.toLocaleString()}
             </span>
           </div>
@@ -155,7 +155,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
             <span>Starting: ${auction.starting_price.toLocaleString()}</span>
             <div className="flex items-center gap-1">
               <TrendingUp className="h-3 w-3" />
-              <span className="animate-in fade-in duration-300">{displayBidCount} bids</span>
+              <span className="transition-all duration-300">{displayBidCount} bids</span>
             </div>
           </div>
         </div>
