@@ -3108,6 +3108,24 @@ export type Database = {
       create_auction_with_context: {
         Args: {
           p_currency: string
+          p_diamond_certificate_number?: number
+          p_diamond_certificate_url?: string
+          p_diamond_clarity: string
+          p_diamond_color: string
+          p_diamond_cut: string
+          p_diamond_depth_percentage?: number
+          p_diamond_fluorescence?: string
+          p_diamond_lab?: string
+          p_diamond_measurements?: string
+          p_diamond_picture?: string
+          p_diamond_polish?: string
+          p_diamond_price_per_carat?: number
+          p_diamond_shape: string
+          p_diamond_symmetry?: string
+          p_diamond_table_percentage?: number
+          p_diamond_total_price?: number
+          p_diamond_video_url?: string
+          p_diamond_weight: number
           p_ends_at: string
           p_min_increment: number
           p_seller_telegram_id: number
