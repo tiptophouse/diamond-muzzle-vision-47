@@ -10,6 +10,7 @@ import { apiEndpoints } from '@/lib/api/endpoints';
 import { http } from '@/api/http';
 import { transformToFastAPICreate, transformToFastAPIUpdate } from '@/api/diamondTransformers';
 import { API_BASE_URL } from '@/lib/api/config';
+import { getBackendAuthToken } from '@/lib/api/auth';
 
 // Query keys
 export const diamondKeys = {
@@ -43,6 +44,19 @@ export function useCreateDiamond() {
 
   return useMutation({
     mutationFn: ({ data, userId }: { data: any; userId: number }) => {
+      // Check JWT token before making request
+      const token = getBackendAuthToken();
+      console.log('🔐 CREATE: JWT Status:', {
+        exists: !!token,
+        tokenPreview: token ? `${token.substring(0, 20)}...` : 'MISSING',
+        stockNumber: data.stockNumber || data.stock_number,
+        userId
+      });
+
+      if (!token) {
+        throw new Error('JWT token missing - authentication required for creating diamonds');
+      }
+
       console.log('💎 Creating diamond:', data.stockNumber || data.stock_number);
       const transformedData = transformToFastAPICreate(data);
       return diamondsApi.createDiamond(transformedData);
@@ -105,8 +119,14 @@ export function useCreateDiamond() {
         ? JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
         : String(error);
       
+      const token = getBackendAuthToken();
       const errorDetails = `
 Stock: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
+User ID: ${variables.userId}
+
+🔐 Authentication:
+- JWT Token: ${token ? 'PRESENT' : '❌ MISSING'}
+- Token Preview: ${token ? token.substring(0, 20) + '...' : 'N/A'}
 
 Request URL: ${requestUrl}
 Method: POST
@@ -151,6 +171,20 @@ export function useUpdateDiamond() {
       data: any;
       userId: number;
     }) => {
+      // Check JWT token before making request
+      const token = getBackendAuthToken();
+      console.log('🔐 UPDATE: JWT Status:', {
+        exists: !!token,
+        tokenPreview: token ? `${token.substring(0, 20)}...` : 'MISSING',
+        diamondId,
+        stockNumber: data.stockNumber || data.stock_number,
+        userId
+      });
+
+      if (!token) {
+        throw new Error('JWT token missing - authentication required for updating diamonds');
+      }
+
       console.log('✏️ Updating diamond:', diamondId);
       const transformedData = transformToFastAPIUpdate(data);
       return diamondsApi.updateDiamond(diamondId, transformedData);
@@ -199,11 +233,46 @@ export function useUpdateDiamond() {
         queryClient.setQueryData(diamondKeys.list(variables.userId), context.previousDiamonds);
       }
       
+      // Show detailed error information including authentication details
+      const transformedData = transformToFastAPIUpdate(variables.data);
+      const requestUrl = `${API_BASE_URL}${apiEndpoints.updateDiamond(variables.diamondId)}`;
+      const token = getBackendAuthToken();
+      
+      const errorMessage = typeof error === 'object' 
+        ? JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
+        : String(error);
+      
+      const errorDetails = `
+Diamond ID: ${variables.diamondId}
+Stock: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
+User ID: ${variables.userId}
+
+🔐 Authentication:
+- JWT Token: ${token ? 'PRESENT' : '❌ MISSING'}
+- Token Preview: ${token ? token.substring(0, 20) + '...' : 'N/A'}
+
+Request URL: ${requestUrl}
+Method: PUT
+
+Body: 
+${JSON.stringify(transformedData, null, 2)}
+
+Error Details:
+${errorMessage}
+
+Original Data:
+${JSON.stringify(variables.data, null, 2).substring(0, 300)}
+      `.trim();
+      
       toast({
         title: '❌ שגיאה בעדכון יהלום',
-        description: error.message || 'אנא נסה שוב',
+        description: errorDetails,
         variant: 'destructive',
+        duration: 10000,
       });
+      
+      // Also alert for visibility
+      alert(`❌ UPDATE DIAMOND FAILED\n\n${errorDetails}`);
     },
   });
 }
