@@ -582,15 +582,7 @@ export type Database = {
           updated_at?: string
           winner_telegram_id?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_auction_diamond"
-            columns: ["stock_number"]
-            isOneToOne: false
-            referencedRelation: "inventory"
-            referencedColumns: ["stock_number"]
-          },
-        ]
+        Relationships: []
       }
       auth_debug_logs: {
         Row: {
