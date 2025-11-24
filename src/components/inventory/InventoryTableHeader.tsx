@@ -5,7 +5,6 @@ export function InventoryTableHeader() {
   return (
     <TableHeader>
       <TableRow className="hover:bg-transparent border-slate-200">
-        <TableHead className="font-semibold text-slate-900 bg-slate-50">Image</TableHead>
         <TableHead className="font-semibold text-slate-900 bg-slate-50">Diamond ID</TableHead>
         <TableHead className="font-semibold text-slate-900 bg-slate-50">Stock #</TableHead>
         <TableHead className="font-semibold text-slate-900 bg-slate-50">Shape</TableHead>
