@@ -119,26 +119,10 @@ export function useCreateDiamond() {
         ? JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
         : String(error);
       
-      const token = getBackendAuthToken();
       const errorDetails = `
-Stock: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
-User ID: ${variables.userId}
+URL: ${requestUrl}
 
-🔐 Authentication:
-- JWT Token: ${token ? 'PRESENT' : '❌ MISSING'}
-- Token Preview: ${token ? token.substring(0, 20) + '...' : 'N/A'}
-
-Request URL: ${requestUrl}
-Method: POST
-
-Body: 
-${JSON.stringify(transformedData, null, 2)}
-
-Error Details:
-${errorMessage}
-
-Original Data:
-${JSON.stringify(variables.data, null, 2).substring(0, 300)}
+Error: ${errorMessage}
       `.trim();
       
       toast({
