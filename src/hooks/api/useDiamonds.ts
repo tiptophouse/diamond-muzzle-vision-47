@@ -218,22 +218,79 @@ export function useUpdateDiamond() {
       data: any;
       userId: number;
     }) => {
+      console.log('🚀 UPDATE MUTATION STARTED');
+      console.log('📋 Mutation Input:', { diamondId, userId, hasData: !!data });
+      
       // Check JWT token before making request
       const token = getBackendAuthToken();
-      console.log('🔐 UPDATE: JWT Status:', {
+      const tokenInfo = {
         exists: !!token,
-        tokenPreview: token ? `${token.substring(0, 20)}...` : 'MISSING',
+        tokenPreview: token ? `${token.substring(0, 30)}...${token.substring(token.length - 10)}` : '❌ MISSING',
+        tokenLength: token ? token.length : 0,
         diamondId,
         stockNumber: data.stockNumber || data.stock_number,
-        userId
+        userId,
+        timestamp: new Date().toISOString(),
+        telegramContext: {
+          hasWebApp: !!(window as any).Telegram?.WebApp,
+          hasInitData: !!(window as any).Telegram?.WebApp?.initData,
+          initDataLength: (window as any).Telegram?.WebApp?.initData?.length || 0
+        }
+      };
+      
+      console.log('🔐 UPDATE: JWT Status:', tokenInfo);
+      console.log('🔐 JWT Full Details:', {
+        localStorage_jwt: localStorage.getItem('jwt_token') ? 'EXISTS' : 'MISSING',
+        token_first_20: token?.substring(0, 20),
+        token_last_10: token?.substring(token.length - 10)
       });
 
       if (!token) {
+        const authErrorMsg = `
+╔═══════════════════════════════════════════════════════════════╗
+║                   ⛔ AUTHENTICATION FAILED                    ║
+╚═══════════════════════════════════════════════════════════════╝
+
+❌ JWT Token Status: MISSING
+
+🔍 What This Means:
+   You are not authenticated with the backend server. 
+   The update request cannot proceed without a valid JWT token.
+
+📊 Environment Info:
+   - User ID: ${userId}
+   - Diamond ID: ${diamondId}
+   - Stock Number: ${data.stockNumber || data.stock_number || 'N/A'}
+   - Telegram WebApp: ${tokenInfo.telegramContext.hasWebApp ? '✅' : '❌'}
+   - Telegram InitData: ${tokenInfo.telegramContext.hasInitData ? '✅' : '❌'}
+   - InitData Length: ${tokenInfo.telegramContext.initDataLength} chars
+   - Timestamp: ${new Date().toISOString()}
+
+💡 How To Fix:
+   1. Close the Telegram Mini App completely
+   2. Reopen from Telegram (not browser)
+   3. Wait for authentication to complete
+   4. Try updating the diamond again
+
+🔧 Technical Details:
+   - JWT Token in localStorage: ${localStorage.getItem('jwt_token') ? 'EXISTS' : 'MISSING'}
+   - getBackendAuthToken() returned: ${token === null ? 'null' : token === undefined ? 'undefined' : 'empty string'}
+   
+If this persists, contact support with this timestamp: ${new Date().toISOString()}
+        `.trim();
+        
+        console.error('⛔ JWT MISSING - FULL AUTH ERROR:');
+        console.error(authErrorMsg);
+        alert(authErrorMsg);
         throw new Error('JWT token missing - authentication required for updating diamonds');
       }
 
+      console.log('✅ JWT Token validated, proceeding with update');
       console.log('✏️ Updating diamond:', diamondId);
+      
       const transformedData = transformToFastAPIUpdate(data);
+      console.log('📤 Transformed data ready:', Object.keys(transformedData));
+      
       return diamondsApi.updateDiamond(diamondId, transformedData);
     },
     onMutate: async ({ diamondId, data, userId }) => {
