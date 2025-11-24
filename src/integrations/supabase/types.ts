@@ -3113,6 +3113,17 @@ export type Database = {
         Returns: boolean
       }
       clean_expired_cache: { Args: never; Returns: undefined }
+      create_auction_with_context: {
+        Args: {
+          p_currency: string
+          p_ends_at: string
+          p_min_increment: number
+          p_seller_telegram_id: number
+          p_starting_price: number
+          p_stock_number: string
+        }
+        Returns: Json
+      }
       delete_diamond: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean
