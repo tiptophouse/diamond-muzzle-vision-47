@@ -23,12 +23,14 @@ export const InventoryTableRow = memo(function InventoryTableRow({ diamond, onEd
       {/* Image */}
       <TableCell className="p-2">
         <div className="flex items-center space-x-2">
-          <UniversalImageHandler
-            imageUrl={diamond.imageUrl || diamond.picture || diamond.gem360Url || ''}
-            stockNumber={diamond.stockNumber}
-            isInline={true}
-            className="w-12 h-12 rounded"
-          />
+          {(diamond.imageUrl || diamond.picture || diamond.gem360Url) && (
+            <UniversalImageHandler
+              imageUrl={diamond.imageUrl || diamond.picture || diamond.gem360Url || ''}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+              className="w-12 h-12 rounded"
+            />
+          )}
           <UserImageUpload 
             diamond={diamond}
             onUpdate={onImageUpdate || (() => {})}
