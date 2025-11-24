@@ -115,6 +115,17 @@ export function useUpdateDiamond(onSuccess?: () => void) {
 
       console.log('📝 UPDATE: Sending data to FastAPI (all integers):', updateData);
       
+      // Log the complete request details before sending
+      const jwtForRequest = getBackendAuthToken();
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📤 SENDING UPDATE REQUEST:');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Endpoint:', endpoint);
+      console.log('Method: PUT');
+      console.log('Authorization Header:', jwtForRequest ? `Bearer ${jwtForRequest}` : '❌ MISSING');
+      console.log('Request Body:', JSON.stringify(updateData, null, 2));
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
       const response = await api.put(endpoint, updateData);
       
       if (response.error) {
