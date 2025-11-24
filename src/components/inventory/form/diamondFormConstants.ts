@@ -1,15 +1,28 @@
 
 export const shapes = [
-  'Round',
-  'Princess',
-  'Emerald',
-  'Asscher',
-  'Oval',
-  'Radiant',
-  'Pear',
-  'Heart',
-  'Marquise',
-  'Cushion'
+  'round brilliant',
+  'princess',
+  'cushion',
+  'oval',
+  'emerald',
+  'pear',
+  'marquise',
+  'asscher',
+  'radiant',
+  'heart',
+  'baguette',
+  'old european',
+  'rose',
+  'tapered baguette',
+  'bullet',
+  'kite',
+  'half moons',
+  'trillion',
+  'horse head',
+  'shield',
+  'hexagonal',
+  'old mine',
+  'rose head'
 ];
 
 export const colors = [
@@ -44,7 +57,7 @@ export const girdleTypes = [
 ];
 
 export const culetGrades = [
-  'None', 'Very Small', 'Small', 'Medium', 'Slightly Large', 'Large', 'Very Large'
+  'NONE', 'VERY SMALL', 'SMALL', 'MEDIUM', 'SLIGHTLY LARGE', 'LARGE', 'VERY LARGE', 'EXTREMELY LARGE'
 ];
 
 export const labOptions = [
