@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { Eye, Edit2, Trash2, ExternalLink } from 'lucide-react';
-import { OptimizedDiamondImage } from '@/components/store/OptimizedDiamondImage';
+import { UniversalImageHandler } from '@/components/store/UniversalImageHandler';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatPrice } from '@/utils/numberUtils';
 
@@ -32,11 +32,10 @@ export function InventoryTableView({
             <CardContent className="p-4">
               <div className="flex gap-4">
                 <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                  <OptimizedDiamondImage
-                    imageUrl={diamond.picture}
-                    gem360Url={diamond.gem360Url}
+                  <UniversalImageHandler
+                    imageUrl={diamond.picture || diamond.gem360Url || ''}
                     stockNumber={diamond.stockNumber}
-                    shape={diamond.shape}
+                    isInline={true}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -143,11 +142,10 @@ export function InventoryTableView({
               <TableRow key={diamond.id} className="hover:bg-muted/30">
                 <TableCell>
                   <div className="w-12 h-12 rounded-lg overflow-hidden">
-                    <OptimizedDiamondImage
-                      imageUrl={diamond.picture}
-                      gem360Url={diamond.gem360Url}
+                    <UniversalImageHandler
+                      imageUrl={diamond.picture || diamond.gem360Url || ''}
                       stockNumber={diamond.stockNumber}
-                      shape={diamond.shape}
+                      isInline={true}
                       className="w-full h-full"
                     />
                   </div>
