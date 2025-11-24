@@ -34,21 +34,43 @@ export async function createAuction(
   const endsAt = new Date();
   endsAt.setHours(endsAt.getHours() + request.duration_hours);
 
-  console.log('💎 Using provided diamond snapshot:', request.diamond_snapshot.stock_number);
+  const snapshot = request.diamond_snapshot;
+  console.log('💎 Using provided diamond snapshot:', snapshot.stock_number);
 
-  // Create auction using atomic RPC function (handles context + insert in one transaction)
-  console.log('📡 Creating auction record with context...');
+  // Create auction with diamond snapshot in single atomic RPC call
+  console.log('📡 Creating auction with diamond snapshot (atomic transaction)...');
   const { data, error } = await (supabase as any).rpc('create_auction_with_context', {
+    // Auction parameters
     p_stock_number: request.stock_number,
     p_starting_price: request.starting_price,
     p_min_increment: request.min_increment,
     p_currency: request.currency || 'USD',
     p_ends_at: endsAt.toISOString(),
-    p_seller_telegram_id: request.seller_telegram_id
+    p_seller_telegram_id: request.seller_telegram_id,
+    
+    // Diamond snapshot parameters
+    p_diamond_shape: snapshot.shape,
+    p_diamond_weight: snapshot.weight,
+    p_diamond_color: snapshot.color,
+    p_diamond_clarity: snapshot.clarity,
+    p_diamond_cut: snapshot.cut,
+    p_diamond_polish: snapshot.polish,
+    p_diamond_symmetry: snapshot.symmetry,
+    p_diamond_fluorescence: snapshot.fluorescence,
+    p_diamond_measurements: snapshot.measurements,
+    p_diamond_table_percentage: snapshot.table_percentage,
+    p_diamond_depth_percentage: snapshot.depth_percentage,
+    p_diamond_certificate_number: snapshot.certificate_number,
+    p_diamond_lab: snapshot.lab,
+    p_diamond_picture: snapshot.picture,
+    p_diamond_certificate_url: snapshot.certificate_url,
+    p_diamond_video_url: snapshot.video_url,
+    p_diamond_price_per_carat: snapshot.price_per_carat,
+    p_diamond_total_price: snapshot.total_price || (snapshot.price_per_carat || 0) * snapshot.weight,
   });
 
   if (error) {
-    console.error('❌ Failed to create auction:', error);
+    console.error('❌ Failed to create auction with diamond snapshot:', error);
     console.error('❌ Error details:', JSON.stringify(error, null, 2));
     throw new Error(`Auction creation failed: ${error.message}`);
   }
@@ -58,48 +80,8 @@ export async function createAuction(
     throw new Error('No auction data returned');
   }
   
-  console.log('✅ Auction record created:', (data as any).id);
-
-  // Store diamond snapshot (passed from frontend)
-  const snapshot = request.diamond_snapshot;
-  const { error: diamondError } = await supabase
-    .from('auction_diamonds' as any)
-    .insert({
-      auction_id: (data as any).id,
-      stock_number: snapshot.stock_number,
-      shape: snapshot.shape,
-      weight: snapshot.weight,
-      color: snapshot.color,
-      clarity: snapshot.clarity,
-      cut: snapshot.cut,
-      polish: snapshot.polish,
-      symmetry: snapshot.symmetry,
-      fluorescence: snapshot.fluorescence,
-      measurements: snapshot.measurements,
-      table_percentage: snapshot.table_percentage,
-      depth_percentage: snapshot.depth_percentage,
-      certificate_number: snapshot.certificate_number,
-      lab: snapshot.lab,
-      picture: snapshot.picture,
-      certificate_url: snapshot.certificate_url,
-      video_url: snapshot.video_url,
-      price_per_carat: snapshot.price_per_carat,
-      total_price: snapshot.total_price || (snapshot.price_per_carat || 0) * snapshot.weight,
-    });
-
-  if (diamondError) {
-    console.error('⚠️ Failed to store diamond snapshot:', diamondError);
-    console.error('⚠️ Diamond error details:', JSON.stringify(diamondError, null, 2));
-    throw new Error(`Failed to store diamond snapshot: ${diamondError.message}`);
-  }
-  
-  console.log('✅ Auction created successfully with diamond snapshot');
-  console.log('📊 Auction details:', {
-    id: (data as any).id,
-    stock_number: (data as any).stock_number,
-    starting_price: (data as any).starting_price,
-    current_price: (data as any).current_price,
-  });
+  console.log('✅ Auction created successfully with diamond snapshot (atomic)');
+  console.log('📊 Auction details:', data);
   
   return data as any;
 }
