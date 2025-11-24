@@ -132,10 +132,12 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         console.error('❌ UPDATE: FastAPI returned error:', response.error);
         const errorDetails = {
           error: response.error,
-          data: response.data
+          data: response.data,
+          status: response.status
         };
         const error = new Error(response.error);
         (error as any).responseDetails = errorDetails;
+        (error as any).status = response.status;
         throw error;
       }
 
