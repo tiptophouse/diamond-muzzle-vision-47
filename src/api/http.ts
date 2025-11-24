@@ -180,13 +180,15 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
     
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      let serverResponseBody: any = null;
       
       try {
-        const errorData = await response.json();
-        errorMessage = errorData.detail || errorData.message || errorMessage;
-        console.error('❌ HTTP: Server error response:', errorData);
+        serverResponseBody = await response.json();
+        errorMessage = serverResponseBody.detail || serverResponseBody.message || errorMessage;
+        console.error('❌ HTTP: Server error response:', serverResponseBody);
       } catch {
         const errorText = await response.text();
+        serverResponseBody = errorText;
         errorMessage = errorText || errorMessage;
         console.error('❌ HTTP: Server error text:', errorText);
       }
@@ -306,7 +308,29 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
         });
       }
       
-      throw new Error(errorMessage);
+      // Create enhanced error with full HTTP details
+      const enhancedError: any = new Error(errorMessage);
+      enhancedError.status = response.status;
+      enhancedError.statusText = response.statusText;
+      enhancedError.data = serverResponseBody;
+      enhancedError.response = serverResponseBody;
+      enhancedError.url = fullUrl;
+      enhancedError.method = method;
+      enhancedError.endpoint = endpoint;
+      enhancedError.requestBody = options.body;
+      enhancedError.timestamp = new Date().toISOString();
+      
+      // Log full error details for debugging
+      console.error('❌ HTTP: Throwing enhanced error:', {
+        status: enhancedError.status,
+        statusText: enhancedError.statusText,
+        url: enhancedError.url,
+        method: enhancedError.method,
+        serverResponse: enhancedError.data,
+        requestBody: enhancedError.requestBody
+      });
+      
+      throw enhancedError;
     }
     
     const contentType = response.headers.get('content-type') || '';
