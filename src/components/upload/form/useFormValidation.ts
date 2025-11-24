@@ -19,11 +19,6 @@ export const useFormValidation = () => {
       return false;
     }
     
-    if (!data.ratio || data.ratio <= 0) {
-      console.error('Valid ratio is required');
-      return false;
-    }
-    
     return true;
   };
 

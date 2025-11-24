@@ -10,6 +10,18 @@ export function useUpdateDiamond(onSuccess?: () => void) {
   const { user } = useTelegramAuth();
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
+    if (!user?.id) {
+      console.error('❌ UPDATE: User not authenticated - BLOCKING');
+      const error = 'User authentication required to update diamonds';
+      toast({
+        variant: "destructive",
+        title: "❌ Authentication Error",
+        description: error,
+      });
+      alert(`❌ UPDATE DIAMOND FAILED\n\n${error}\n\nPlease ensure you're logged in through Telegram.`);
+      return false;
+    }
+
     // Parse and validate diamond ID
     const numericId = parseInt(diamondId);
     if (isNaN(numericId) || typeof numericId !== 'number') {
@@ -22,7 +34,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
     console.info('[CRUD START]', { 
       action: 'UPDATE',
       diamondId: numericId,
-      userId: user?.id || 'NO_USER',
+      userId: user.id,
       stockNumber: data.stockNumber,
       payload: JSON.stringify(data).substring(0, 500)
     });
@@ -39,16 +51,8 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       
       const endpoint = apiEndpoints.updateDiamond(numericId);
       console.log('📝 UPDATE: Using endpoint:', endpoint);
-      console.log('📝 UPDATE: User ID:', user?.id || 'NO_USER', 'type:', typeof user?.id);
+      console.log('📝 UPDATE: User ID:', user.id, 'type:', typeof user.id);
       console.log('📝 UPDATE: Diamond ID:', numericId, 'type:', typeof numericId);
-      
-      // Log the FULL REQUEST details before sending
-      console.log('🔍 FULL REQUEST DETAILS:', {
-        method: 'PUT',
-        url: endpoint,
-        body: data,
-        timestamp: new Date().toISOString()
-      });
       
       // Prepare update data according to FastAPI schema - ensure all numbers are integers
       const updateData = {
@@ -101,7 +105,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       console.info('[CRUD SUCCESS]', {
         action: 'UPDATE',
         diamondId: numericId,
-        userId: user?.id || 'NO_USER',
+        userId: user.id,
         stockNumber: data.stockNumber,
         response: response.data
       });
@@ -118,7 +122,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       console.error('[CRUD FAIL]', {
         action: 'UPDATE',
         diamondId: numericId,
-        userId: user?.id || 'NO_USER',
+        userId: user.id,
         stockNumber: data.stockNumber,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
@@ -131,7 +135,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
 Action: UPDATE
 Diamond ID: ${numericId}
 Stock: ${data.stockNumber}
-User ID: ${user?.id || 'NO_USER'}
+User ID: ${user.id}
 Error: ${errorMessage}
 ${error instanceof Error && error.stack ? `\nStack: ${error.stack.substring(0, 200)}` : ''}
       `.trim();

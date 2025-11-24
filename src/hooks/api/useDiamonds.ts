@@ -218,79 +218,22 @@ export function useUpdateDiamond() {
       data: any;
       userId: number;
     }) => {
-      console.log('🚀 UPDATE MUTATION STARTED');
-      console.log('📋 Mutation Input:', { diamondId, userId, hasData: !!data });
-      
       // Check JWT token before making request
       const token = getBackendAuthToken();
-      const tokenInfo = {
+      console.log('🔐 UPDATE: JWT Status:', {
         exists: !!token,
-        tokenPreview: token ? `${token.substring(0, 30)}...${token.substring(token.length - 10)}` : '❌ MISSING',
-        tokenLength: token ? token.length : 0,
+        tokenPreview: token ? `${token.substring(0, 20)}...` : 'MISSING',
         diamondId,
         stockNumber: data.stockNumber || data.stock_number,
-        userId,
-        timestamp: new Date().toISOString(),
-        telegramContext: {
-          hasWebApp: !!(window as any).Telegram?.WebApp,
-          hasInitData: !!(window as any).Telegram?.WebApp?.initData,
-          initDataLength: (window as any).Telegram?.WebApp?.initData?.length || 0
-        }
-      };
-      
-      console.log('🔐 UPDATE: JWT Status:', tokenInfo);
-      console.log('🔐 JWT Full Details:', {
-        localStorage_jwt: localStorage.getItem('jwt_token') ? 'EXISTS' : 'MISSING',
-        token_first_20: token?.substring(0, 20),
-        token_last_10: token?.substring(token.length - 10)
+        userId
       });
 
       if (!token) {
-        const authErrorMsg = `
-╔═══════════════════════════════════════════════════════════════╗
-║                   ⛔ AUTHENTICATION FAILED                    ║
-╚═══════════════════════════════════════════════════════════════╝
-
-❌ JWT Token Status: MISSING
-
-🔍 What This Means:
-   You are not authenticated with the backend server. 
-   The update request cannot proceed without a valid JWT token.
-
-📊 Environment Info:
-   - User ID: ${userId}
-   - Diamond ID: ${diamondId}
-   - Stock Number: ${data.stockNumber || data.stock_number || 'N/A'}
-   - Telegram WebApp: ${tokenInfo.telegramContext.hasWebApp ? '✅' : '❌'}
-   - Telegram InitData: ${tokenInfo.telegramContext.hasInitData ? '✅' : '❌'}
-   - InitData Length: ${tokenInfo.telegramContext.initDataLength} chars
-   - Timestamp: ${new Date().toISOString()}
-
-💡 How To Fix:
-   1. Close the Telegram Mini App completely
-   2. Reopen from Telegram (not browser)
-   3. Wait for authentication to complete
-   4. Try updating the diamond again
-
-🔧 Technical Details:
-   - JWT Token in localStorage: ${localStorage.getItem('jwt_token') ? 'EXISTS' : 'MISSING'}
-   - getBackendAuthToken() returned: ${token === null ? 'null' : token === undefined ? 'undefined' : 'empty string'}
-   
-If this persists, contact support with this timestamp: ${new Date().toISOString()}
-        `.trim();
-        
-        console.error('⛔ JWT MISSING - FULL AUTH ERROR:');
-        console.error(authErrorMsg);
-        alert(authErrorMsg);
         throw new Error('JWT token missing - authentication required for updating diamonds');
       }
 
-      console.log('✅ JWT Token validated, proceeding with update');
       console.log('✏️ Updating diamond:', diamondId);
-      
       const transformedData = transformToFastAPIUpdate(data);
-      console.log('📤 Transformed data ready:', Object.keys(transformedData));
-      
       return diamondsApi.updateDiamond(diamondId, transformedData);
     },
     onMutate: async ({ diamondId, data, userId }) => {
@@ -337,145 +280,46 @@ If this persists, contact support with this timestamp: ${new Date().toISOString(
         queryClient.setQueryData(diamondKeys.list(variables.userId), context.previousDiamonds);
       }
       
-      // Extract comprehensive error information from enhanced error object
-      const httpError = error as any;
+      // Show detailed error information including authentication details
       const transformedData = transformToFastAPIUpdate(variables.data);
-      
-      // Use enhanced error properties if available
-      const requestUrl = httpError.url || `${API_BASE_URL}${apiEndpoints.updateDiamond(variables.diamondId)}`;
-      const requestMethod = httpError.method || 'PUT';
-      const requestBody = httpError.requestBody || JSON.stringify(transformedData);
-      const statusCode = httpError.status || 'N/A';
-      const statusText = httpError.statusText || '';
-      const serverResponse = httpError.data || httpError.response || 'N/A';
+      const requestUrl = `${API_BASE_URL}${apiEndpoints.updateDiamond(variables.diamondId)}`;
       const token = getBackendAuthToken();
       
-      // Safe stringify helper
-      const safeStringify = (obj: any, indent = 2): string => {
-        const seen = new WeakSet();
-        return JSON.stringify(obj, (key, value) => {
-          if (typeof value === 'object' && value !== null) {
-            if (seen.has(value)) return '[Circular]';
-            seen.add(value);
-          }
-          return value;
-        }, indent);
-      };
+      const errorMessage = typeof error === 'object' 
+        ? JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
+        : String(error);
       
-      // Extract detailed error information
-      let errorMessage = httpError.message || 'Unknown error';
-      let errorCode = httpError.code || 'N/A';
-      let errorHint = '';
-      let errorDetails = '';
-      let errorStack = httpError.stack || 'No stack trace';
-      let serverResponseStr = 'N/A';
-      
-      // Format server response
-      try {
-        serverResponseStr = typeof serverResponse === 'object' 
-          ? safeStringify(serverResponse)
-          : String(serverResponse);
-          
-        // Extract FastAPI validation errors
-        if (serverResponse?.detail) {
-          if (Array.isArray(serverResponse.detail)) {
-            errorDetails = serverResponse.detail.map((d: any) => 
-              `- ${d.loc?.join('.')} : ${d.msg}`
-            ).join('\n');
-          } else {
-            errorDetails = String(serverResponse.detail);
-          }
-        }
-      } catch (e) {
-        serverResponseStr = String(serverResponse);
-      }
-      
-      // Add hints based on status code
-      const statusNum = typeof statusCode === 'number' ? statusCode : parseInt(String(statusCode), 10);
-      
-      if (statusNum === 401) {
-        errorHint = '🔐 Authentication failed - JWT token may be invalid or expired';
-      } else if (statusNum === 403) {
-        errorHint = '🚫 Permission denied - user may not have access to this diamond';
-      } else if (statusNum === 404) {
-        errorHint = '🔍 Diamond not found - ID may be incorrect or diamond was deleted';
-      } else if (statusNum === 422) {
-        errorHint = '⚠️ Validation error - check request body format and field types';
-      } else if (statusNum === 500) {
-        errorHint = '💥 Server error - backend may have crashed or database issue';
-      }
-      
-      // Build comprehensive debug info
-      const debugInfo = `
-╔═══════════════════════════════════════════════════════════════╗
-║           ❌ DIAMOND UPDATE FAILED - FULL DEBUG INFO          ║
-╚═══════════════════════════════════════════════════════════════╝
+      const errorDetails = `
+Diamond ID: ${variables.diamondId}
+Stock: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
+User ID: ${variables.userId}
 
-📍 REQUEST DETAILS:
-   URL: ${requestUrl}
-   Method: ${requestMethod}
-   Diamond ID: ${variables.diamondId}
-   Stock Number: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
-   User ID: ${variables.userId}
-   Timestamp: ${httpError.timestamp || new Date().toISOString()}
+🔐 Authentication:
+- JWT Token: ${token ? 'PRESENT' : '❌ MISSING'}
+- Token Preview: ${token ? token.substring(0, 20) + '...' : 'N/A'}
 
-🔐 AUTHENTICATION:
-   JWT Token Present: ${token ? '✅ YES' : '❌ NO'}
-   Token Preview: ${token ? token.substring(0, 30) + '...' : 'MISSING'}
-   Token Length: ${token ? token.length : 0} chars
+Request URL: ${requestUrl}
+Method: PUT
 
-📤 REQUEST BODY SENT TO SERVER:
-${requestBody}
+Body: 
+${JSON.stringify(transformedData, null, 2)}
 
-📥 SERVER RESPONSE:
-   HTTP Status: ${statusCode} ${statusText}
-   Error Code: ${errorCode}
-   
-   Response Body:
-${serverResponseStr}
+Error Details:
+${errorMessage}
 
-❌ ERROR DETAILS:
-   Message: ${errorMessage}
-   ${errorHint ? `Hint: ${errorHint}` : ''}
-   ${errorDetails ? `\nValidation Errors:\n${errorDetails}` : ''}
-
-📋 ORIGINAL DATA (Before transformation):
-${safeStringify(variables.data)}
-
-🔍 ERROR STACK TRACE:
-${errorStack}
-
-💡 TROUBLESHOOTING TIPS:
-${statusNum === 401 ? 
-  '✓ Close and reopen the app from Telegram to refresh JWT\n✓ Check if user is still authenticated' : ''}
-${statusNum === 422 ? 
-  '✓ Verify all required fields are present\n✓ Check field types match backend schema\n✓ Ensure enums match exact values (case-sensitive)' : ''}
-${statusNum === 404 ? 
-  '✓ Verify diamond ID is correct\n✓ Check if diamond still exists in database' : ''}
-${statusNum === 500 ?
-  '✓ Check Supabase edge function logs\n✓ Verify FastAPI server is running\n✓ Check database connection' : ''}
-
-📊 WHERE TO FIND MORE INFO:
-   - Edge Function Logs: https://supabase.com/dashboard/project/uhhljqgxhdhbbhpohxll/functions
-   - FastAPI Health: ${API_BASE_URL}/api/v1/alive
-   - Request Timestamp: ${httpError.timestamp || new Date().toISOString()}
+Original Data:
+${JSON.stringify(variables.data, null, 2).substring(0, 300)}
       `.trim();
       
-      // Log full debug info to console
-      console.error('═══ FULL UPDATE ERROR DEBUG ═══');
-      console.error(debugInfo);
-      console.error('═══ END DEBUG ═══');
-      
-      // Show shorter toast
       toast({
         title: '❌ שגיאה בעדכון יהלום',
-        description: `Status ${statusCode}: ${errorMessage.substring(0, 100)}`,
+        description: errorDetails,
         variant: 'destructive',
         duration: 10000,
       });
       
-      // Show full debug info in alert
-      alert(debugInfo);
+      // Also alert for visibility
+      alert(`❌ UPDATE DIAMOND FAILED\n\n${errorDetails}`);
     },
   });
 }

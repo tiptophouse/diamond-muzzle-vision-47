@@ -54,7 +54,7 @@ export function MeasurementsFormSection({ register, watch, errors }: Measurement
 
         <DiamondInputField
           id="ratio"
-          label="יחס *"
+          label="יחס"
           type="number"
           step="0.01"
           placeholder="0.00"

@@ -180,101 +180,44 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
     
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      let serverResponseBody: any = null;
       
       try {
-        serverResponseBody = await response.json();
-        errorMessage = serverResponseBody.detail || serverResponseBody.message || errorMessage;
-        console.error('❌ HTTP: Server error response:', serverResponseBody);
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+        console.error('❌ HTTP: Server error response:', errorData);
       } catch {
         const errorText = await response.text();
-        serverResponseBody = errorText;
         errorMessage = errorText || errorMessage;
         console.error('❌ HTTP: Server error text:', errorText);
       }
       
-      // Handle 401 Unauthorized - Session expired or invalid
+      // Handle 401 Unauthorized - Session expired
       if (response.status === 401 && !endpoint.includes('/api/v1/sign-in/')) {
-        console.error('❌ HTTP: 401 Unauthorized - JWT token invalid or expired');
-        console.error('❌ HTTP: Current token exists:', !!token);
-        
-        // CRITICAL: Clear the invalid token from BOTH memory and storage
-        const { clearBackendAuthToken } = await import('@/lib/api/auth');
-        clearBackendAuthToken();
-        
-        try {
-          localStorage.removeItem('backend_auth_token');
-          console.log('✅ HTTP: Cleared invalid token from storage');
-        } catch (e) {
-          console.error('❌ HTTP: Failed to clear auth token from storage:', e);
-        }
-        
-        // Try to re-authenticate ONCE using Telegram initData
-        console.log('🔄 HTTP: Attempting automatic re-authentication...');
-        const tg = (window as any).Telegram?.WebApp;
-        
-        if (tg?.initData) {
-          try {
-            const { signInToBackend } = await import('@/lib/api/auth');
-            const newToken = await signInToBackend(tg.initData);
-            
-            if (newToken) {
-              console.log('✅ HTTP: Re-authentication successful! Retrying original request...');
-              
-              // Retry the original request with new token
-              const retryConfig: RequestInit = {
-                ...config,
-                headers: {
-                  ...config.headers,
-                  "Authorization": `Bearer ${newToken}`,
-                },
-              };
-              
-              const retryController = new AbortController();
-              const retryTimeoutId = setTimeout(() => retryController.abort(), 10000);
-              
-              try {
-                const retryResponse = await fetch(fullUrl, {
-                  ...retryConfig,
-                  signal: retryController.signal,
-                });
-                clearTimeout(retryTimeoutId);
-                
-                if (retryResponse.ok) {
-                  console.log('✅ HTTP: Retry succeeded after re-authentication');
-                  const retryData = await retryResponse.json();
-                  return retryData;
-                }
-              } finally {
-                clearTimeout(retryTimeoutId);
-              }
-            } else {
-              console.error('❌ HTTP: Re-authentication failed - no token returned');
-            }
-          } catch (reAuthError) {
-            console.error('❌ HTTP: Re-authentication error:', reAuthError);
-          }
-        } else {
-          console.error('❌ HTTP: Cannot re-authenticate - no Telegram initData available');
-        }
-        
-        // If re-authentication failed, show error and throw
-        const errorMsg = '🔐 JWT Token Invalid/Expired\n\n' +
-          'The authentication token is invalid or has expired.\n\n' +
-          `Endpoint: ${endpoint}\n` +
-          `Token exists: ${!!token}\n` +
-          `Telegram context: ${tg?.initData ? 'Available' : 'Missing'}\n\n` +
-          'Please close and reopen the app from Telegram.';
-        
+        const isTelegram = typeof window !== 'undefined' && (window as any).Telegram?.WebApp;
         toast({
-          title: "🔐 Authentication Failed",
-          description: "אימות נכשל. אנא סגור ופתח מחדש את האפליקציה מטלגרם",
+          title: "🔐 Session Expired",
+          description: "אנא התחבר מחדש | Please sign in again",
           variant: "destructive",
-          duration: 10000,
+          duration: 7000,
         });
         
-        alert(errorMsg);
-        throw new Error(errorMsg);
+        // Clear the invalid token (attempt to clear from localStorage)
+        try {
+          localStorage.removeItem('backend_auth_token');
+        } catch (e) {
+          console.error('Failed to clear auth token:', e);
+        }
+        
+        // In Telegram Mini App, avoid hard reload which looks like a crash
+        if (!isTelegram) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else {
+          console.warn('Skipping auto-reload inside Telegram WebApp after 401');
+        }
+        
+        throw new Error('Session expired');
       }
       
       // Show specific error messages for different operations
@@ -308,29 +251,7 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
         });
       }
       
-      // Create enhanced error with full HTTP details
-      const enhancedError: any = new Error(errorMessage);
-      enhancedError.status = response.status;
-      enhancedError.statusText = response.statusText;
-      enhancedError.data = serverResponseBody;
-      enhancedError.response = serverResponseBody;
-      enhancedError.url = fullUrl;
-      enhancedError.method = method;
-      enhancedError.endpoint = endpoint;
-      enhancedError.requestBody = options.body;
-      enhancedError.timestamp = new Date().toISOString();
-      
-      // Log full error details for debugging
-      console.error('❌ HTTP: Throwing enhanced error:', {
-        status: enhancedError.status,
-        statusText: enhancedError.statusText,
-        url: enhancedError.url,
-        method: enhancedError.method,
-        serverResponse: enhancedError.data,
-        requestBody: enhancedError.requestBody
-      });
-      
-      throw enhancedError;
+      throw new Error(errorMessage);
     }
     
     const contentType = response.headers.get('content-type') || '';

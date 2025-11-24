@@ -51,29 +51,6 @@ function DiamondDetailPage() {
     return diamonds.find(d => d.stockNumber === diamondId) || null;
   }, [diamonds, diamondId]);
 
-  // Handle successful auction creation (defined after diamond)
-  const handleAuctionSuccess = useCallback((auctionId: string) => {
-    console.log('✅ Auction created successfully with ID:', auctionId);
-    
-    // Show success message
-    toast({
-      title: '🎉 המכרז נוצר בהצלחה!',
-      description: `מכרז עבור יהלום ${diamond?.stockNumber || diamondId} נוצר ושותף בהצלחה`,
-      duration: 5000,
-    });
-    
-    // Haptic success feedback
-    try {
-      const tg = (window as any).Telegram?.WebApp;
-      tg?.HapticFeedback?.notificationOccurred('success');
-    } catch (e) {
-      console.error('Failed to trigger haptic feedback:', e);
-    }
-    
-    // Close modal
-    setShowAuctionModal(false);
-  }, [diamond?.stockNumber, diamondId, toast]);
-
   // Memoized price formatting to avoid recreation
   const formatPrice = useCallback((price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -591,10 +568,7 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
         <ErrorBoundary>
           <CreateAuctionModal
             open={showAuctionModal}
-            onOpenChange={(open) => {
-              console.log('🔄 Auction modal onOpenChange:', open);
-              setShowAuctionModal(open);
-            }}
+            onOpenChange={setShowAuctionModal}
             stockNumber={diamond.stockNumber}
             diamondName={`${diamond.carat}ct ${diamond.shape}`}
             diamond={{
@@ -607,7 +581,6 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
               price: diamond.price,
               picture: diamond.picture,
             }}
-            onSuccess={handleAuctionSuccess}
           />
         </ErrorBoundary>
       </div>

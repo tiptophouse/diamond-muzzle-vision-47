@@ -72,22 +72,7 @@ export async function createAuction(
   if (error) {
     console.error('❌ Failed to create auction with diamond snapshot:', error);
     console.error('❌ Error details:', JSON.stringify(error, null, 2));
-    console.error('❌ Full error object:', {
-      message: error.message,
-      hint: error.hint,
-      details: error.details,
-      code: error.code
-    });
-    
-    // Create detailed error with all available info
-    const errorDetails = [
-      `Message: ${error.message}`,
-      error.hint ? `Hint: ${error.hint}` : null,
-      error.details ? `Details: ${error.details}` : null,
-      error.code ? `Code: ${error.code}` : null
-    ].filter(Boolean).join('\n');
-    
-    throw new Error(`Auction creation failed:\n${errorDetails}`);
+    throw new Error(`Auction creation failed: ${error.message}`);
   }
   
   if (!data) {

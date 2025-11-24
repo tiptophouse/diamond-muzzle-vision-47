@@ -80,47 +80,13 @@ export function useAuctionViralMechanics() {
           });
 
           if (error) {
-            const errorDetails = {
-              message: error.message,
-              context: error.context,
-              name: error.name,
-              status: error.status,
-              details: error.details,
-              hint: error.hint,
-              code: error.code,
-              fullError: JSON.stringify(error, null, 2)
-            };
-            console.error(`❌ Failed to share to group ${groupId}:`, errorDetails);
-            
-            // Store detailed error for alert
-            (window as any).lastAuctionShareError = {
-              groupId,
-              auctionId: options.auctionId,
-              error: errorDetails,
-              timestamp: new Date().toISOString()
-            };
-            
+            console.error(`❌ Failed to share to group ${groupId}:`, error);
+            console.error(`❌ Error details:`, JSON.stringify(error, null, 2));
             return false;
           }
           
           if (!data?.success) {
-            const dataError = {
-              data: JSON.stringify(data, null, 2),
-              hasSuccess: 'success' in data,
-              successValue: data?.success,
-              error: data?.error,
-              message: data?.message
-            };
-            console.error(`❌ Sharing unsuccessful for group ${groupId}:`, dataError);
-            
-            // Store detailed data error for alert
-            (window as any).lastAuctionShareError = {
-              groupId,
-              auctionId: options.auctionId,
-              responseData: dataError,
-              timestamp: new Date().toISOString()
-            };
-            
+            console.error(`❌ Sharing unsuccessful for group ${groupId}:`, data);
             return false;
           }
 
@@ -160,13 +126,8 @@ export function useAuctionViralMechanics() {
 
         return true;
       } else {
-        const lastError = (window as any).lastAuctionShareError;
         console.error('❌ Failed to share to ANY groups');
-        console.error('❌ Last error details:', lastError);
-        
-        const errorMsg = lastError?.error?.message || lastError?.responseData?.error || 
-                        `Failed to share to any of ${targetGroups.length} groups`;
-        throw new Error(errorMsg);
+        throw new Error(`Failed to share to any of ${targetGroups.length} groups`);
       }
     } catch (error) {
       console.error('❌ Viral sharing FAILED:', error);

@@ -139,67 +139,13 @@ export function CreateAuctionModal({
 
       if (!sharedSuccessfully) {
         console.error('⚠️ Sharing to groups failed but auction was created');
-        
-        // Get detailed error from window storage
-        const lastError = (window as any).lastAuctionShareError;
-        
-        const errorDetails = lastError ? `
-📍 GROUP ID: ${lastError.groupId}
-📍 AUCTION ID: ${lastError.auctionId}
-⏰ TIMESTAMP: ${lastError.timestamp}
-
-${lastError.error ? `
-🔴 EDGE FUNCTION ERROR:
-Message: ${lastError.error.message || 'Unknown'}
-Status: ${lastError.error.status || 'N/A'}
-Code: ${lastError.error.code || 'N/A'}
-Details: ${lastError.error.details || 'N/A'}
-Hint: ${lastError.error.hint || 'N/A'}
-
-Full Error:
-${lastError.error.fullError}
-` : ''}
-
-${lastError.responseData ? `
-🔴 RESPONSE DATA ERROR:
-Success Value: ${lastError.responseData.successValue}
-Error: ${lastError.responseData.error || 'N/A'}
-Message: ${lastError.responseData.message || 'N/A'}
-
-Full Response:
-${lastError.responseData.data}
-` : ''}
-
-🔍 WHERE TO FIND LOGS IN SUPABASE:
-1. Go to: https://supabase.com/dashboard/project/uhhljqgxhdhbbhpohxll/functions/send-auction-message/logs
-2. Look for timestamp: ${lastError?.timestamp || 'recent'}
-3. Search for auction ID: ${auction.id}
-        `.trim() : 'No detailed error captured';
-        
-        const shareFailMsg = 'המכרז נוצר בהצלחה אך השיתוף לטלגרם נכשל. בדוק לוגים.';
-        
         toast({ 
           title: '⚠️ המכרז נוצר', 
-          description: shareFailMsg,
+          description: 'אך השיתוף לטלגרם נכשל. בדוק לוגים.',
           variant: 'default',
           duration: 5000,
         });
-        
-        // Show detailed alert
-        alert(`⚠️ שים לב: המכרז נוצר אך השיתוף נכשל
-
-מזהה מכרז: ${auction.id}
-
-${errorDetails}
-
-💡 TIP: העתק את הטקסט הזה ושלח למפתח לבדיקה.`);
-        
-        // Clear the error
-        (window as any).lastAuctionShareError = null;
-        
-        // Still close modal and call success - auction was created
-        onOpenChange(false);
-        onSuccess?.(auction.id);
+        // Don't close modal on sharing failure - let user retry
         return;
       }
 
@@ -219,51 +165,18 @@ ${errorDetails}
         message: error?.message,
         stack: error?.stack,
         response: error?.response,
-        data: error?.response?.data,
-        code: error?.code,
-        hint: error?.hint,
-        details: error?.details
+        code: error?.code
       });
       
       hapticFeedback.notification('error');
       
-      // Build detailed error message for user
-      let errorMsg = error?.message || 'לא ניתן ליצור מכרז כרגע';
-      let debugInfo = '';
-      
-      if (error?.hint) {
-        debugInfo += `\nHint: ${error.hint}`;
-      }
-      if (error?.details) {
-        debugInfo += `\nDetails: ${error.details}`;
-      }
-      if (error?.code) {
-        debugInfo += `\nCode: ${error.code}`;
-      }
-      
-      const fullError = `${errorMsg}${debugInfo}`;
-      
-      // Show detailed error in toast
+      const errorMsg = error?.message || 'לא ניתן ליצור מכרז כרגע';
       toast({ 
         title: 'שגיאה ביצירת מכרז', 
-        description: fullError, 
-        variant: 'destructive',
-        duration: 10000 // Longer duration for debugging
+        description: errorMsg, 
+        variant: 'destructive' 
       });
-      
-      // Show alert with full debug info
-      alert(`❌ שגיאה ביצירת מכרז:\n\n${fullError}\n\nבדוק את הקונסול לפרטים נוספים`);
-      
-      // Log to console for easy copy-paste
-      console.error('=== COPY THIS ERROR INFO ===');
-      console.error(JSON.stringify({
-        error: errorMsg,
-        hint: error?.hint,
-        details: error?.details,
-        code: error?.code,
-        stack: error?.stack
-      }, null, 2));
-      console.error('=========================');
+      alert(`שגיאה: ${errorMsg}`); // Backup alert
     } finally {
       console.log('🏁 Auction creation flow finished');
       setIsSubmitting(false);

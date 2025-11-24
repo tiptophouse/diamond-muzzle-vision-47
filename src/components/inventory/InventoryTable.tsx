@@ -26,7 +26,6 @@ export interface Diamond {
   fluorescence?: string;
   polish?: string;
   symmetry?: string;
-  ratio?: number;
   imageUrl?: string;
   gem360Url?: string;
   store_visible: boolean;
