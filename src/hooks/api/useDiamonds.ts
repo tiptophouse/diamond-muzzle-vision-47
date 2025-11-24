@@ -9,6 +9,7 @@ import * as diamondsApi from '@/api/diamonds';
 import { apiEndpoints } from '@/lib/api/endpoints';
 import { http } from '@/api/http';
 import { transformToFastAPICreate, transformToFastAPIUpdate } from '@/api/diamondTransformers';
+import { API_BASE_URL } from '@/lib/api/config';
 
 // Query keys
 export const diamondKeys = {
@@ -95,11 +96,27 @@ export function useCreateDiamond() {
         queryClient.setQueryData(diamondKeys.list(variables.userId), context.previousDiamonds);
       }
       
+      // Show detailed error information including request details
+      const transformedData = transformToFastAPICreate(variables.data);
+      const requestUrl = `${API_BASE_URL}${apiEndpoints.addDiamond()}`;
+      const errorDetails = `
+Stock: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
+Request URL: ${requestUrl}
+Method: POST
+Body: ${JSON.stringify(transformedData, null, 2).substring(0, 500)}
+Error: ${error.message || error.name || 'Unknown error'}
+${error.stack ? `\nStack: ${error.stack.substring(0, 200)}` : ''}
+      `.trim();
+      
       toast({
         title: '❌ שגיאה בהוספת יהלום',
-        description: error.message || 'אנא נסה שוב',
+        description: errorDetails,
         variant: 'destructive',
+        duration: 10000,
       });
+      
+      // Also alert for visibility
+      alert(`❌ CREATE DIAMOND FAILED\n\n${errorDetails}`);
     },
   });
 }
