@@ -224,39 +224,6 @@ async function handleBidCallback(
       },
     });
 
-    // Step 8.5: CHECK FOR BID WAR MODE (3+ bids in 5 minutes = extend by 10 mins)
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const { data: recentBidsForWar } = await supabase
-      .from('auction_bids')
-      .select('id')
-      .eq('auction_id', auctionId)
-      .gte('created_at', fiveMinutesAgo.toISOString());
-
-    if (recentBidsForWar && recentBidsForWar.length >= 3) {
-      // BID WAR MODE ACTIVATED! 🔥
-      const currentEndTime = new Date(auction.ends_at);
-      const newEndTime = new Date(currentEndTime.getTime() + 10 * 60 * 1000);
-      
-      await supabase
-        .from('auctions')
-        .update({ ends_at: newEndTime.toISOString() })
-        .eq('id', auctionId);
-
-      await supabase.from('auction_analytics').insert({
-        auction_id: auctionId,
-        telegram_id: from.id,
-        event_type: 'bid_war_activated',
-        event_data: {
-          recent_bids_count: recentBidsForWar.length,
-          extension_minutes: 10,
-          new_end_time: newEndTime.toISOString(),
-          timestamp: new Date().toISOString(),
-        },
-      });
-
-      console.log('🔥 BID WAR MODE ACTIVATED - Extended auction by 10 minutes');
-    }
-
     // Step 9: Answer callback query
     await answerCallbackQuery(id, `✅ הצעה התקבלה! $${nextBidAmount}`, false);
 

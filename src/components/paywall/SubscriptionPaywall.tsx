@@ -2,9 +2,8 @@ import { ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Lock, CreditCard, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Loader2, Lock, CreditCard, CheckCircle, XCircle } from 'lucide-react';
 import { useSubscriptionPaywall } from '@/hooks/useSubscriptionPaywall';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 interface SubscriptionPaywallProps {
   children: ReactNode;
@@ -12,17 +11,9 @@ interface SubscriptionPaywallProps {
 }
 
 export function SubscriptionPaywall({ children, loadingFallback }: SubscriptionPaywallProps) {
-  const { subscriptionStatus, isLoading, isBlocked, requestPaymentLink, refetch } = useSubscriptionPaywall();
-  const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const { subscriptionStatus, isLoading, isBlocked, requestPaymentLink } = useSubscriptionPaywall();
 
-  // Admin bypass - admins always get access
-  if (isAdmin) {
-    console.log('👑 Admin user detected, bypassing paywall');
-    return <>{children}</>;
-  }
-
-  // Show loading state
-  if (isLoading || adminLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
         {loadingFallback || (
@@ -35,7 +26,6 @@ export function SubscriptionPaywall({ children, loadingFallback }: SubscriptionP
     );
   }
 
-  // Only block if explicitly no subscription
   if (isBlocked) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
@@ -79,16 +69,6 @@ export function SubscriptionPaywall({ children, loadingFallback }: SubscriptionP
               >
                 <CreditCard className="h-5 w-5 mr-2" />
                 Get Payment Link via Telegram
-              </Button>
-              
-              <Button
-                onClick={refetch}
-                variant="outline"
-                className="w-full"
-                size="lg"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry Subscription Check
               </Button>
               
               <p className="text-xs text-center text-muted-foreground">

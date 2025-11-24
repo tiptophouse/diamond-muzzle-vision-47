@@ -18,7 +18,6 @@ import { UniversalImageHandler } from "@/components/store/UniversalImageHandler"
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 function DiamondDetailPage() {
   const { stockNumber: diamondId } = useParams<{ stockNumber: string }>();
@@ -564,25 +563,23 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
           </div>
         </div>
         
-        {/* Auction Modal - Moved outside nested structure with Error Boundary */}
-        <ErrorBoundary>
-          <CreateAuctionModal
-            open={showAuctionModal}
-            onOpenChange={setShowAuctionModal}
-            stockNumber={diamond.stockNumber}
-            diamondName={`${diamond.carat}ct ${diamond.shape}`}
-            diamond={{
-              stockNumber: diamond.stockNumber,
-              carat: diamond.carat,
-              shape: diamond.shape,
-              color: diamond.color,
-              clarity: diamond.clarity,
-              cut: diamond.cut,
-              price: diamond.price,
-              picture: diamond.picture,
-            }}
-          />
-        </ErrorBoundary>
+        {/* Auction Modal - Moved outside nested structure */}
+        <CreateAuctionModal
+          open={showAuctionModal}
+          onOpenChange={setShowAuctionModal}
+          stockNumber={diamond.stockNumber}
+          diamondName={`${diamond.carat}ct ${diamond.shape}`}
+          diamond={{
+            stockNumber: diamond.stockNumber,
+            carat: diamond.carat,
+            shape: diamond.shape,
+            color: diamond.color,
+            clarity: diamond.clarity,
+            cut: diamond.cut,
+            price: diamond.price,
+            picture: diamond.picture,
+          }}
+        />
       </div>
     </>
   );

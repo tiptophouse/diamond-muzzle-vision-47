@@ -582,7 +582,15 @@ export type Database = {
           updated_at?: string
           winner_telegram_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_auction_diamond"
+            columns: ["stock_number"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["stock_number"]
+          },
+        ]
       }
       auth_debug_logs: {
         Row: {
@@ -3105,35 +3113,6 @@ export type Database = {
         Returns: boolean
       }
       clean_expired_cache: { Args: never; Returns: undefined }
-      create_auction_with_context: {
-        Args: {
-          p_currency: string
-          p_diamond_certificate_number?: number
-          p_diamond_certificate_url?: string
-          p_diamond_clarity: string
-          p_diamond_color: string
-          p_diamond_cut: string
-          p_diamond_depth_percentage?: number
-          p_diamond_fluorescence?: string
-          p_diamond_lab?: string
-          p_diamond_measurements?: string
-          p_diamond_picture?: string
-          p_diamond_polish?: string
-          p_diamond_price_per_carat?: number
-          p_diamond_shape: string
-          p_diamond_symmetry?: string
-          p_diamond_table_percentage?: number
-          p_diamond_total_price?: number
-          p_diamond_video_url?: string
-          p_diamond_weight: number
-          p_ends_at: string
-          p_min_increment: number
-          p_seller_telegram_id: number
-          p_starting_price: number
-          p_stock_number: string
-        }
-        Returns: Json
-      }
       delete_diamond: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean

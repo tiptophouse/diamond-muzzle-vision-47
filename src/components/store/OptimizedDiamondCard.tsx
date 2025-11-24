@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useSecureDiamondSharing } from "@/hooks/useSecureDiamondSharing";
-import { useEnhancedDiamondSharing } from "@/hooks/useEnhancedDiamondSharing";
 import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
 import { P2PShareButton } from "./P2PShareButton";
 import { toast } from 'sonner';
@@ -37,7 +36,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   const [isVisible, setIsVisible] = useState(false);
   const { impactOccurred } = useTelegramHapticFeedback();
   const { shareWithInlineButtons, trackShareClick, isAvailable: shareAvailable } = useSecureDiamondSharing();
-  const { shareToStory, hasStorySharing, isSharing: isStorySharing } = useEnhancedDiamondSharing();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -404,33 +402,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             className="flex-1"
             variant="default"
           />
-          {hasStorySharing && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 h-8 text-xs border-purple-200 text-purple-700 hover:bg-purple-50"
-              onClick={async () => {
-                impactOccurred('medium');
-                await shareToStory({
-                  id: diamond.id,
-                  stockNumber: diamond.stockNumber,
-                  carat: diamond.carat,
-                  shape: diamond.shape,
-                  color: diamond.color,
-                  clarity: diamond.clarity,
-                  cut: diamond.cut || '',
-                  price: diamond.price,
-                  imageUrl: diamond.imageUrl,
-                  gem360Url: diamond.gem360Url,
-                  picture: diamond.picture
-                });
-              }}
-              disabled={isStorySharing}
-            >
-              <Sparkles className="h-3 w-3 mr-1" />
-              Story
-            </Button>
-          )}
         </div>
       </div>
     </div>

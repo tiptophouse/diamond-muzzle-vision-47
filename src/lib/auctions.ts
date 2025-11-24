@@ -1,88 +1,97 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { AuctionSchema, AuctionBidSchema, AuctionCreateRequest } from '@/types/fastapi-models';
 
-export interface DiamondSnapshot {
-  stock_number: string;
-  shape: string;
-  weight: number;
-  color: string;
-  clarity: string;
-  cut: string;
-  polish?: string;
-  symmetry?: string;
-  fluorescence?: string;
-  measurements?: string;
-  table_percentage?: number;
-  depth_percentage?: number;
-  certificate_number?: number;
-  lab?: string;
-  picture?: string;
-  certificate_url?: string;
-  video_url?: string;
-  price_per_carat?: number;
-  total_price?: number;
-}
-
 export async function createAuction(
-  request: AuctionCreateRequest & { 
-    seller_telegram_id: number;
-    diamond_snapshot: DiamondSnapshot;
-  }
+  request: AuctionCreateRequest & { seller_telegram_id: number }
 ): Promise<AuctionSchema> {
   console.log('🔵 createAuction STARTED with:', request);
   
   const endsAt = new Date();
   endsAt.setHours(endsAt.getHours() + request.duration_hours);
 
-  const snapshot = request.diamond_snapshot;
-  console.log('💎 Using provided diamond snapshot:', snapshot.stock_number);
-
-  // Create auction with diamond snapshot in single atomic RPC call
-  console.log('📡 Creating auction with diamond snapshot (atomic transaction)...');
-  const { data, error } = await (supabase as any).rpc('create_auction_with_context', {
-    // Auction parameters
-    p_stock_number: request.stock_number,
-    p_starting_price: request.starting_price,
-    p_min_increment: request.min_increment,
-    p_currency: request.currency || 'USD',
-    p_ends_at: endsAt.toISOString(),
-    p_seller_telegram_id: request.seller_telegram_id,
-    
-    // Diamond snapshot parameters
-    p_diamond_shape: snapshot.shape,
-    p_diamond_weight: snapshot.weight,
-    p_diamond_color: snapshot.color,
-    p_diamond_clarity: snapshot.clarity,
-    p_diamond_cut: snapshot.cut,
-    p_diamond_polish: snapshot.polish,
-    p_diamond_symmetry: snapshot.symmetry,
-    p_diamond_fluorescence: snapshot.fluorescence,
-    p_diamond_measurements: snapshot.measurements,
-    p_diamond_table_percentage: snapshot.table_percentage,
-    p_diamond_depth_percentage: snapshot.depth_percentage,
-    p_diamond_certificate_number: snapshot.certificate_number,
-    p_diamond_lab: snapshot.lab,
-    p_diamond_picture: snapshot.picture,
-    p_diamond_certificate_url: snapshot.certificate_url,
-    p_diamond_video_url: snapshot.video_url,
-    p_diamond_price_per_carat: snapshot.price_per_carat,
-    p_diamond_total_price: snapshot.total_price || (snapshot.price_per_carat || 0) * snapshot.weight,
+  console.log('📡 Setting user context for RLS...');
+  // Set user context for RLS
+  const { error: contextError } = await supabase.rpc('set_user_context', {
+    telegram_id: request.seller_telegram_id
   });
 
+  if (contextError) {
+    console.error('❌ Failed to set user context:', contextError);
+    throw new Error(`Auth context failed: ${contextError.message}`);
+  }
+  console.log('✅ User context set');
+
+  // First, get the diamond details to store snapshot
+  console.log('📡 Fetching diamond from inventory...');
+  const { data: diamond, error: fetchError } = await supabase
+    .from('inventory' as any)
+    .select('*')
+    .eq('stock_number', request.stock_number)
+    .eq('user_id', request.seller_telegram_id)
+    .is('deleted_at', null)
+    .single();
+
+  if (fetchError || !diamond) {
+    console.error('❌ Diamond not found:', fetchError);
+    throw new Error('Diamond not found in your inventory');
+  }
+  
+  const diamondRecord = diamond as any;
+  console.log('✅ Diamond found:', diamondRecord.stock_number);
+
+  // Create auction
+  console.log('📡 Creating auction record...');
+  const { data, error } = await (supabase as any)
+    .from('auctions')
+    .insert([{
+      stock_number: request.stock_number,
+      starting_price: request.starting_price,
+      current_price: request.starting_price,
+      min_increment: request.min_increment,
+      currency: request.currency || 'USD',
+      ends_at: endsAt.toISOString(),
+      seller_telegram_id: request.seller_telegram_id,
+    }] as any)
+    .select()
+    .single();
+
   if (error) {
-    console.error('❌ Failed to create auction with diamond snapshot:', error);
-    console.error('❌ Error details:', JSON.stringify(error, null, 2));
+    console.error('❌ Failed to create auction:', error);
     throw new Error(`Auction creation failed: ${error.message}`);
   }
-  
-  if (!data) {
-    console.error('❌ No auction data returned from RPC');
-    throw new Error('No auction data returned');
+  console.log('✅ Auction record created:', data.id);
+
+  // Store diamond snapshot
+  const { error: diamondError } = await supabase
+    .from('auction_diamonds' as any)
+    .insert({
+      auction_id: data.id,
+      stock_number: diamondRecord.stock_number,
+      shape: diamondRecord.shape,
+      weight: diamondRecord.weight,
+      color: diamondRecord.color,
+      clarity: diamondRecord.clarity,
+      cut: diamondRecord.cut,
+      polish: diamondRecord.polish,
+      symmetry: diamondRecord.symmetry,
+      fluorescence: diamondRecord.fluorescence,
+      measurements: diamondRecord.measurements,
+      table_percentage: diamondRecord.table_percentage,
+      depth_percentage: diamondRecord.depth_percentage,
+      certificate_number: diamondRecord.certificate_number,
+      lab: diamondRecord.lab,
+      picture: diamondRecord.picture,
+      certificate_url: diamondRecord.certificate_url,
+      video_url: diamondRecord.video_url,
+      price_per_carat: diamondRecord.price_per_carat,
+      total_price: diamondRecord.price_per_carat * diamondRecord.weight,
+    });
+
+  if (diamondError) {
+    console.error('⚠️ Failed to store diamond snapshot:', diamondError);
   }
   
-  console.log('✅ Auction created successfully with diamond snapshot (atomic)');
-  console.log('📊 Auction details:', data);
-  
+  console.log('✅ Auction created successfully with diamond snapshot:', data);
   return data as any;
 }
 

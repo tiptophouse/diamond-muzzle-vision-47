@@ -11,14 +11,14 @@ export const apiEndpoints = {
     return url + (params.length ? `?${params.join('&')}` : '');
   },
   
-  // Create diamond - POST /api/v1/diamonds (user_id from JWT)
-  addDiamond: () => `/api/v1/diamonds`,
+  // Create diamond - POST /api/v1/add_stone (user_id from JWT)
+  addDiamond: () => `/api/v1/add_stone`,
   
   // Batch diamond upload - POST /api/v1/diamonds/batch (user_id from JWT)
   addDiamondsBatch: () => `/api/v1/diamonds/batch`,
   
-  // Update diamond - PUT /api/v1/diamonds/{diamond_id} (user_id from JWT)
-  updateDiamond: (diamondId: number) => `/api/v1/diamonds/${diamondId}`,
+  // Update diamond - PUT /api/v1/update_stone/{diamond_id} (user_id from JWT)
+  updateDiamond: (diamondId: number) => `/api/v1/update_stone/${diamondId}`,
   
   // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id} (user_id from JWT)
   deleteDiamond: (diamondId: number) => `/api/v1/delete_stone/${diamondId}`,
