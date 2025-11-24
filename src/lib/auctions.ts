@@ -1,8 +1,33 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { AuctionSchema, AuctionBidSchema, AuctionCreateRequest } from '@/types/fastapi-models';
 
+export interface DiamondSnapshot {
+  stock_number: string;
+  shape: string;
+  weight: number;
+  color: string;
+  clarity: string;
+  cut: string;
+  polish?: string;
+  symmetry?: string;
+  fluorescence?: string;
+  measurements?: string;
+  table_percentage?: number;
+  depth_percentage?: number;
+  certificate_number?: number;
+  lab?: string;
+  picture?: string;
+  certificate_url?: string;
+  video_url?: string;
+  price_per_carat?: number;
+  total_price?: number;
+}
+
 export async function createAuction(
-  request: AuctionCreateRequest & { seller_telegram_id: number }
+  request: AuctionCreateRequest & { 
+    seller_telegram_id: number;
+    diamond_snapshot: DiamondSnapshot;
+  }
 ): Promise<AuctionSchema> {
   console.log('🔵 createAuction STARTED with:', request);
   
@@ -20,24 +45,7 @@ export async function createAuction(
     throw new Error(`Auth context failed: ${contextError.message}`);
   }
   console.log('✅ User context set');
-
-  // First, get the diamond details to store snapshot
-  console.log('📡 Fetching diamond from inventory...');
-  const { data: diamond, error: fetchError } = await supabase
-    .from('inventory' as any)
-    .select('*')
-    .eq('stock_number', request.stock_number)
-    .eq('user_id', request.seller_telegram_id)
-    .is('deleted_at', null)
-    .single();
-
-  if (fetchError || !diamond) {
-    console.error('❌ Diamond not found:', fetchError);
-    throw new Error('Diamond not found in your inventory');
-  }
-  
-  const diamondRecord = diamond as any;
-  console.log('✅ Diamond found:', diamondRecord.stock_number);
+  console.log('💎 Using provided diamond snapshot:', request.diamond_snapshot.stock_number);
 
   // Create auction
   console.log('📡 Creating auction record...');
@@ -61,30 +69,31 @@ export async function createAuction(
   }
   console.log('✅ Auction record created:', data.id);
 
-  // Store diamond snapshot
+  // Store diamond snapshot (passed from frontend)
+  const snapshot = request.diamond_snapshot;
   const { error: diamondError } = await supabase
     .from('auction_diamonds' as any)
     .insert({
       auction_id: data.id,
-      stock_number: diamondRecord.stock_number,
-      shape: diamondRecord.shape,
-      weight: diamondRecord.weight,
-      color: diamondRecord.color,
-      clarity: diamondRecord.clarity,
-      cut: diamondRecord.cut,
-      polish: diamondRecord.polish,
-      symmetry: diamondRecord.symmetry,
-      fluorescence: diamondRecord.fluorescence,
-      measurements: diamondRecord.measurements,
-      table_percentage: diamondRecord.table_percentage,
-      depth_percentage: diamondRecord.depth_percentage,
-      certificate_number: diamondRecord.certificate_number,
-      lab: diamondRecord.lab,
-      picture: diamondRecord.picture,
-      certificate_url: diamondRecord.certificate_url,
-      video_url: diamondRecord.video_url,
-      price_per_carat: diamondRecord.price_per_carat,
-      total_price: diamondRecord.price_per_carat * diamondRecord.weight,
+      stock_number: snapshot.stock_number,
+      shape: snapshot.shape,
+      weight: snapshot.weight,
+      color: snapshot.color,
+      clarity: snapshot.clarity,
+      cut: snapshot.cut,
+      polish: snapshot.polish,
+      symmetry: snapshot.symmetry,
+      fluorescence: snapshot.fluorescence,
+      measurements: snapshot.measurements,
+      table_percentage: snapshot.table_percentage,
+      depth_percentage: snapshot.depth_percentage,
+      certificate_number: snapshot.certificate_number,
+      lab: snapshot.lab,
+      picture: snapshot.picture,
+      certificate_url: snapshot.certificate_url,
+      video_url: snapshot.video_url,
+      price_per_carat: snapshot.price_per_carat,
+      total_price: snapshot.total_price || (snapshot.price_per_carat || 0) * snapshot.weight,
     });
 
   if (diamondError) {
