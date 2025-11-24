@@ -337,9 +337,17 @@ If this persists, contact support with this timestamp: ${new Date().toISOString(
         queryClient.setQueryData(diamondKeys.list(variables.userId), context.previousDiamonds);
       }
       
-      // Extract comprehensive error information
+      // Extract comprehensive error information from enhanced error object
+      const httpError = error as any;
       const transformedData = transformToFastAPIUpdate(variables.data);
-      const requestUrl = `${API_BASE_URL}${apiEndpoints.updateDiamond(variables.diamondId)}`;
+      
+      // Use enhanced error properties if available
+      const requestUrl = httpError.url || `${API_BASE_URL}${apiEndpoints.updateDiamond(variables.diamondId)}`;
+      const requestMethod = httpError.method || 'PUT';
+      const requestBody = httpError.requestBody || JSON.stringify(transformedData);
+      const statusCode = httpError.status || 'N/A';
+      const statusText = httpError.statusText || '';
+      const serverResponse = httpError.data || httpError.response || 'N/A';
       const token = getBackendAuthToken();
       
       // Safe stringify helper
@@ -355,64 +363,34 @@ If this persists, contact support with this timestamp: ${new Date().toISOString(
       };
       
       // Extract detailed error information
-      let errorMessage = 'Unknown error';
-      let statusCode: string | number = 'N/A';
-      let serverResponse = 'N/A';
-      let errorCode = 'N/A';
+      let errorMessage = httpError.message || 'Unknown error';
+      let errorCode = httpError.code || 'N/A';
       let errorHint = '';
       let errorDetails = '';
-      let errorStack = '';
+      let errorStack = httpError.stack || 'No stack trace';
+      let serverResponseStr = 'N/A';
       
-      if (error instanceof Error) {
-        errorMessage = error.message;
-        errorStack = error.stack || 'No stack trace';
-        
-        // Check if it's an HTTP error with response data
-        const httpError = error as any;
-        
-        if (httpError.status) {
-          statusCode = httpError.status;
-        }
-        
-        if (httpError.code) {
-          errorCode = httpError.code;
-        }
-        
-        if (httpError.response) {
-          try {
-            serverResponse = safeStringify(httpError.response);
-          } catch (e) {
-            serverResponse = String(httpError.response);
+      // Format server response
+      try {
+        serverResponseStr = typeof serverResponse === 'object' 
+          ? safeStringify(serverResponse)
+          : String(serverResponse);
+          
+        // Extract FastAPI validation errors
+        if (serverResponse?.detail) {
+          if (Array.isArray(serverResponse.detail)) {
+            errorDetails = serverResponse.detail.map((d: any) => 
+              `- ${d.loc?.join('.')} : ${d.msg}`
+            ).join('\n');
+          } else {
+            errorDetails = String(serverResponse.detail);
           }
         }
-        
-        if (httpError.data) {
-          try {
-            serverResponse = safeStringify(httpError.data);
-            
-            // Extract FastAPI validation errors
-            if (httpError.data.detail) {
-              if (Array.isArray(httpError.data.detail)) {
-                errorDetails = httpError.data.detail.map((d: any) => 
-                  `- ${d.loc?.join('.')} : ${d.msg}`
-                ).join('\n');
-              } else {
-                errorDetails = String(httpError.data.detail);
-              }
-            }
-          } catch (e) {
-            serverResponse = String(httpError.data);
-          }
-        }
-      } else {
-        try {
-          errorMessage = safeStringify(error);
-        } catch (e) {
-          errorMessage = String(error);
-        }
+      } catch (e) {
+        serverResponseStr = String(serverResponse);
       }
       
-      // Add hints based on status code (outside if block)
+      // Add hints based on status code
       const statusNum = typeof statusCode === 'number' ? statusCode : parseInt(String(statusCode), 10);
       
       if (statusNum === 401) {
@@ -429,50 +407,58 @@ If this persists, contact support with this timestamp: ${new Date().toISOString(
       
       // Build comprehensive debug info
       const debugInfo = `
-═══════════════════════════════════════
-❌ DIAMOND UPDATE FAILED - DEBUG INFO
-═══════════════════════════════════════
+╔═══════════════════════════════════════════════════════════════╗
+║           ❌ DIAMOND UPDATE FAILED - FULL DEBUG INFO          ║
+╚═══════════════════════════════════════════════════════════════╝
 
-📍 REQUEST INFO:
+📍 REQUEST DETAILS:
    URL: ${requestUrl}
-   Method: PUT
+   Method: ${requestMethod}
    Diamond ID: ${variables.diamondId}
    Stock Number: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
    User ID: ${variables.userId}
+   Timestamp: ${httpError.timestamp || new Date().toISOString()}
 
 🔐 AUTHENTICATION:
    JWT Token Present: ${token ? '✅ YES' : '❌ NO'}
    Token Preview: ${token ? token.substring(0, 30) + '...' : 'MISSING'}
    Token Length: ${token ? token.length : 0} chars
 
-📤 REQUEST BODY (Transformed to FastAPI format):
-${JSON.stringify(transformedData, null, 2)}
+📤 REQUEST BODY SENT TO SERVER:
+${requestBody}
 
 📥 SERVER RESPONSE:
-   Status Code: ${statusCode}
+   HTTP Status: ${statusCode} ${statusText}
    Error Code: ${errorCode}
-   Response Body: 
-${serverResponse}
+   
+   Response Body:
+${serverResponseStr}
 
 ❌ ERROR DETAILS:
    Message: ${errorMessage}
    ${errorHint ? `Hint: ${errorHint}` : ''}
-   ${errorDetails ? `Validation Errors:\n${errorDetails}` : ''}
+   ${errorDetails ? `\nValidation Errors:\n${errorDetails}` : ''}
 
 📋 ORIGINAL DATA (Before transformation):
-${JSON.stringify(variables.data, null, 2)}
+${safeStringify(variables.data)}
 
 🔍 ERROR STACK TRACE:
 ${errorStack}
 
 💡 TROUBLESHOOTING TIPS:
 ${statusNum === 401 ? 
-  '- Close and reopen the app from Telegram to refresh JWT\n- Check if user is still authenticated' : ''}
+  '✓ Close and reopen the app from Telegram to refresh JWT\n✓ Check if user is still authenticated' : ''}
 ${statusNum === 422 ? 
-  '- Verify all required fields are present\n- Check field types match backend schema\n- Ensure enums match exact values (case-sensitive)' : ''}
+  '✓ Verify all required fields are present\n✓ Check field types match backend schema\n✓ Ensure enums match exact values (case-sensitive)' : ''}
 ${statusNum === 404 ? 
-  '- Verify diamond ID is correct\n- Check if diamond still exists in database' : ''}
-═══════════════════════════════════════
+  '✓ Verify diamond ID is correct\n✓ Check if diamond still exists in database' : ''}
+${statusNum === 500 ?
+  '✓ Check Supabase edge function logs\n✓ Verify FastAPI server is running\n✓ Check database connection' : ''}
+
+📊 WHERE TO FIND MORE INFO:
+   - Edge Function Logs: https://supabase.com/dashboard/project/uhhljqgxhdhbbhpohxll/functions
+   - FastAPI Health: ${API_BASE_URL}/api/v1/alive
+   - Request Timestamp: ${httpError.timestamp || new Date().toISOString()}
       `.trim();
       
       // Log full debug info to console
@@ -483,7 +469,7 @@ ${statusNum === 404 ?
       // Show shorter toast
       toast({
         title: '❌ שגיאה בעדכון יהלום',
-        description: `Status: ${statusCode} | ${errorMessage.substring(0, 100)}`,
+        description: `Status ${statusCode}: ${errorMessage.substring(0, 100)}`,
         variant: 'destructive',
         duration: 10000,
       });
