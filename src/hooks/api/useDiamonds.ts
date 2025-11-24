@@ -114,13 +114,38 @@ export function useCreateDiamond() {
       const transformedData = transformToFastAPICreate(variables.data);
       const requestUrl = `${API_BASE_URL}${apiEndpoints.addDiamond()}`;
       
+      // Custom serializer to handle nested objects and circular references
+      const safeStringify = (obj: any, indent = 2): string => {
+        const seen = new WeakSet();
+        return JSON.stringify(obj, (key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) {
+              return '[Circular]';
+            }
+            seen.add(value);
+          }
+          return value;
+        }, indent);
+      };
+
       // Extract detailed error information
       let errorMessage = 'Unknown error';
       let statusCode = 'N/A';
       let responseData = 'N/A';
       
       if (error instanceof Error) {
-        errorMessage = error.message;
+        // Try to serialize the entire error object first
+        try {
+          const errorObj = {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+            ...error
+          };
+          errorMessage = safeStringify(errorObj);
+        } catch (e) {
+          errorMessage = error.message;
+        }
         
         // Check if it's an HTTP error with response data
         const httpError = error as any;
@@ -129,21 +154,21 @@ export function useCreateDiamond() {
         }
         if (httpError.response) {
           try {
-            responseData = JSON.stringify(httpError.response, null, 2);
+            responseData = safeStringify(httpError.response);
           } catch (e) {
             responseData = String(httpError.response);
           }
         }
         if (httpError.data) {
           try {
-            responseData = JSON.stringify(httpError.data, null, 2);
+            responseData = safeStringify(httpError.data);
           } catch (e) {
             responseData = String(httpError.data);
           }
         }
       } else if (typeof error === 'object' && error !== null) {
         try {
-          errorMessage = JSON.stringify(error, null, 2);
+          errorMessage = safeStringify(error);
         } catch (e) {
           errorMessage = String(error);
         }
