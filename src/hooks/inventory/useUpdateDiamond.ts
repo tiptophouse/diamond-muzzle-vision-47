@@ -141,6 +141,9 @@ Error: ${errorMessage}
 ${error instanceof Error && error.stack ? `\nStack: ${error.stack.substring(0, 200)}` : ''}
       `.trim();
       
+      // Show alert for failed PUT request
+      alert(`❌ UPDATE DIAMOND FAILED\n\nStock: ${data.stockNumber}\nError: ${errorMessage}`);
+      
       toast({
         variant: "destructive",
         title: "❌ Update Diamond Failed",
