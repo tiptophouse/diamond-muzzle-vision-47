@@ -76,13 +76,27 @@ export function CreateAuctionModal({
 
     try {
       console.log('📡 Calling createAuction...');
-      // Step 1: Create auction
+      
+      // Step 1: Prepare diamond snapshot from FastAPI data
+      const diamondSnapshot = {
+        stock_number: diamond.stockNumber,
+        shape: diamond.shape,
+        weight: diamond.carat,
+        color: diamond.color,
+        clarity: diamond.clarity,
+        cut: diamond.cut,
+        picture: diamond.picture,
+        total_price: diamond.price,
+      };
+      
+      // Step 2: Create auction with snapshot
       const auction = await createAuction({
         stock_number: stockNumber,
         starting_price: Number(startingPrice),
         min_increment: Number(minIncrement),
         duration_hours: Number(durationHours),
         seller_telegram_id: userId,
+        diamond_snapshot: diamondSnapshot,
       });
 
       console.log('✅ Auction created:', auction.id);
