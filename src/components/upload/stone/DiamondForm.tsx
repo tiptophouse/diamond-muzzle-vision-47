@@ -48,7 +48,8 @@ const getDefaultValues = (initialData?: any): DiamondFormData => {
     lab: 'GIA',
     gridle: 'Medium',
     culet: 'None',
-    storeVisible: true
+    storeVisible: true,
+    ratio: 1
   };
 
   if (!initialData) return defaults;

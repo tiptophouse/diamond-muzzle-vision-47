@@ -115,6 +115,7 @@ export default function InventoryPage() {
         certificateNumber: diamond.certificateNumber,
         certificateUrl: diamond.certificateUrl,
         lab: diamond.lab,
+        ratio: diamond.ratio || 1,
       };
       
       const success = await updateDiamond(diamond.id, updateData);

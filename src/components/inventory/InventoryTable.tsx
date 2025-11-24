@@ -22,6 +22,7 @@ export interface Diamond {
   clarity: string;
   cut: string;
   price: number;
+  ratio?: number;
   status: string;
   fluorescence?: string;
   polish?: string;
