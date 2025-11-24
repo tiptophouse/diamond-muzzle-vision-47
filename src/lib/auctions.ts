@@ -49,8 +49,15 @@ export async function createAuction(
 
   if (error) {
     console.error('❌ Failed to create auction:', error);
+    console.error('❌ Error details:', JSON.stringify(error, null, 2));
     throw new Error(`Auction creation failed: ${error.message}`);
   }
+  
+  if (!data) {
+    console.error('❌ No auction data returned from RPC');
+    throw new Error('No auction data returned');
+  }
+  
   console.log('✅ Auction record created:', (data as any).id);
 
   // Store diamond snapshot (passed from frontend)
@@ -82,9 +89,18 @@ export async function createAuction(
 
   if (diamondError) {
     console.error('⚠️ Failed to store diamond snapshot:', diamondError);
+    console.error('⚠️ Diamond error details:', JSON.stringify(diamondError, null, 2));
+    throw new Error(`Failed to store diamond snapshot: ${diamondError.message}`);
   }
   
-  console.log('✅ Auction created successfully with diamond snapshot:', data);
+  console.log('✅ Auction created successfully with diamond snapshot');
+  console.log('📊 Auction details:', {
+    id: (data as any).id,
+    stock_number: (data as any).stock_number,
+    starting_price: (data as any).starting_price,
+    current_price: (data as any).current_price,
+  });
+  
   return data as any;
 }
 

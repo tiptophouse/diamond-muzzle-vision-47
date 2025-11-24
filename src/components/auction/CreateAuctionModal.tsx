@@ -100,6 +100,13 @@ export function CreateAuctionModal({
       });
 
       console.log('✅ Auction created:', auction.id);
+      
+      hapticFeedback.notification('success');
+      toast({
+        title: '✅ מכרז נוצר בהצלחה!',
+        description: `מכרז ${stockNumber} נפתח`,
+        duration: 2000,
+      });
 
       // Step 2: AUTO-SHARE TO MULTIPLE GROUPS (VIRAL MECHANICS)
       const endsAt = new Date();
@@ -110,6 +117,8 @@ export function CreateAuctionModal({
 ✨ Cut: ${diamond.cut}
 📦 Stock: ${diamond.stockNumber}`;
 
+      console.log('📤 Starting auto-share to Telegram groups...');
+      
       const sharedSuccessfully = await shareToGroups({
         auctionId: auction.id,
         stockNumber,
@@ -123,13 +132,25 @@ export function CreateAuctionModal({
       });
 
       if (!sharedSuccessfully) {
+        console.error('⚠️ Sharing to groups failed but auction was created');
         toast({ 
           title: '⚠️ המכרז נוצר', 
-          description: 'אך השיתוף לקבוצות נכשל. ניתן לשתף ידנית.',
-          variant: 'default'
+          description: 'אך השיתוף לטלגרם נכשל. בדוק לוגים.',
+          variant: 'default',
+          duration: 5000,
         });
+        // Don't close modal on sharing failure - let user retry
+        return;
       }
 
+      console.log('✅ Auction shared successfully to Telegram groups');
+      hapticFeedback.notification('success');
+      toast({
+        title: '🎉 מכרז שותף בהצלחה!',
+        description: 'המכרז נשלח לטלגרם עם כפתורי הצעה',
+        duration: 3000,
+      });
+      
       onOpenChange(false);
       onSuccess?.(auction.id);
     } catch (error: any) {
