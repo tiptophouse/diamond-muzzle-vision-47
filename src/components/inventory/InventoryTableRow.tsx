@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Diamond } from "./InventoryTable";
 import { Edit, Trash } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
-import { UserImageUpload } from "./UserImageUpload";
-import { UniversalImageHandler } from "@/components/store/UniversalImageHandler";
 import { formatPrice } from "@/utils/numberUtils";
 
 interface InventoryTableRowProps {
@@ -14,10 +12,9 @@ interface InventoryTableRowProps {
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
-  onImageUpdate?: () => void;
 }
 
-export const InventoryTableRow = memo(function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, onImageUpdate }: InventoryTableRowProps) {
+export const InventoryTableRow = memo(function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: InventoryTableRowProps) {
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="font-mono text-xs font-medium text-slate-600 dark:text-slate-400">
