@@ -12,22 +12,23 @@ export function useUpdateDiamond(onSuccess?: () => void) {
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
     if (!user?.id) {
       console.error('❌ UPDATE: User not authenticated - BLOCKING');
-      const error = 'User authentication required to update diamonds';
       toast({
         variant: "destructive",
         title: "❌ Authentication Error",
-        description: error,
+        description: 'User authentication required to update diamonds',
       });
-      alert(`❌ UPDATE DIAMOND FAILED\n\n${error}\n\nPlease ensure you're logged in through Telegram.`);
       return false;
     }
 
     // Parse and validate diamond ID
     const numericId = parseInt(diamondId);
     if (isNaN(numericId) || typeof numericId !== 'number') {
-      const error = `Invalid diamond_id: got ${diamondId} (${typeof diamondId}), expected number`;
-      console.error('❌ UPDATE VALIDATION FAIL:', error);
-      alert(`❌ VALIDATION ERROR\n\n${error}\n\nCannot proceed with UPDATE.`);
+      console.error('❌ UPDATE VALIDATION FAIL: Invalid diamond_id');
+      toast({
+        variant: "destructive",
+        title: "❌ Validation Error",
+        description: 'Invalid diamond ID',
+      });
       return false;
     }
 
@@ -143,11 +144,9 @@ ${error instanceof Error && error.stack ? `\nStack: ${error.stack.substring(0, 2
       toast({
         variant: "destructive",
         title: "❌ Update Diamond Failed",
-        description: errorDetails,
-        duration: 10000
+        description: errorMessage,
+        duration: 5000
       });
-
-      alert(`❌ UPDATE DIAMOND FAILED\n\n${errorDetails}`);
       
       return false;
     }
