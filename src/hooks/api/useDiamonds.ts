@@ -114,15 +114,53 @@ export function useCreateDiamond() {
       const transformedData = transformToFastAPICreate(variables.data);
       const requestUrl = `${API_BASE_URL}${apiEndpoints.addDiamond()}`;
       
-      // Properly stringify error details
-      const errorMessage = typeof error === 'object' 
-        ? JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
-        : String(error);
+      // Extract detailed error information
+      let errorMessage = 'Unknown error';
+      let statusCode = 'N/A';
+      let responseData = 'N/A';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Check if it's an HTTP error with response data
+        const httpError = error as any;
+        if (httpError.status) {
+          statusCode = httpError.status;
+        }
+        if (httpError.response) {
+          try {
+            responseData = JSON.stringify(httpError.response, null, 2);
+          } catch (e) {
+            responseData = String(httpError.response);
+          }
+        }
+        if (httpError.data) {
+          try {
+            responseData = JSON.stringify(httpError.data, null, 2);
+          } catch (e) {
+            responseData = String(httpError.data);
+          }
+        }
+      } else if (typeof error === 'object' && error !== null) {
+        try {
+          errorMessage = JSON.stringify(error, null, 2);
+        } catch (e) {
+          errorMessage = String(error);
+        }
+      } else {
+        errorMessage = String(error);
+      }
       
       const errorDetails = `
 URL: ${requestUrl}
+Status: ${statusCode}
 
-Error: ${errorMessage}
+Error Message: ${errorMessage}
+
+Response Data: ${responseData}
+
+Request Body: 
+${JSON.stringify(transformedData, null, 2)}
       `.trim();
       
       toast({
