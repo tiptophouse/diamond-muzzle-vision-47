@@ -66,8 +66,8 @@ export const diamondFormSchema = z.object({
   
   ratio: z.number()
     .positive('יחס חייב להיות חיובי')
-    .max(10, 'יחס מקסימלי 10')
-    .optional(),
+    .min(0.01, 'יחס נדרש')
+    .max(10, 'יחס מקסימלי 10'),
   
   // Detailed Grading (Optional)
   tablePercentage: z.number()
