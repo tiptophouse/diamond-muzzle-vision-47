@@ -209,7 +209,7 @@ export default function PublicAuctionPage() {
             </Badge>
           )}
           <div className="text-sm text-muted-foreground">מחיר נוכחי</div>
-          <div className="text-3xl font-bold animate-in fade-in duration-300">${displayPrice}</div>
+          <div className="text-3xl font-bold transition-all duration-300">${displayPrice}</div>
           {isActive && (
             <div className="text-sm text-muted-foreground mt-1">
               הצעה הבאה: ${nextBidAmount}
@@ -233,7 +233,7 @@ export default function PublicAuctionPage() {
         {/* Bid Stats - REAL-TIME */}
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-bold animate-in fade-in duration-300">{displayBidCount}</div>
+            <div className="text-2xl font-bold transition-all duration-300">{displayBidCount}</div>
             <div className="text-xs text-muted-foreground">הצעות</div>
           </div>
           <div>
@@ -284,8 +284,7 @@ export default function PublicAuctionPage() {
               {realtimeBids.slice(0, 5).map((bid, index) => (
                 <div 
                   key={bid.id} 
-                  className={`flex justify-between items-center text-sm p-2 bg-muted rounded animate-in slide-in-from-top duration-300`}
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="flex justify-between items-center text-sm p-2 bg-muted rounded transition-all duration-300"
                 >
                   <span>{bid.bidder_name || 'משתמש'}</span>
                   <span className="font-semibold">${bid.bid_amount}</span>
