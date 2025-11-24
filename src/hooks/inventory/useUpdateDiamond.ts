@@ -100,7 +100,13 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       
       if (response.error) {
         console.error('❌ UPDATE: FastAPI returned error:', response.error);
-        throw new Error(response.error);
+        const errorDetails = {
+          error: response.error,
+          data: response.data
+        };
+        const error = new Error(response.error);
+        (error as any).responseDetails = errorDetails;
+        throw error;
       }
 
       console.info('[CRUD SUCCESS]', {
@@ -120,29 +126,60 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       return true;
         
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
+      const responseDetails = (error as any)?.responseDetails;
+      
       console.error('[CRUD FAIL]', {
         action: 'UPDATE',
         diamondId: numericId,
         userId: user.id,
         stockNumber: data.stockNumber,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
+        responseDetails,
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString()
       });
       
-      const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
-      
-      const errorDetails = `
-Action: UPDATE
+      // Build detailed alert message
+      let alertMessage = `❌ UPDATE DIAMOND FAILED
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 REQUEST DETAILS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Endpoint: PUT /api/v1/diamonds/${numericId}
+Stock Number: ${data.stockNumber}
 Diamond ID: ${numericId}
-Stock: ${data.stockNumber}
 User ID: ${user.id}
-Error: ${errorMessage}
-${error instanceof Error && error.stack ? `\nStack: ${error.stack.substring(0, 200)}` : ''}
-      `.trim();
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ ERROR:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${errorMessage}`;
+
+      // Add server response if available
+      if (responseDetails) {
+        alertMessage += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 SERVER RESPONSE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+        
+        if (responseDetails.data) {
+          alertMessage += `\nResponse Data: ${JSON.stringify(responseDetails.data, null, 2)}`;
+        }
+        
+        if (responseDetails.error) {
+          alertMessage += `\nError Details: ${responseDetails.error}`;
+        }
+      }
       
-      // Show alert for failed PUT request
-      alert(`❌ UPDATE DIAMOND FAILED\n\nStock: ${data.stockNumber}\nError: ${errorMessage}`);
+      alertMessage += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏰ Timestamp: ${new Date().toISOString()}`;
+      
+      // Show detailed alert
+      alert(alertMessage);
       
       toast({
         variant: "destructive",
