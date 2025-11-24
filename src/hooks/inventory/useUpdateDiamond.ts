@@ -128,6 +128,13 @@ export function useUpdateDiamond(onSuccess?: () => void) {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
       const responseDetails = (error as any)?.responseDetails;
+      const statusCode = (error as any)?.status || 'Unknown';
+      
+      // Get JWT token info
+      const jwtToken = localStorage.getItem('jwt_token');
+      const tokenInfo = jwtToken 
+        ? `Present (${jwtToken.substring(0, 10)}...${jwtToken.substring(jwtToken.length - 10)})`
+        : 'Missing';
       
       console.error('[CRUD FAIL]', {
         action: 'UPDATE',
@@ -135,50 +142,27 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         userId: user.id,
         stockNumber: data.stockNumber,
         error: errorMessage,
+        statusCode,
         responseDetails,
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString()
       });
       
-      // Build detailed alert message
-      let alertMessage = `❌ UPDATE DIAMOND FAILED
+      // Build alert message with server response
+      const serverMessage = responseDetails?.error || responseDetails?.data?.detail || errorMessage;
+      
+      const alertMessage = `❌ UPDATE DIAMOND FAILED
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 REQUEST DETAILS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Endpoint: PUT /api/v1/diamonds/${numericId}
-Stock Number: ${data.stockNumber}
+Stock: ${data.stockNumber}
 Diamond ID: ${numericId}
-User ID: ${user.id}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-❌ ERROR:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${errorMessage}`;
+Status Code: ${statusCode}
+Server Message: ${serverMessage}
 
-      // Add server response if available
-      if (responseDetails) {
-        alertMessage += `
+JWT Token: ${tokenInfo}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 SERVER RESPONSE:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-        
-        if (responseDetails.data) {
-          alertMessage += `\nResponse Data: ${JSON.stringify(responseDetails.data, null, 2)}`;
-        }
-        
-        if (responseDetails.error) {
-          alertMessage += `\nError Details: ${responseDetails.error}`;
-        }
-      }
+Timestamp: ${new Date().toISOString()}`;
       
-      alertMessage += `
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⏰ Timestamp: ${new Date().toISOString()}`;
-      
-      // Show detailed alert
       alert(alertMessage);
       
       toast({
