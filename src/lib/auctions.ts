@@ -34,34 +34,18 @@ export async function createAuction(
   const endsAt = new Date();
   endsAt.setHours(endsAt.getHours() + request.duration_hours);
 
-  console.log('📡 Setting user context for RLS...');
-  // Set user context for RLS
-  const { error: contextError } = await supabase.rpc('set_user_context', {
-    telegram_id: request.seller_telegram_id
-  });
-
-  if (contextError) {
-    console.error('❌ Failed to set user context:', contextError);
-    throw new Error(`Auth context failed: ${contextError.message}`);
-  }
-  console.log('✅ User context set');
   console.log('💎 Using provided diamond snapshot:', request.diamond_snapshot.stock_number);
 
-  // Create auction
-  console.log('📡 Creating auction record...');
-  const { data, error } = await (supabase as any)
-    .from('auctions')
-    .insert([{
-      stock_number: request.stock_number,
-      starting_price: request.starting_price,
-      current_price: request.starting_price,
-      min_increment: request.min_increment,
-      currency: request.currency || 'USD',
-      ends_at: endsAt.toISOString(),
-      seller_telegram_id: request.seller_telegram_id,
-    }] as any)
-    .select()
-    .single();
+  // Create auction using atomic RPC function (handles context + insert in one transaction)
+  console.log('📡 Creating auction record with context...');
+  const { data, error } = await supabase.rpc('create_auction_with_context', {
+    p_stock_number: request.stock_number,
+    p_starting_price: request.starting_price,
+    p_min_increment: request.min_increment,
+    p_currency: request.currency || 'USD',
+    p_ends_at: endsAt.toISOString(),
+    p_seller_telegram_id: request.seller_telegram_id
+  });
 
   if (error) {
     console.error('❌ Failed to create auction:', error);
