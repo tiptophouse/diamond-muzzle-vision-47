@@ -49,7 +49,9 @@ export function useAuctionViralMechanics() {
 
       const sharePromises = targetGroups.map(async (groupId) => {
         try {
-          const { error } = await supabase.functions.invoke('send-auction-message', {
+          console.log(`📤 Sending auction to group ${groupId}...`);
+          
+          const { data, error } = await supabase.functions.invoke('send-auction-message', {
             body: {
               chat_id: groupId,
               auction_id: options.auctionId,
@@ -64,26 +66,36 @@ export function useAuctionViralMechanics() {
           });
 
           if (error) {
-            console.error(`Failed to share to group ${groupId}:`, error);
+            console.error(`❌ Failed to share to group ${groupId}:`, error);
+            console.error(`❌ Error details:`, JSON.stringify(error, null, 2));
+            return false;
+          }
+          
+          if (!data?.success) {
+            console.error(`❌ Sharing unsuccessful for group ${groupId}:`, data);
             return false;
           }
 
-          console.log(`✅ Shared to group ${groupId}`);
+          console.log(`✅ Successfully shared to group ${groupId}, message ID:`, data.message_id);
           return true;
         } catch (error) {
-          console.error(`Error sharing to group ${groupId}:`, error);
+          console.error(`❌ Exception sharing to group ${groupId}:`, error);
+          console.error(`❌ Stack:`, error?.stack);
           return false;
         }
       });
 
       const results = await Promise.all(sharePromises);
       const successCount = results.filter(r => r).length;
+      
+      console.log(`📊 Sharing results: ${successCount}/${targetGroups.length} succeeded`);
 
       if (successCount > 0) {
         hapticFeedback.notification('success');
         toast({
           title: `🎉 המכרז שותף ל-${successCount} קבוצות!`,
-          description: 'המכרז כבר מתחיל להתפשט',
+          description: 'הכרטיס עם כפתורי הצעה נשלח בהצלחה',
+          duration: 3000,
         });
         
         // Track viral sharing event
@@ -100,15 +112,23 @@ export function useAuctionViralMechanics() {
 
         return true;
       } else {
-        throw new Error('Failed to share to any groups');
+        console.error('❌ Failed to share to ANY groups');
+        throw new Error(`Failed to share to any of ${targetGroups.length} groups`);
       }
     } catch (error) {
-      console.error('❌ Viral sharing failed:', error);
+      console.error('❌ Viral sharing FAILED:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        auctionId: options.auctionId,
+      });
+      
       hapticFeedback.notification('error');
       toast({
-        title: 'שגיאה בשיתוף',
-        description: 'לא ניתן לשתף לקבוצות כרגע',
+        title: 'שגיאה בשיתוף לטלגרם',
+        description: error?.message || 'לא ניתן לשתף לקבוצות כרגע',
         variant: 'destructive',
+        duration: 5000,
       });
       return false;
     } finally {

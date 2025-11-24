@@ -54,8 +54,9 @@ serve(async (req) => {
       .single();
 
     if (diamondError || !diamond) {
-      console.error('❌ Diamond snapshot not found:', diamondError);
-      throw new Error('Diamond snapshot not found for auction');
+      console.error('❌ Diamond snapshot not found for auction:', auction_id);
+      console.error('❌ Supabase error:', JSON.stringify(diamondError, null, 2));
+      throw new Error(`Diamond snapshot not found for auction ${auction_id}: ${diamondError?.message || 'Unknown error'}`);
     }
 
     console.log('✅ Diamond snapshot fetched for auction');
@@ -103,9 +104,12 @@ serve(async (req) => {
     );
 
     if (!result.success) {
-      console.error('❌ Failed to send auction message:', result.error);
-      throw new Error(result.error || 'Failed to send auction message');
+      console.error('❌ Failed to send auction message to chat:', chat_id);
+      console.error('❌ Telegram error:', result.error);
+      throw new Error(`Failed to send auction message to chat ${chat_id}: ${result.error || 'Unknown error'}`);
     }
+    
+    console.log('✅ Telegram message sent with ID:', result.messageId);
 
     console.log('✅ Auction message sent successfully, storing message ID');
 
@@ -141,9 +145,19 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('❌ Error sending auction message:', error);
+    console.error('❌ CRITICAL ERROR sending auction message:', error);
+    console.error('❌ Error stack:', error?.stack);
+    console.error('❌ Request payload:', JSON.stringify({
+      chat_id: 'REDACTED',
+      auction_id: 'REDACTED',
+      stock_number: 'REDACTED'
+    }));
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error?.message || 'Unknown error',
+        details: error?.stack || 'No stack trace',
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
