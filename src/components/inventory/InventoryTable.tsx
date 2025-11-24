@@ -47,10 +47,9 @@ interface InventoryTableProps {
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
-  onImageUpdate?: () => void;
 }
 
-export const InventoryTable = memo(function InventoryTable({ data, loading = false, onEdit, onDelete, onStoreToggle, onImageUpdate }: InventoryTableProps) {
+export const InventoryTable = memo(function InventoryTable({ data, loading = false, onEdit, onDelete, onStoreToggle }: InventoryTableProps) {
   const isMobile = useIsMobile();
 
   if (loading) {
@@ -94,7 +93,6 @@ export const InventoryTable = memo(function InventoryTable({ data, loading = fal
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onStoreToggle={onStoreToggle}
-                  onImageUpdate={onImageUpdate}
                 />
               ))
             )}
