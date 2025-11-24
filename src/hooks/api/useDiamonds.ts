@@ -280,46 +280,159 @@ export function useUpdateDiamond() {
         queryClient.setQueryData(diamondKeys.list(variables.userId), context.previousDiamonds);
       }
       
-      // Show detailed error information including authentication details
+      // Extract comprehensive error information
       const transformedData = transformToFastAPIUpdate(variables.data);
       const requestUrl = `${API_BASE_URL}${apiEndpoints.updateDiamond(variables.diamondId)}`;
       const token = getBackendAuthToken();
       
-      const errorMessage = typeof error === 'object' 
-        ? JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
-        : String(error);
+      // Safe stringify helper
+      const safeStringify = (obj: any, indent = 2): string => {
+        const seen = new WeakSet();
+        return JSON.stringify(obj, (key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) return '[Circular]';
+            seen.add(value);
+          }
+          return value;
+        }, indent);
+      };
       
-      const errorDetails = `
-Diamond ID: ${variables.diamondId}
-Stock: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
-User ID: ${variables.userId}
+      // Extract detailed error information
+      let errorMessage = 'Unknown error';
+      let statusCode: string | number = 'N/A';
+      let serverResponse = 'N/A';
+      let errorCode = 'N/A';
+      let errorHint = '';
+      let errorDetails = '';
+      let errorStack = '';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        errorStack = error.stack || 'No stack trace';
+        
+        // Check if it's an HTTP error with response data
+        const httpError = error as any;
+        
+        if (httpError.status) {
+          statusCode = httpError.status;
+        }
+        
+        if (httpError.code) {
+          errorCode = httpError.code;
+        }
+        
+        if (httpError.response) {
+          try {
+            serverResponse = safeStringify(httpError.response);
+          } catch (e) {
+            serverResponse = String(httpError.response);
+          }
+        }
+        
+        if (httpError.data) {
+          try {
+            serverResponse = safeStringify(httpError.data);
+            
+            // Extract FastAPI validation errors
+            if (httpError.data.detail) {
+              if (Array.isArray(httpError.data.detail)) {
+                errorDetails = httpError.data.detail.map((d: any) => 
+                  `- ${d.loc?.join('.')} : ${d.msg}`
+                ).join('\n');
+              } else {
+                errorDetails = String(httpError.data.detail);
+              }
+            }
+          } catch (e) {
+            serverResponse = String(httpError.data);
+          }
+        }
+      } else {
+        try {
+          errorMessage = safeStringify(error);
+        } catch (e) {
+          errorMessage = String(error);
+        }
+      }
+      
+      // Add hints based on status code (outside if block)
+      const statusNum = typeof statusCode === 'number' ? statusCode : parseInt(String(statusCode), 10);
+      
+      if (statusNum === 401) {
+        errorHint = '🔐 Authentication failed - JWT token may be invalid or expired';
+      } else if (statusNum === 403) {
+        errorHint = '🚫 Permission denied - user may not have access to this diamond';
+      } else if (statusNum === 404) {
+        errorHint = '🔍 Diamond not found - ID may be incorrect or diamond was deleted';
+      } else if (statusNum === 422) {
+        errorHint = '⚠️ Validation error - check request body format and field types';
+      } else if (statusNum === 500) {
+        errorHint = '💥 Server error - backend may have crashed or database issue';
+      }
+      
+      // Build comprehensive debug info
+      const debugInfo = `
+═══════════════════════════════════════
+❌ DIAMOND UPDATE FAILED - DEBUG INFO
+═══════════════════════════════════════
 
-🔐 Authentication:
-- JWT Token: ${token ? 'PRESENT' : '❌ MISSING'}
-- Token Preview: ${token ? token.substring(0, 20) + '...' : 'N/A'}
+📍 REQUEST INFO:
+   URL: ${requestUrl}
+   Method: PUT
+   Diamond ID: ${variables.diamondId}
+   Stock Number: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
+   User ID: ${variables.userId}
 
-Request URL: ${requestUrl}
-Method: PUT
+🔐 AUTHENTICATION:
+   JWT Token Present: ${token ? '✅ YES' : '❌ NO'}
+   Token Preview: ${token ? token.substring(0, 30) + '...' : 'MISSING'}
+   Token Length: ${token ? token.length : 0} chars
 
-Body: 
+📤 REQUEST BODY (Transformed to FastAPI format):
 ${JSON.stringify(transformedData, null, 2)}
 
-Error Details:
-${errorMessage}
+📥 SERVER RESPONSE:
+   Status Code: ${statusCode}
+   Error Code: ${errorCode}
+   Response Body: 
+${serverResponse}
 
-Original Data:
-${JSON.stringify(variables.data, null, 2).substring(0, 300)}
+❌ ERROR DETAILS:
+   Message: ${errorMessage}
+   ${errorHint ? `Hint: ${errorHint}` : ''}
+   ${errorDetails ? `Validation Errors:\n${errorDetails}` : ''}
+
+📋 ORIGINAL DATA (Before transformation):
+${JSON.stringify(variables.data, null, 2)}
+
+🔍 ERROR STACK TRACE:
+${errorStack}
+
+💡 TROUBLESHOOTING TIPS:
+${statusNum === 401 ? 
+  '- Close and reopen the app from Telegram to refresh JWT\n- Check if user is still authenticated' : ''}
+${statusNum === 422 ? 
+  '- Verify all required fields are present\n- Check field types match backend schema\n- Ensure enums match exact values (case-sensitive)' : ''}
+${statusNum === 404 ? 
+  '- Verify diamond ID is correct\n- Check if diamond still exists in database' : ''}
+═══════════════════════════════════════
       `.trim();
       
+      // Log full debug info to console
+      console.error('═══ FULL UPDATE ERROR DEBUG ═══');
+      console.error(debugInfo);
+      console.error('═══ END DEBUG ═══');
+      
+      // Show shorter toast
       toast({
         title: '❌ שגיאה בעדכון יהלום',
-        description: errorDetails,
+        description: `Status: ${statusCode} | ${errorMessage.substring(0, 100)}`,
         variant: 'destructive',
         duration: 10000,
       });
       
-      // Also alert for visibility
-      alert(`❌ UPDATE DIAMOND FAILED\n\n${errorDetails}`);
+      // Show full debug info in alert
+      alert(debugInfo);
     },
   });
 }
