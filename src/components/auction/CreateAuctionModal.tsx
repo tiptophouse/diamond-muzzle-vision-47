@@ -139,13 +139,22 @@ export function CreateAuctionModal({
 
       if (!sharedSuccessfully) {
         console.error('⚠️ Sharing to groups failed but auction was created');
+        
+        const shareFailMsg = 'המכרז נוצר בהצלחה אך השיתוף לטלגרם נכשל. בדוק לוגים.';
+        
         toast({ 
           title: '⚠️ המכרז נוצר', 
-          description: 'אך השיתוף לטלגרם נכשל. בדוק לוגים.',
+          description: shareFailMsg,
           variant: 'default',
           duration: 5000,
         });
-        // Don't close modal on sharing failure - let user retry
+        
+        // Show alert for visibility
+        alert(`⚠️ שים לב:\n\n${shareFailMsg}\n\nמזהה מכרז: ${auction.id}`);
+        
+        // Still close modal and call success - auction was created
+        onOpenChange(false);
+        onSuccess?.(auction.id);
         return;
       }
 
