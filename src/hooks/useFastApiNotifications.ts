@@ -76,7 +76,7 @@ export function useFastApiNotifications() {
     }
   };
 
-  const fetchNotifications = async (pageNum: number = 1, append: boolean = false) => {
+  const fetchNotifications = async (pageNum: number = 1, append: boolean = false, bypassCache: boolean = false) => {
     if (!user?.id) {
       console.log('🔔 No user ID available, skipping notification fetch');
       setIsLoading(false);
@@ -87,7 +87,7 @@ export function useFastApiNotifications() {
     
     try {
       const offset = (pageNum - 1) * PAGE_SIZE;
-      console.log('🔔 Fetching seller notifications from FastAPI for user:', user.id, 'page:', pageNum);
+      console.log('🔔 Fetching seller notifications from FastAPI for user:', user.id, 'page:', pageNum, 'bypassCache:', bypassCache);
       
       // Try seller notifications endpoint first (preferred for seller-centric view)
       let response: any;
@@ -96,10 +96,17 @@ export function useFastApiNotifications() {
       
       try {
         const cacheKey = `seller_notifications_${user.id}_${pageNum}`;
-        const sellerUrl = `/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`;
-        console.log('🔔 Fetching seller notifications (with 2min cache):', sellerUrl);
+        const timestamp = Date.now();
+        const sellerUrl = `/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}&_t=${timestamp}`;
+        console.log('🔔 Fetching seller notifications:', sellerUrl);
         
         const fullUrl = `https://api.mazalbot.com${sellerUrl}`;
+        
+        // If bypassCache is true, clear cache and fetch fresh
+        if (bypassCache) {
+          console.log('🔄 BYPASSING CACHE - Clearing cache key:', cacheKey);
+          apiCache.clear(cacheKey);
+        }
         
         searchResults = await cachedApiCall(
           cacheKey,
@@ -119,7 +126,7 @@ export function useFastApiNotifications() {
             
             return await rawResponse.json();
           },
-          2 * 60 * 1000 // 2 minute cache
+          bypassCache ? 0 : (30 * 1000) // No cache if bypass, otherwise 30 seconds
         );
         
         console.log('✅ Seller notifications fetched:', searchResults?.length, 'results');
@@ -535,8 +542,13 @@ ${customerInfo?.diamonds_count ? `נמצאו ${customerInfo.diamonds_count} יה
 
   const loadMore = () => {
     if (!isLoading && hasMore) {
-      fetchNotifications(page + 1, true);
+      fetchNotifications(page + 1, true, false);
     }
+  };
+
+  const refetch = async () => {
+    console.log('🔄 Manual refetch - bypassing cache');
+    await fetchNotifications(1, false, true); // Always bypass cache on manual refetch
   };
 
   return {
@@ -546,7 +558,7 @@ ${customerInfo?.diamonds_count ? `נמצאו ${customerInfo.diamonds_count} יה
     page,
     markAsRead,
     contactCustomer,
-    refetch: () => fetchNotifications(1, false),
+    refetch,
     loadMore,
   };
 }
