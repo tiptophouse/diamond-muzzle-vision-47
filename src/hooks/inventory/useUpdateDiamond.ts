@@ -181,23 +181,6 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         timestamp: new Date().toISOString()
       });
       
-      // Build alert message with server response
-      const serverMessage = responseDetails?.error || responseDetails?.data?.detail || errorMessage;
-      
-      const alertMessage = `❌ UPDATE DIAMOND FAILED
-
-Stock: ${data.stockNumber}
-Diamond ID: ${numericId}
-
-Status Code: ${statusCode}
-Server Message: ${serverMessage}
-
-JWT Token: ${tokenInfo}
-
-Timestamp: ${new Date().toISOString()}`;
-      
-      alert(alertMessage);
-      
       toast({
         variant: "destructive",
         title: "❌ Update Diamond Failed",
