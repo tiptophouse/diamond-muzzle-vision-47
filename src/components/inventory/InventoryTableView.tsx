@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { Eye, Edit2, Trash2, ExternalLink } from 'lucide-react';
+import { UniversalImageHandler } from '@/components/store/UniversalImageHandler';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatPrice } from '@/utils/numberUtils';
 
@@ -30,6 +31,14 @@ export function InventoryTableView({
           <Card key={diamond.id} className="overflow-hidden">
             <CardContent className="p-4">
               <div className="flex gap-4">
+                <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                  <UniversalImageHandler
+                    imageUrl={diamond.picture || diamond.gem360Url || ''}
+                    stockNumber={diamond.stockNumber}
+                    isInline={true}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
@@ -114,6 +123,7 @@ export function InventoryTableView({
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-16">תמונה</TableHead>
               <TableHead>מלאי #</TableHead>
               <TableHead>צורה</TableHead>
               <TableHead>משקל</TableHead>
@@ -130,6 +140,16 @@ export function InventoryTableView({
           <TableBody>
             {diamonds.map((diamond) => (
               <TableRow key={diamond.id} className="hover:bg-muted/30">
+                <TableCell>
+                  <div className="w-12 h-12 rounded-lg overflow-hidden">
+                    <UniversalImageHandler
+                      imageUrl={diamond.picture || diamond.gem360Url || ''}
+                      stockNumber={diamond.stockNumber}
+                      isInline={true}
+                      className="w-full h-full"
+                    />
+                  </div>
+                </TableCell>
                 <TableCell className="font-medium">{diamond.stockNumber}</TableCell>
                 <TableCell>
                   <Badge variant="outline">{diamond.shape}</Badge>

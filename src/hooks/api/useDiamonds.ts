@@ -378,37 +378,11 @@ export function useDeleteDiamond() {
         queryClient.setQueryData(diamondKeys.list(variables.userId), context.previousDiamonds);
       }
       
-      // Show detailed error information
-      const requestUrl = `${API_BASE_URL}${apiEndpoints.deleteDiamond(variables.diamondId)}`;
-      const token = getBackendAuthToken();
-      
-      const errorMessage = typeof error === 'object' 
-        ? JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
-        : String(error);
-      
-      const errorDetails = `
-Diamond ID: ${variables.diamondId}
-User ID: ${variables.userId}
-
-🔐 Authentication:
-- JWT Token: ${token ? 'PRESENT' : '❌ MISSING'}
-
-Request URL: ${requestUrl}
-Method: DELETE
-
-Error Details:
-${errorMessage}
-      `.trim();
-      
       toast({
         title: '❌ שגיאה במחיקת יהלום',
-        description: errorDetails,
+        description: error.message || 'אנא נסה שוב',
         variant: 'destructive',
-        duration: 10000,
       });
-      
-      // Also alert for visibility
-      alert(`❌ DELETE DIAMOND FAILED\n\n${errorDetails}`);
     },
   });
 }
@@ -421,66 +395,22 @@ export function useCreateDiamondsBatch() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ diamonds, userId }: { diamonds: any[]; userId: number }) => {
-      console.log('📦 Batch creating diamonds:', diamonds.length);
-      return diamondsApi.createDiamondsBatch(diamonds);
-    },
+    mutationFn: ({ diamonds, userId }: { diamonds: any[]; userId: number }) =>
+      diamondsApi.createDiamondsBatch(diamonds),
     onSuccess: (data, variables) => {
-      console.log('✅ Batch diamonds created successfully');
-      
-      try {
-        const tg = window.Telegram?.WebApp as any;
-        tg?.HapticFeedback?.notificationOccurred('success');
-      } catch (e) {}
-      
       queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
       
       toast({
-        title: '✅ יהלומים נוספו בהצלחה',
-        description: `${variables.diamonds.length} יהלומים נוספו למלאי שלך`,
+        title: 'יהלומים נוספו בהצלחה',
+        description: `${variables.diamonds.length} יהלומים נוספו למלאי`,
       });
     },
-    onError: (error: Error, variables) => {
-      console.error('❌ Batch diamond creation failed:', error);
-      
-      try {
-        const tg = window.Telegram?.WebApp as any;
-        tg?.HapticFeedback?.notificationOccurred('error');
-      } catch (e) {}
-      
-      const requestUrl = `${API_BASE_URL}${apiEndpoints.addDiamondsBatch()}`;
-      const token = getBackendAuthToken();
-      
-      const errorMessage = typeof error === 'object' 
-        ? JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
-        : String(error);
-      
-      const errorDetails = `
-Batch Size: ${variables.diamonds.length}
-User ID: ${variables.userId}
-
-🔐 Authentication:
-- JWT Token: ${token ? 'PRESENT' : '❌ MISSING'}
-
-Request URL: ${requestUrl}
-Method: POST
-
-Error Details:
-${errorMessage}
-
-First Diamond Sample:
-${JSON.stringify(variables.diamonds[0], null, 2).substring(0, 200)}...
-      `.trim();
-      
+    onError: (error: Error) => {
       toast({
-        title: '❌ שגיאה בהוספת יהלומים',
-        description: errorDetails,
+        title: 'שגיאה בהוספת יהלומים',
+        description: error.message,
         variant: 'destructive',
-        duration: 10000,
       });
-      
-      // Also alert for visibility
-      alert(`❌ BATCH CREATE DIAMONDS FAILED\n\n${errorDetails}`);
     },
   });
 }

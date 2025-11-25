@@ -16,13 +16,11 @@ import { BuyerContactDialog } from '@/components/notifications/BuyerContactDialo
 import { getCurrentUserId } from '@/lib/api';
 import { http } from '@/api/http';
 import { apiEndpoints } from '@/lib/api/endpoints';
-import { supabase } from '@/integrations/supabase/client';
 
 const NotificationsPage = () => {
   const [searchParams] = useSearchParams();
   const buyerIdFromUrl = searchParams.get('buyerId');
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const [newNotificationCount, setNewNotificationCount] = useState(0);
   
   const { notifications, isLoading, markAsRead, refetch, loadMore, hasMore } = useFastApiNotifications();
   const { user } = useTelegramAuth();
@@ -87,56 +85,10 @@ const NotificationsPage = () => {
   // Pull-to-refresh
   const { isRefreshing, pullDistance, isPulling } = usePullToRefresh({
     onRefresh: async () => {
-      console.log('🔄 Pull-to-refresh triggered');
       await refetch();
-      setNewNotificationCount(0); // Reset new notification count after refresh
     },
     threshold: 80,
   });
-  
-  // Set up real-time subscription for new notifications
-  useEffect(() => {
-    if (!user?.id) return;
-    
-    console.log('🔴 Setting up real-time notifications subscription for user:', user.id);
-    
-    const channel = supabase
-      .channel('notifications-realtime-page')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `telegram_id=eq.${user.id}`,
-        },
-        (payload) => {
-          console.log('🔴 NEW NOTIFICATION via realtime:', payload);
-          
-          // Increment new notification count
-          setNewNotificationCount(prev => prev + 1);
-          
-          // Haptic feedback
-          haptic.notificationOccurred('success');
-          haptic.impactOccurred('medium');
-          
-          // Show toast
-          toast({
-            title: "🔔 התראה חדשה!",
-            description: "יש לך התראת התאמה חדשה מקונה. לחץ על כפתור הרענון למעלה",
-            duration: 5000,
-          });
-        }
-      )
-      .subscribe((status) => {
-        console.log('🔴 Realtime subscription status:', status);
-      });
-    
-    return () => {
-      console.log('🔴 Cleaning up realtime subscription');
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, haptic, toast, refetch]);
   
   // Group notifications by buyer with diamond_match type only and enhance with inventory data
   const groupedNotifications = useMemo(() => {
@@ -384,24 +336,12 @@ const NotificationsPage = () => {
               </div>
             </div>
             <Button 
-              onClick={async () => {
-                await refetch();
-                setNewNotificationCount(0);
-              }}
+              onClick={refetch} 
               variant="outline" 
               size="icon"
               disabled={isRefreshing}
-              className="relative"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {newNotificationCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0 animate-pulse"
-                >
-                  {newNotificationCount}
-                </Badge>
-              )}
             </Button>
           </div>
 
