@@ -176,55 +176,56 @@ export function BuyerContactDialog({
   };
 
   const handleSendMessage = async () => {
-    console.log('🔵 handleSendMessage called');
-    console.log('🔵 State check:', { 
-      generatedMessage: !!generatedMessage, 
-      buyerId, 
-      buyerName,
-      diamondDataLength: diamondData.length,
-      loading
-    });
-
-    if (!generatedMessage) {
-      console.error('❌ No generated message');
-      toast.error('אין הודעה', {
-        description: 'נא לנסות לסגור ולפתוח מחדש את החלון'
-      });
-      return;
-    }
-
-    if (!buyerId) {
-      console.error('❌ No buyer ID');
-      toast.error('מזהה קונה חסר', {
-        description: 'אנא נסה שנית'
-      });
-      return;
-    }
-
-    if (diamondData.length === 0) {
-      console.error('❌ No diamond data');
-      toast.error('אין נתוני יהלומים', {
-        description: 'אנא נסה שנית'
-      });
-      return;
-    }
-
-    setLoading(true);
-    console.log('🔵 Loading state set to true');
-    
-    // Show immediate feedback to user
-    toast.info('שולח הודעה...', {
-      description: `שולח ${diamondData.length} יהלומים לקונה`
-    });
-    
     try {
+      console.log('🔵 ========== START SEND MESSAGE ==========');
+      console.log('🔵 State check:', { 
+        generatedMessage: !!generatedMessage, 
+        messageLength: generatedMessage?.length,
+        buyerId, 
+        buyerName,
+        diamondDataLength: diamondData.length,
+        diamondImages: diamondImages.length,
+        loading
+      });
+
+      if (!generatedMessage) {
+        console.error('❌ VALIDATION FAILED: No generated message');
+        toast.error('אין הודעה', {
+          description: 'נא לנסות לסגור ולפתוח מחדש את החלון'
+        });
+        return;
+      }
+
+      if (!buyerId) {
+        console.error('❌ VALIDATION FAILED: No buyer ID');
+        toast.error('מזהה קונה חסר', {
+          description: 'אנא נסה שנית'
+        });
+        return;
+      }
+
+      if (diamondData.length === 0) {
+        console.error('❌ VALIDATION FAILED: No diamond data');
+        toast.error('אין נתוני יהלומים', {
+          description: 'אנא נסה שנית'
+        });
+        return;
+      }
+
+      console.log('✅ All validations passed, proceeding with send...');
+      setLoading(true);
       impactOccurred('medium');
+      
+      // Show immediate feedback to user
+      toast.info('שולח הודעה...', {
+        description: `שולח ${diamondData.length} יהלומים לקונה`
+      });
       
       console.log('📤 Starting message send process...');
       console.log('📤 Buyer ID:', buyerId);
       console.log('📤 Buyer Name:', buyerName);
       console.log(`📤 Sending ${diamondData.length} diamonds with AI message`);
-      console.log('📤 Generated message:', generatedMessage.substring(0, 100) + '...');
+      console.log('📤 Generated message preview:', generatedMessage.substring(0, 100) + '...');
 
       // Map diamonds to the format expected by send-rich-diamond-message
       const diamondsToSend = diamondData.map(d => ({
@@ -239,10 +240,16 @@ export function BuyerContactDialog({
         certificate_url: d.certificate_url,
       }));
 
-      console.log('📤 Diamonds to send:', diamondsToSend.map(d => d.stock_number));
+      console.log('📤 Diamonds to send:', diamondsToSend);
+      console.log('📤 Payload:', {
+        telegram_id: buyerId,
+        message_length: generatedMessage.length,
+        diamonds_count: diamondsToSend.length
+      });
 
       // Send AI message + all diamonds in one call to buyer's personal chat
       console.log('📤 Invoking send-rich-diamond-message edge function...');
+      
       const { data, error } = await supabase.functions.invoke('send-rich-diamond-message', {
         body: {
           telegram_id: buyerId,
@@ -251,14 +258,24 @@ export function BuyerContactDialog({
         },
       });
 
-      console.log('📤 Edge function response:', { data, error });
+      console.log('📤 Edge function response:', { 
+        data, 
+        error,
+        hasData: !!data,
+        hasError: !!error 
+      });
 
       if (error) {
-        console.error('❌ Edge function returned error:', error);
+        console.error('❌ Edge function returned error:', {
+          message: error.message,
+          details: error,
+          stack: error.stack
+        });
         throw error;
       }
 
       console.log('✅ Message and diamonds sent successfully to buyer:', buyerId);
+      console.log('✅ Send result:', data);
 
 
       // Track the contact (fire and forget)
@@ -287,7 +304,21 @@ export function BuyerContactDialog({
       onOpenChange(false);
       
     } catch (error: any) {
-      console.error('❌ Failed to send message:', error);
+      console.error('❌ ========== SEND MESSAGE FAILED ==========');
+      console.error('❌ Error type:', typeof error);
+      console.error('❌ Error:', error);
+      console.error('❌ Error message:', error?.message);
+      console.error('❌ Error details:', {
+        name: error?.name,
+        message: error?.message,
+        status: error?.status,
+        statusText: error?.statusText,
+        context: error?.context,
+        details: error?.details,
+        stack: error?.stack
+      });
+      
+      notificationOccurred('error');
       
       if (error?.message?.includes('blocked')) {
         toast.error('לא ניתן לשלוח הודעה', {
@@ -297,12 +328,17 @@ export function BuyerContactDialog({
         toast.error('לא ניתן לשלוח הודעה', {
           description: 'הקונה לא נמצא',
         });
+      } else if (error?.message?.includes('TELEGRAM_BOT_TOKEN')) {
+        toast.error('שגיאת תצורה', {
+          description: 'הבוט לא מוגדר. צור קשר עם התמיכה',
+        });
       } else {
         toast.error('שגיאה בשליחת ההודעה', {
-          description: 'נסה שוב או צור קשר עם התמיכה',
+          description: error?.message || 'נסה שוב או צור קשר עם התמיכה',
         });
       }
     } finally {
+      console.log('🔵 ========== END SEND MESSAGE ==========');
       setLoading(false);
     }
   };
