@@ -97,13 +97,23 @@ export function BuyerContactDialog({
 
       console.log('📸 Selected diamonds with images:', selectedDiamonds);
 
-      // Extract image URLs
+      console.log('📸 Selected diamonds raw data:', selectedDiamonds.map(d => ({
+        stock: d.stock || d.stock_number,
+        picture: d.picture,
+        hasPicture: !!d.picture
+      })));
+
+      // Extract image URLs - more flexible filtering
       const images = selectedDiamonds
         .map(d => d.picture)
-        .filter(pic => pic && (pic.startsWith('http://') || pic.startsWith('https://')));
+        .filter(pic => {
+          if (!pic) return false;
+          // Accept any string that looks like a URL or path
+          return typeof pic === 'string' && pic.trim().length > 0;
+        });
 
       setDiamondImages(images);
-      console.log(`Found ${images.length} diamond images`);
+      console.log(`📸 Found ${images.length} diamond images:`, images);
 
       // Generate AI message
       console.log('🤖 Generating AI message for buyer:', buyerName);
@@ -129,8 +139,14 @@ export function BuyerContactDialog({
       console.log('📊 Generated data:', { 
         messageLength: data.message?.length, 
         diamondsCount: data.diamonds?.length,
-        totalValue: data.totalValue 
+        totalValue: data.totalValue,
+        diamondsWithPictures: data.diamonds?.filter((d: any) => d.picture).length
       });
+      console.log('📊 Diamond data details:', data.diamonds?.map((d: any) => ({
+        stock: d.stock,
+        picture: d.picture,
+        hasPicture: !!d.picture
+      })));
       setGeneratedMessage(data.message);
       setDiamondData(data.diamonds);
       setTotalValue(data.totalValue);
@@ -459,7 +475,11 @@ export function BuyerContactDialog({
                   העתק
                 </Button>
                 <Button
-                  onClick={handleSendMessage}
+                  onClick={() => {
+                    console.log('🔴 SEND BUTTON CLICKED!');
+                    console.log('🔴 Current state:', { loading, generatedMessage: !!generatedMessage, diamondDataLength: diamondData.length });
+                    handleSendMessage();
+                  }}
                   disabled={loading}
                   className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                 >
