@@ -18,6 +18,7 @@ import { formatPrice } from '@/utils/numberUtils';
 
 interface DiamondMatch {
   stock_number: string;
+  stock?: string; // Some APIs use 'stock' instead of 'stock_number'
   shape: string;
   weight: number;
   color: string;
@@ -90,30 +91,48 @@ export function BuyerContactDialog({
       }
 
       // Filter to get only selected diamonds with full data
+      // Handle both 'stock' and 'stock_number' field names for robustness
       const selectedDiamonds = diamonds.map(match => {
-        const fullDiamond = allDiamonds.find(d => d.stock === match.stock_number);
-        return fullDiamond || match;
+        const matchStock = match.stock_number || match.stock;
+        const fullDiamond = allDiamonds.find(d => 
+          (d.stock === matchStock || d.stock_number === matchStock)
+        );
+        
+        if (fullDiamond) {
+          console.log(`✅ Found full data for diamond ${matchStock}:`, {
+            hasPicture: !!fullDiamond.picture,
+            picture: fullDiamond.picture?.substring(0, 50) + '...'
+          });
+          return fullDiamond;
+        } else {
+          console.warn(`⚠️ Using partial data for diamond ${matchStock} (not found in FastAPI)`);
+          return match;
+        }
       });
 
-      console.log('📸 Selected diamonds with images:', selectedDiamonds);
-
-      console.log('📸 Selected diamonds raw data:', selectedDiamonds.map(d => ({
-        stock: d.stock || d.stock_number,
-        picture: d.picture,
-        hasPicture: !!d.picture
-      })));
-
-      // Extract image URLs - more flexible filtering
+      // Extract image URLs from diamonds
       const images = selectedDiamonds
         .map(d => d.picture)
         .filter(pic => {
           if (!pic) return false;
-          // Accept any string that looks like a URL or path
           return typeof pic === 'string' && pic.trim().length > 0;
         });
 
+      console.log(`📸 Image extraction summary:`, {
+        totalDiamonds: selectedDiamonds.length,
+        diamondsWithPictures: selectedDiamonds.filter(d => d.picture).length,
+        extractedImages: images.length,
+        imageUrls: images.map(img => img.substring(0, 50) + '...')
+      });
+
       setDiamondImages(images);
-      console.log(`📸 Found ${images.length} diamond images:`, images);
+      
+      if (images.length === 0) {
+        console.warn('⚠️ No images found for any diamonds! This might be a problem.');
+        toast.info('אין תמונות', {
+          description: 'יהלומים יישלחו ללא תמונות',
+        });
+      }
 
       // Generate AI message
       console.log('🤖 Generating AI message for buyer:', buyerName);
@@ -244,23 +263,35 @@ export function BuyerContactDialog({
       console.log('📤 Generated message preview:', generatedMessage.substring(0, 100) + '...');
 
       // Map diamonds to the format expected by send-rich-diamond-message
-      const diamondsToSend = diamondData.map(d => ({
-        stock_number: d.stock,
-        shape: d.shape,
-        carat: d.weight,
-        color: d.color,
-        clarity: d.clarity,
-        cut: d.cut || 'EXCELLENT',
-        price: d.price,
-        picture: d.picture,
-        certificate_url: d.certificate_url,
-      }));
+      const diamondsToSend = diamondData.map(d => {
+        const payload = {
+          stock_number: d.stock || d.stock_number,
+          shape: d.shape,
+          carat: d.weight,
+          color: d.color,
+          clarity: d.clarity,
+          cut: d.cut || 'EXCELLENT',
+          price: d.price || (d.price_per_carat * d.weight),
+          picture: d.picture,
+          certificate_url: d.certificate_url,
+        };
+        
+        // Log each diamond's payload for debugging
+        console.log(`💎 Diamond payload for ${payload.stock_number}:`, {
+          hasPicture: !!payload.picture,
+          pictureUrl: payload.picture?.substring(0, 50),
+          price: payload.price
+        });
+        
+        return payload;
+      });
 
-      console.log('📤 Diamonds to send:', diamondsToSend);
-      console.log('📤 Payload:', {
+      console.log('📤 Payload summary:', {
         telegram_id: buyerId,
         message_length: generatedMessage.length,
-        diamonds_count: diamondsToSend.length
+        diamonds_count: diamondsToSend.length,
+        diamonds_with_pictures: diamondsToSend.filter(d => d.picture).length,
+        total_value: diamondsToSend.reduce((sum, d) => sum + d.price, 0)
       });
 
       // Send AI message + all diamonds in one call to buyer's personal chat
@@ -287,7 +318,17 @@ export function BuyerContactDialog({
           details: error,
           stack: error.stack
         });
-        throw error;
+        
+        // Provide specific error message based on error type
+        if (error.message?.includes('TELEGRAM_BOT_TOKEN')) {
+          throw new Error('🔧 הבוט לא מוגדר במערכת. צור קשר עם התמיכה.');
+        } else if (error.message?.includes('Max number of functions')) {
+          throw new Error('⚠️ השירות זמני לא זמין. יש מגבלת פונקציות. צור קשר עם התמיכה.');
+        } else if (error.message?.includes('blocked')) {
+          throw new Error('🚫 הקונה חסם את הבוט. לא ניתן לשלוח הודעה.');
+        } else {
+          throw new Error(`❌ שגיאה בשליחה: ${error.message || 'נסה שוב'}`);
+        }
       }
 
       console.log('✅ Message and diamonds sent successfully to buyer:', buyerId);
@@ -475,13 +516,9 @@ export function BuyerContactDialog({
                   העתק
                 </Button>
                 <Button
-                  onClick={() => {
-                    console.log('🔴 SEND BUTTON CLICKED!');
-                    console.log('🔴 Current state:', { loading, generatedMessage: !!generatedMessage, diamondDataLength: diamondData.length });
-                    handleSendMessage();
-                  }}
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  onClick={handleSendMessage}
+                  disabled={loading || !generatedMessage || diamondData.length === 0}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50"
                 >
                   {loading ? (
                     <>
@@ -491,7 +528,8 @@ export function BuyerContactDialog({
                   ) : (
                     <>
                       <Send className="h-4 w-4 mr-2" />
-                      שלח בטלגרם
+                      שלח בטלגרם ({diamondData.length} יהלומים
+                      {diamondImages.length > 0 && `, ${diamondImages.length} תמונות`})
                     </>
                   )}
                 </Button>
