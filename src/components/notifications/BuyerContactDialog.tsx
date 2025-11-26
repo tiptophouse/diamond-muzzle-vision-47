@@ -110,6 +110,11 @@ export function BuyerContactDialog({
         }
       });
 
+      console.log('💎 Setting diamond data directly as fallback:', selectedDiamonds.length);
+      // ALWAYS set diamond data so button can work even if AI generation fails
+      setDiamondData(selectedDiamonds);
+      setTotalValue(selectedDiamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0));
+
       // Extract image URLs from diamonds
       const images = selectedDiamonds
         .map(d => d.picture)
@@ -151,7 +156,14 @@ export function BuyerContactDialog({
       }
 
       if (!data) {
-        throw new Error('No data returned from edge function');
+        console.warn('⚠️ No data returned from AI edge function, using fallback');
+        setGeneratedMessage(`היי ${buyerName}, מצאתי ${selectedDiamonds.length} יהלומים שמתאימים לחיפוש שלך!`);
+        impactOccurred('light');
+        toast.info('הודעה נוצרה', {
+          description: 'הודעה בסיסית (שירות ה-AI זמנית לא זמין)',
+        });
+        console.log('🟢 fetchDiamondsAndGenerate COMPLETED with fallback');
+        return;
       }
 
       console.log('✅ AI message generated successfully');
@@ -167,8 +179,13 @@ export function BuyerContactDialog({
         hasPicture: !!d.picture
       })));
       setGeneratedMessage(data.message);
-      setDiamondData(data.diamonds);
-      setTotalValue(data.totalValue);
+      // Update diamondData with AI-enhanced version if available
+      if (data.diamonds && data.diamonds.length > 0) {
+        setDiamondData(data.diamonds);
+      }
+      if (data.totalValue) {
+        setTotalValue(data.totalValue);
+      }
       impactOccurred('light');
       toast.success('הודעה נוצרה בהצלחה!', {
         description: `עם ${images.length} תמונות יהלומים`,
@@ -213,14 +230,15 @@ export function BuyerContactDialog({
   const handleSendMessage = async () => {
     try {
       console.log('🔵 ========== START SEND MESSAGE ==========');
-      console.log('🔵 State check:', { 
+      console.log('🔵 Button clicked - checking state:', { 
         generatedMessage: !!generatedMessage, 
         messageLength: generatedMessage?.length,
         buyerId, 
         buyerName,
         diamondDataLength: diamondData.length,
         diamondImages: diamondImages.length,
-        loading
+        loading,
+        buttonShouldBeDisabled: loading || !generatedMessage || diamondData.length === 0
       });
 
       if (!generatedMessage) {
@@ -250,6 +268,13 @@ export function BuyerContactDialog({
       console.log('✅ All validations passed, proceeding with send...');
       setLoading(true);
       impactOccurred('medium');
+      
+      console.log('🚀 ABOUT TO CALL EDGE FUNCTION');
+      console.log('📤 Edge function will be called with:', {
+        telegram_id: buyerId,
+        message_preview: generatedMessage.substring(0, 100),
+        diamonds_count: diamondData.length
+      });
       
       // Show immediate feedback to user
       toast.info('שולח הודעה...', {
@@ -305,12 +330,22 @@ export function BuyerContactDialog({
         },
       });
 
+      console.log('📤 Edge function returned!');
       console.log('📤 Edge function response:', { 
         data, 
         error,
         hasData: !!data,
-        hasError: !!error 
+        hasError: !!error,
+        dataType: typeof data,
+        errorType: typeof error
       });
+      
+      if (error) {
+        console.error('📤 Edge function ERROR details:', JSON.stringify(error, null, 2));
+      }
+      if (data) {
+        console.log('📤 Edge function DATA details:', JSON.stringify(data, null, 2));
+      }
 
       if (error) {
         console.error('❌ Edge function returned error:', {
