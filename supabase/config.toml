@@ -83,6 +83,9 @@ verify_jwt = false
 [functions.register-telegram-webhook]
 verify_jwt = false
 
+[functions.delete-telegram-webhook]
+verify_jwt = false
+
 [functions.send-telegram-bot-command]
 verify_jwt = false
 
