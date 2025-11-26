@@ -252,7 +252,14 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
 
   // Share diamond to Telegram Story
   const shareToStory = useCallback(async (diamond: DiamondShareData): Promise<ShareResult> => {
+    console.log('📱 shareToStory hook called:', {
+      hasStorySharing: features.hasStorySharing,
+      hasImage: !!diamond.imageUrl,
+      stockNumber: diamond.stockNumber
+    });
+
     if (!features.hasStorySharing) {
+      console.warn('⚠️ Story sharing not available');
       toast({
         title: "Not Available",
         description: "Story sharing requires Telegram 7.2+",
@@ -261,7 +268,10 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
       return { success: false, error: "Story sharing not available" };
     }
 
-    if (!diamond.imageUrl) {
+    // Validate image URL
+    const imageUrl = diamond.imageUrl || diamond.picture;
+    if (!imageUrl) {
+      console.warn('⚠️ No image URL found');
       toast({
         title: "No Image",
         description: "This diamond doesn't have an image to share",
@@ -270,14 +280,26 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
       return { success: false, error: "No image available" };
     }
 
+    if (!imageUrl.startsWith('http')) {
+      console.error('❌ Invalid image URL:', imageUrl);
+      toast({
+        title: "Invalid Image",
+        description: "Image URL must be HTTPS",
+        variant: "destructive",
+      });
+      return { success: false, error: "Invalid image URL" };
+    }
+
     setIsSharing(true);
     webApp?.HapticFeedback?.impactOccurred('medium');
 
     try {
       const botUsername = 'BrilliantBot_bot';
-      const deepLink = `https://t.me/${botUsername}?start=diamond_${diamond.stockNumber}_${user?.id || 'guest'}_story`;
+      const deepLink = `https://t.me/${botUsername}?startapp=diamond_${diamond.stockNumber}_${user?.id || 'guest'}_story`;
 
-      const success = await shareStory(diamond.imageUrl, {
+      console.log('🚀 Attempting story share:', { imageUrl, deepLink });
+
+      const success = await shareStory(imageUrl, {
         text: `💎 ${diamond.carat}ct ${diamond.shape} Diamond - $${diamond.price.toLocaleString()}`,
         widgetLink: {
           url: deepLink,
@@ -286,6 +308,8 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
       });
 
       if (success) {
+        console.log('✅ Story shared successfully');
+        
         // Track story share
         await supabase.from('diamond_story_shares').insert({
           diamond_stock_number: diamond.stockNumber,
@@ -303,12 +327,18 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
         return { success: true };
       }
 
-      return { success: false, error: "Story sharing failed" };
-    } catch (error) {
-      console.error('Story share error:', error);
+      console.error('❌ Story share returned false');
       toast({
         title: "Share Failed",
         description: "Could not share to story. Please try again.",
+        variant: "destructive",
+      });
+      return { success: false, error: "Story sharing failed" };
+    } catch (error) {
+      console.error('❌ Story share error:', error);
+      toast({
+        title: "Share Failed",
+        description: error instanceof Error ? error.message : "Could not share to story",
         variant: "destructive",
       });
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };

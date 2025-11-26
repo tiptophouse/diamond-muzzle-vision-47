@@ -3,7 +3,7 @@
  * Leverages the latest Telegram Mini App capabilities
  */
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 
 export function useTelegramAdvanced() {
   const webAppRef = useRef<any>(null);
@@ -160,24 +160,51 @@ export function useTelegramAdvanced() {
     text?: string;
     widgetLink?: { url: string; name?: string };
   }) => {
-    const webApp = webAppRef.current;
-    if (webApp?.shareToStory) {
-      try {
-        await webApp.shareToStory(mediaUrl, {
-          text: options?.text,
-          widget_link: options?.widgetLink ? {
-            url: options.widgetLink.url,
-            name: options.widgetLink.name
-          } : undefined
-        });
-        return true;
-      } catch (error) {
-        console.error('Share to story failed:', error);
-        return false;
-      }
+    console.log('📱 shareStory called:', {
+      isInitialized,
+      hasWebApp: !!webAppRef.current,
+      hasShareMethod: !!webAppRef.current?.shareToStory,
+      mediaUrl
+    });
+
+    if (!isInitialized) {
+      console.warn('⚠️ Story sharing attempted before initialization');
+      return false;
     }
-    return false;
-  }, []);
+
+    const webApp = webAppRef.current;
+    if (!webApp) {
+      console.error('❌ WebApp not available');
+      return false;
+    }
+
+    if (!webApp.shareToStory) {
+      console.error('❌ shareToStory method not available (requires Telegram 7.2+)');
+      return false;
+    }
+
+    // Validate image URL
+    if (!mediaUrl || !mediaUrl.startsWith('http')) {
+      console.error('❌ Invalid media URL:', mediaUrl);
+      return false;
+    }
+
+    try {
+      console.log('🚀 Calling webApp.shareToStory...');
+      await webApp.shareToStory(mediaUrl, {
+        text: options?.text,
+        widget_link: options?.widgetLink ? {
+          url: options.widgetLink.url,
+          name: options.widgetLink.name
+        } : undefined
+      });
+      console.log('✅ Story share successful');
+      return true;
+    } catch (error) {
+      console.error('❌ Share to story failed:', error);
+      return false;
+    }
+  }, [isInitialized]);
 
   // Enhanced CloudStorage with batch operations
   const cloudStorage = {
@@ -315,22 +342,34 @@ export function useTelegramAdvanced() {
     return null;
   }, []);
 
-  // Check Feature Support
-  const features = {
-    hasSecondaryButton: !!webAppRef.current?.SecondaryButton,
-    hasBottomBar: !!webAppRef.current?.BottomBar,
-    hasAccelerometer: !!webAppRef.current?.Accelerometer,
-    hasGyroscope: !!webAppRef.current?.Gyroscope,
-    hasDeviceOrientation: !!webAppRef.current?.DeviceOrientation,
-    hasStorySharing: !!webAppRef.current?.shareToStory,
-    hasFileDownload: !!webAppRef.current?.downloadFile,
-    hasEmojiStatus: !!webAppRef.current?.setEmojiStatus,
-    hasFullscreen: !!webAppRef.current?.requestFullscreen,
-    hasHomeScreen: !!webAppRef.current?.addToHomeScreen,
-    hasContactSharing: !!webAppRef.current?.requestContact,
-    hasWriteAccess: !!webAppRef.current?.requestWriteAccess,
-    hasPhoneAccess: !!webAppRef.current?.requestPhoneAccess,
-  };
+  // Check Feature Support - Use useMemo to recalculate when initialized
+  const features = useMemo(() => {
+    const webApp = webAppRef.current;
+    const featureSet = {
+      hasSecondaryButton: !!webApp?.SecondaryButton,
+      hasBottomBar: !!webApp?.BottomBar,
+      hasAccelerometer: !!webApp?.Accelerometer,
+      hasGyroscope: !!webApp?.Gyroscope,
+      hasDeviceOrientation: !!webApp?.DeviceOrientation,
+      hasStorySharing: !!webApp?.shareToStory,
+      hasFileDownload: !!webApp?.downloadFile,
+      hasEmojiStatus: !!webApp?.setEmojiStatus,
+      hasFullscreen: !!webApp?.requestFullscreen,
+      hasHomeScreen: !!webApp?.addToHomeScreen,
+      hasContactSharing: !!webApp?.requestContact,
+      hasWriteAccess: !!webApp?.requestWriteAccess,
+      hasPhoneAccess: !!webApp?.requestPhoneAccess,
+    };
+    
+    console.log('🔍 Feature detection:', {
+      isInitialized,
+      hasStorySharing: featureSet.hasStorySharing,
+      webAppVersion: webApp?.version,
+      platform: webApp?.platform
+    });
+    
+    return featureSet;
+  }, [isInitialized]);
 
   // Emoji Status (Telegram 7.0+)
   const setEmojiStatus = useCallback(async (customEmojiId: string, duration?: number) => {
