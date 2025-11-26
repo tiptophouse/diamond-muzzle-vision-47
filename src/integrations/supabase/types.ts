@@ -477,6 +477,111 @@ export type Database = {
           },
         ]
       }
+      auction_interest: {
+        Row: {
+          auction_id: string
+          converted_to_bid: boolean | null
+          created_at: string
+          id: string
+          telegram_id: number
+          user_name: string | null
+        }
+        Insert: {
+          auction_id: string
+          converted_to_bid?: boolean | null
+          created_at?: string
+          id?: string
+          telegram_id: number
+          user_name?: string | null
+        }
+        Update: {
+          auction_id?: string
+          converted_to_bid?: boolean | null
+          created_at?: string
+          id?: string
+          telegram_id?: number
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_interest_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auction_presence: {
+        Row: {
+          auction_id: string
+          id: string
+          joined_at: string
+          last_heartbeat: string
+          telegram_id: number
+          user_name: string | null
+        }
+        Insert: {
+          auction_id: string
+          id?: string
+          joined_at?: string
+          last_heartbeat?: string
+          telegram_id: number
+          user_name?: string | null
+        }
+        Update: {
+          auction_id?: string
+          id?: string
+          joined_at?: string
+          last_heartbeat?: string
+          telegram_id?: number
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_presence_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auction_reactions: {
+        Row: {
+          auction_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          reaction_type: string
+          telegram_id: number
+        }
+        Insert: {
+          auction_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          reaction_type: string
+          telegram_id: number
+        }
+        Update: {
+          auction_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          reaction_type?: string
+          telegram_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_reactions_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auction_watchers: {
         Row: {
           auction_id: string
@@ -518,6 +623,8 @@ export type Database = {
           current_price: number
           diamond_data: Json | null
           ends_at: string
+          extension_count: number | null
+          heat_level: string | null
           id: string
           message_ids: Json | null
           min_increment: number
@@ -542,6 +649,8 @@ export type Database = {
           current_price: number
           diamond_data?: Json | null
           ends_at: string
+          extension_count?: number | null
+          heat_level?: string | null
           id?: string
           message_ids?: Json | null
           min_increment?: number
@@ -566,6 +675,8 @@ export type Database = {
           current_price?: number
           diamond_data?: Json | null
           ends_at?: string
+          extension_count?: number | null
+          heat_level?: string | null
           id?: string
           message_ids?: Json | null
           min_increment?: number
@@ -3105,6 +3216,7 @@ export type Database = {
         Returns: boolean
       }
       clean_expired_cache: { Args: never; Returns: undefined }
+      clean_expired_reactions: { Args: never; Returns: undefined }
       create_auction_with_context: {
         Args: {
           p_currency: string
