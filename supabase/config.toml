@@ -32,29 +32,14 @@ port = 54328
 [edge_functions]
 enabled = true
 
-# Core functions - actively used
-[functions.track-auction-view]
-verify_jwt = false
-
-[functions.check-admin]
-verify_jwt = false
-
-[functions.check-subscription-status]
-verify_jwt = false
-
-[functions.admin-manage-blocked-users]
-verify_jwt = false
-
-[functions.generate-buyer-message]
-verify_jwt = false
-
-[functions.generate-conversation-starter]
-verify_jwt = false
-
-[functions.send-rich-diamond-message]
+# Critical Telegram messaging functions
+[functions.send-auction-message]
 verify_jwt = false
 
 [functions.send-diamond-to-group]
+verify_jwt = false
+
+[functions.send-rich-diamond-message]
 verify_jwt = false
 
 [functions.send-diamond-card]
@@ -63,29 +48,51 @@ verify_jwt = false
 [functions.public-diamond-share]
 verify_jwt = false
 
-[functions.user-engagement-monitor]
+# Admin and user management
+[functions.check-admin]
 verify_jwt = false
 
-[functions.test-inline-buttons]
+[functions.admin-manage-blocked-users]
 verify_jwt = false
 
-[functions.send-auction-message]
+# AI and generation functions
+[functions.generate-buyer-message]
+verify_jwt = false
+
+[functions.generate-conversation-starter]
+verify_jwt = false
+
+# Auction functions
+[functions.track-auction-view]
 verify_jwt = false
 
 [functions.send-auction-notification]
 verify_jwt = false
 
+# Monitoring and analytics
+[functions.user-engagement-monitor]
+verify_jwt = false
+
+[functions.check-subscription-status]
+verify_jwt = false
+
+# Telegram bot integration
 [functions.telegram-webhook]
-verify_jwt = false
-
-[functions.send-seller-message]
-verify_jwt = false
-
-[functions.track-buyer-contact]
 verify_jwt = false
 
 [functions.register-telegram-webhook]
 verify_jwt = false
 
 [functions.send-telegram-bot-command]
+verify_jwt = false
+
+# Seller and buyer messaging
+[functions.send-seller-message]
+verify_jwt = false
+
+[functions.track-buyer-contact]
+verify_jwt = false
+
+# Testing
+[functions.test-inline-buttons]
 verify_jwt = false
