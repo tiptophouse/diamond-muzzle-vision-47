@@ -26,6 +26,7 @@ export default function PublicAuctionPage() {
   const groupId = searchParams.get('group');
   const sharerId = searchParams.get('sharer');
   const trackingId = searchParams.get('track');
+  const action = searchParams.get('action');
   const { webApp, hapticFeedback } = useTelegramWebApp();
   const { user } = useTelegramAuth();
   const { toast } = useToast();
@@ -67,6 +68,17 @@ export default function PublicAuctionPage() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, [auction, refetch]);
+
+  // Handle ?action=bid query param
+  useEffect(() => {
+    if (action === 'bid' && auction) {
+      hapticFeedback?.notification('warning');
+      toast({ 
+        title: '💰 מוכן להציע?',
+        description: `המחיר הנוכחי: $${(auction as any).current_price}`
+      });
+    }
+  }, [action, auction, hapticFeedback, toast]);
 
   // Track view when page loads
   useEffect(() => {

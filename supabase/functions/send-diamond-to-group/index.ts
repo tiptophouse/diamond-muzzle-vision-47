@@ -169,19 +169,17 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: testMode ? [
-          // Personal chat - use web_app with proper deep links
+          // Personal chat - use proper deep links (NO web_app wrapper)
           [
             {
               text: '💎 פרטים מלאים',
-              web_app: {
-                url: `${telegramBotUrl}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
-              }
+              url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
             {
               text: '📱 צור קשר',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+              url: `${telegramBotUrl}?startapp=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
@@ -191,7 +189,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             }
           ]
         ] : (() => {
-          // Group chat - use Telegram deep links that actually work
+          // Group chat - use webhook-free deep links
           const buttons = [
             [
               {
@@ -206,9 +204,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             buttons.push([
               {
                 text: '🔨 הצע מחיר במכרז',
-                web_app: {
-                  url: `${baseUrl}/public/auction/${activeAuction.id}?shared=true`
-                }
+                url: `${telegramBotUrl}?startapp=auction_${activeAuction.id}`
               }
             ]);
           }
@@ -216,7 +212,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           buttons.push([
             {
               text: '📱 צור קשר למחיר ולפרטים',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+              url: `${telegramBotUrl}?startapp=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ]);
 
@@ -227,7 +223,7 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             },
             {
               text: '🤖 עזרה בבחירה',
-              url: `${telegramBotUrl}?start=ai_assistant_${diamond.stockNumber}`
+              url: `${telegramBotUrl}?startapp=ai_${diamond.stockNumber}`
             }
           ]);
 

@@ -96,14 +96,14 @@ serve(async (req) => {
       gem360_url: diamond.video_url,
     };
 
-    // Build DiamondCardOptions with auction context
+    // Build DiamondCardOptions with auction context (WEBHOOK-FREE)
     const options: DiamondCardOptions = {
       context: 'auction',
       customMessage: `🔴 LIVE: ${spectatorCount} צופים\n\n💰 מחיר נוכחי: ${current_price} ${currency}\n📈 הצעה הבאה: ${current_price + min_increment} ${currency}\n⏰ זמן נותר: ~${timeRemaining} שעות\n🔥 ${bidCount} הצעות`,
       additionalButtons: [
         {
           text: `💰 הצע ${current_price + min_increment} ${currency}`,
-          callback_data: `bid:${auction_id}`,
+          url: `https://t.me/${TELEGRAM_BOT_USERNAME}?startapp=bid_${auction_id}`,
         }
       ],
       includePrice: false, // Don't show diamond price, show auction price instead
