@@ -148,6 +148,50 @@ export function useStartParamRouter() {
         if (webApp.HapticFeedback) {
           webApp.HapticFeedback.impactOccurred('light');
         }
+      } else if (startParam.startsWith('contact_')) {
+        // Pattern: contact_<stockNumber>_<sellerId>
+        const parts = startParam.split('_');
+        const stockNumber = parts[1];
+        const sellerId = parts[2] || null;
+        
+        console.log('📱 Routing to contact seller:', { stockNumber, sellerId });
+        
+        const queryParams = new URLSearchParams();
+        queryParams.set('contact', 'true');
+        if (sellerId) {
+          queryParams.set('seller', sellerId);
+        }
+        
+        navigate(`/public/diamond/${stockNumber}?${queryParams.toString()}`);
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
+      } else if (startParam.startsWith('ai_')) {
+        // Pattern: ai_<stockNumber>
+        const stockNumber = startParam.replace('ai_', '');
+        
+        console.log('🤖 Routing to AI assistant:', { stockNumber });
+        
+        navigate(`/public/diamond/${stockNumber}?ai=true`);
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('light');
+        }
+      } else if (startParam.startsWith('bid_')) {
+        // Pattern: bid_<auctionId> - Opens auction with bid intent
+        const auctionId = startParam.replace('bid_', '');
+        
+        console.log('💰 Routing to auction bid:', { auctionId });
+        
+        navigate(`/public/auction/${auctionId}?action=bid`);
+        
+        // Haptic feedback
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('medium');
+        }
       }
 
     } catch (error) {
