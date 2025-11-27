@@ -1,4 +1,4 @@
-import { TelegramLayout } from "@/components/layout/TelegramLayout";
+import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
@@ -9,7 +9,7 @@ export default function UploadPage() {
   const { hapticFeedback } = useTelegramWebApp();
 
   return (
-    <TelegramLayout>
+    <TelegramMiniAppLayout>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         {/* Hero Header */}
         <div className="px-6 pt-8 pb-6 text-center space-y-3">
@@ -123,6 +123,6 @@ export default function UploadPage() {
           </Card>
         </div>
       </div>
-    </TelegramLayout>
+    </TelegramMiniAppLayout>
   );
 }

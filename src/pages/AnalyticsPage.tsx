@@ -1,11 +1,11 @@
 
-import { TelegramLayout } from "@/components/layout/TelegramLayout";
+import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { AnalyticsDashboard } from "@/components/analytics/AnalyticsDashboard";
 
 export default function AnalyticsPage() {
   return (
-    <TelegramLayout>
+    <TelegramMiniAppLayout>
       <AnalyticsDashboard />
-    </TelegramLayout>
+    </TelegramMiniAppLayout>
   );
 }

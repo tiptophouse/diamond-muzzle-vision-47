@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Home, Package, Store, MessageCircle, TrendingUp, Settings } from 'lucide-react';
-import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useSecureNavigation } from '@/hooks/useSecureNavigation';
 import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
 import { FloatingFirstUploadCTA } from '@/components/upload/FloatingFirstUploadCTA';

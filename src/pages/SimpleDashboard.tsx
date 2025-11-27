@@ -60,8 +60,8 @@ export default function SimpleDashboard() {
       
       console.log('🔍 Simple Dashboard: Fetching data for user:', user.id);
       
-      // Use the proper API client with JWT authentication
-      const diamonds = await http<any[]>(`/api/v1/get_all_stones?user_id=${user.id}`, { method: 'GET' });
+      // Use the proper API client with JWT authentication (user_id inferred from JWT)
+      const diamonds = await http<any[]>('/api/v1/get_all_stones', { method: 'GET' });
       
       console.log('✅ Simple Dashboard: Received', diamonds?.length || 0, 'diamonds');
 
