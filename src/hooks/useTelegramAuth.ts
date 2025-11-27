@@ -1,3 +1,15 @@
+/**
+ * @deprecated This hook is DEPRECATED and should NOT be used in new code.
+ * 
+ * Please use `useTelegramAuth` from '@/context/TelegramAuthContext' instead:
+ * 
+ * ```typescript
+ * import { useTelegramAuth } from '@/context/TelegramAuthContext';
+ * ```
+ * 
+ * This legacy hook will be removed in a future version.
+ * The new context-based approach provides better performance and consistency.
+ */
 
 import { useState, useEffect, useRef } from 'react';
 import { verifyTelegramUser, setCurrentUserId } from '@/lib/api';
@@ -5,7 +17,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { TelegramUser } from '@/types/telegram';
 import { toast } from 'sonner';
 
+/**
+ * @deprecated Use useTelegramAuth from '@/context/TelegramAuthContext' instead
+ */
 export function useTelegramAuth() {
+  console.warn('⚠️ DEPRECATED: useTelegramAuth from @/hooks/useTelegramAuth is deprecated. Use @/context/TelegramAuthContext instead.');
+  
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
