@@ -1,5 +1,5 @@
 
-import { TelegramLayout } from "@/components/layout/TelegramLayout";
+import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export default function InsightsPage() {
   
   if (!basicAuth) {
     return (
-      <TelegramLayout>
+      <TelegramMiniAppLayout>
         <div className="flex items-center justify-center h-64">
           <Card>
             <CardHeader>
@@ -47,7 +47,7 @@ export default function InsightsPage() {
             </CardHeader>
           </Card>
         </div>
-      </TelegramLayout>
+      </TelegramMiniAppLayout>
     );
   }
   
@@ -55,7 +55,7 @@ export default function InsightsPage() {
   
   if (loading) {
     return (
-      <TelegramLayout>
+      <TelegramMiniAppLayout>
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Portfolio Intelligence</h1>
@@ -69,7 +69,7 @@ export default function InsightsPage() {
             </div>
           </div>
         </div>
-      </TelegramLayout>
+      </TelegramMiniAppLayout>
     );
   }
 
@@ -78,7 +78,7 @@ export default function InsightsPage() {
   };
 
   return (
-    <TelegramLayout>
+    <TelegramMiniAppLayout>
       <div className="space-y-6 pb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -252,6 +252,6 @@ export default function InsightsPage() {
           </Tabs>
         )}
       </div>
-    </TelegramLayout>
+    </TelegramMiniAppLayout>
   );
 }

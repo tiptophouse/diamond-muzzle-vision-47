@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TelegramLayout } from "@/components/layout/TelegramLayout";
+import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { BulkFileUploadArea } from "@/components/upload/BulkFileUploadArea";
 import { CsvValidationResults } from "@/components/upload/CsvValidationResults";
 import { ProcessingReport } from "@/components/upload/ProcessingReport";
@@ -143,7 +143,7 @@ export default function BulkUploadPage() {
   };
 
   return (
-    <TelegramLayout>
+    <TelegramMiniAppLayout>
       <div className="space-y-6 px-4 py-6">
         {/* Header */}
         <div className="text-center space-y-4">
@@ -226,6 +226,6 @@ export default function BulkUploadPage() {
           </Card>
         )}
       </div>
-    </TelegramLayout>
+    </TelegramMiniAppLayout>
   );
 }

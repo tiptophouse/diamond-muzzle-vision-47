@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from 'react';
-import { TelegramLayout } from '@/components/layout/TelegramLayout';
+import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, Download, FileText, CheckCircle, ArrowLeft, Sparkles } from 'lucide-react';
@@ -256,7 +256,7 @@ export default function StandardizeCsvPage() {
   };
 
   return (
-    <TelegramLayout>
+    <TelegramMiniAppLayout>
       <MobilePullToRefresh onRefresh={handleRefresh}>
         <div className="container mx-auto p-4 space-y-4 pb-safe">
           {/* Header */}
@@ -433,6 +433,6 @@ export default function StandardizeCsvPage() {
           )}
         </div>
       </MobilePullToRefresh>
-    </TelegramLayout>
+    </TelegramMiniAppLayout>
   );
 }
