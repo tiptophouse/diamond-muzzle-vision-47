@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface WizardStep {
   id: string;
