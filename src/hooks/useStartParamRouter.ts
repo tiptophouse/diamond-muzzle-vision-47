@@ -17,7 +17,16 @@ export function useStartParamRouter() {
     // Get start_param from Telegram WebApp (fix type issue)
     const startParam = (webApp as any)?.initDataUnsafe?.start_param;
     
-    if (!startParam) return;
+    console.log('🔍 Checking for start_param...', {
+      hasWebApp: !!webApp,
+      initDataUnsafe: (webApp as any)?.initDataUnsafe,
+      startParam: startParam || 'NONE'
+    });
+    
+    if (!startParam) {
+      console.log('⚠️ No start_param found - user opened app directly or from menu');
+      return;
+    }
 
     console.log('🔗 Processing start_param:', startParam);
 
