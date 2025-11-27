@@ -42,9 +42,12 @@ export function TelegramMiniApp({ children }: TelegramMiniAppProps) {
   if (!isReady) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Initializing Telegram Mini App...</p>
+        <div className="text-center animate-fade-in">
+          <div className="relative w-12 h-12 mx-auto mb-3">
+            <div className="absolute inset-0 border-2 border-primary/30 rounded-full animate-ping" style={{ animationDuration: '1.2s' }}></div>
+            <div className="absolute inset-0 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="text-sm text-muted-foreground animate-pulse">Loading...</p>
         </div>
       </div>
     );
