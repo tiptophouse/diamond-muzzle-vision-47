@@ -52,6 +52,12 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
 
         const tg = window.Telegram.WebApp as TelegramWebApp;
         
+        // Disable vertical swipes for better UX (Telegram SDK 2.0+ best practice)
+        if (tg.disableVerticalSwipes) {
+          tg.disableVerticalSwipes();
+          console.log('✅ Vertical swipes disabled');
+        }
+        
         // Set theme colors for better integration
         if (tg.setHeaderColor) tg.setHeaderColor('#ffffff');
         if (tg.setBackgroundColor) tg.setBackgroundColor('#f8fafc');
@@ -71,6 +77,22 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
         // Listen for viewport changes
         if (tg.onEvent) {
           tg.onEvent('viewportChanged', handleViewportChange);
+          
+          // Listen for theme changes (pro best practice)
+          tg.onEvent('themeChanged', () => {
+            console.log('🎨 Theme changed:', tg.colorScheme);
+            // Update CSS variables dynamically
+            if (tg.themeParams) {
+              const root = document.documentElement;
+              root.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+              root.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+              root.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+              root.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#2481cc');
+              root.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
+              root.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+            }
+            setWebApp({ ...tg });
+          });
         }
         
         // Set initial viewport
