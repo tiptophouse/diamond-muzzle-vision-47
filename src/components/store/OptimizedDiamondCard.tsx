@@ -290,127 +290,95 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         </button>
       </div>
 
+      {/* Telegram Best Practice: Clean info section matching reference design */}
       <div className="p-4 bg-white space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">
+            <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">
               {diamond.carat} ct {diamond.shape}
             </h3>
-            <p className="text-xs text-gray-500 truncate">
+            <p className="text-xs text-gray-500">
               Stock: {diamond.stockNumber}
             </p>
           </div>
-          <div className="ml-3 text-right">
-            {priceDisplay ? (
-              <p className="text-base font-bold text-gray-900">
-                {priceDisplay}
-              </p>
-            ) : (
-              <p className="text-xs text-gray-500 italic">
-                Contact
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2.5">
-          {isFancyColor ? (
-            <>
-              <div className="flex items-center gap-1.5">
-                <FancyColorBadge colorInfo={colorInfo} />
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <CertificationBadge 
-                  lab={diamond.lab} 
-                  certificateUrl={diamond.certificateUrl}
-                />
-                <OriginBadge isNatural={true} />
-                {diamond.clarity && (
-                  <Badge className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
-                    {diamond.clarity}
-                  </Badge>
-                )}
-              </div>
-              {showCutGrade ? (
-                <div className="text-xs font-medium text-yellow-600">
-                  Cut: {diamond.cut}
-                </div>
-              ) : polishSymmetryText ? (
-                <div className="text-xs text-gray-500">
-                  {polishSymmetryText}
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-1.5">
-                <Badge className="text-xs font-medium bg-blue-100 text-blue-800 border-blue-300 px-2 py-1 rounded">
-                  {diamond.color}
-                </Badge>
-                {diamond.clarity && (
-                  <Badge className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
-                    {diamond.clarity}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <CertificationBadge 
-                  lab={diamond.lab} 
-                  certificateUrl={diamond.certificateUrl}
-                />
-                <OriginBadge isNatural={true} />
-              </div>
-              {showCutGrade && (
-                <div className="text-xs font-medium text-yellow-600">
-                  Cut: {diamond.cut}
-                </div>
-              )}
-            </>
+          {priceDisplay && (
+            <div className="ml-3 text-right">
+              <p className="text-sm text-gray-500 mb-1">Contact</p>
+            </div>
           )}
         </div>
 
+        {/* Telegram Best Practice: Clean badge layout matching reference */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge className="text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-md">
+            {diamond.color}
+          </Badge>
+          {diamond.clarity && (
+            <Badge className="text-sm font-medium bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1 rounded-md">
+              {diamond.clarity}
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <CertificationBadge 
+            lab={diamond.lab} 
+            certificateUrl={diamond.certificateUrl}
+          />
+          <OriginBadge isNatural={true} />
+        </div>
+
+        {showCutGrade && (
+          <div className="text-sm font-semibold text-amber-600">
+            Cut: {diamond.cut}
+          </div>
+        )}
+
+        {/* Telegram Best Practice: Large prominent CTA button (matches reference) */}
         <div className="flex gap-2">
           <Button 
             variant="default" 
-            size="default" 
-            className="flex-1 h-10 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+            size="lg" 
+            className="flex-1 h-12 text-base font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-md rounded-xl"
             onClick={handleViewDetails}
           >
-            <Eye className="h-4 w-4 mr-2" />
+            <Eye className="h-5 w-5 mr-2" />
             View Details
           </Button>
           <Button 
             variant="outline" 
-            size="default" 
-            className="h-10 px-3 border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm"
+            size="lg" 
+            className="h-12 px-4 border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm rounded-xl"
             onClick={handleContact}
           >
-            <MessageCircle className="h-4 w-4" />
+            <MessageCircle className="h-5 w-5" />
           </Button>
         </div>
 
-        {/* Share Buttons */}
+        {/* Telegram Best Practice: Share buttons row (matches reference design) */}
         <div className="flex gap-2">
-          <P2PShareButton 
-            diamond={diamond} 
-            size="sm"
-            className="flex-1"
+          <Button
             variant="outline"
-          />
+            size="default"
+            className="flex-1 h-10 text-sm border-gray-200 hover:bg-gray-50 rounded-xl"
+            onClick={handleShare}
+          >
+            <Share2 className="h-4 w-4 mr-1.5" />
+            Bot
+          </Button>
           <LimitedGroupShareButton 
             diamond={diamond} 
-            size="sm"
-            className="flex-1"
-            variant="default"
+            size="default"
+            className="flex-1 h-10 bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700 border-0 rounded-xl font-semibold"
           />
           <Button
             variant="outline"
-            size="sm"
-            className="flex-1 h-8 text-xs border-purple-200 text-purple-700 hover:bg-purple-50 disabled:opacity-50"
+            size="default"
+            className="flex-1 h-10 text-sm border-purple-200 text-purple-700 hover:bg-purple-50 disabled:opacity-50 rounded-xl"
             onClick={async () => {
               if (!hasStorySharing) {
                 toast.error("Story sharing requires Telegram 7.2+", {
-                  description: "Please update your Telegram app to use this feature"
+                  description: "Please update your Telegram app"
                 });
                 return;
               }
@@ -431,20 +399,16 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
                 picture: diamond.picture
               });
               
-              // Show result feedback
               if (!result) {
-                toast.error("Story sharing failed", {
-                  description: "Please check your Telegram version and try again"
-                });
+                toast.error("Story sharing failed");
               }
             }}
             disabled={isStorySharing || !hasStorySharing}
-            title={!hasStorySharing ? "Requires Telegram 7.2+" : "Share to Story"}
           >
             {isStorySharing ? (
-              <div className="h-3 w-3 mr-1 border-2 border-purple-700 border-t-transparent rounded-full animate-spin"></div>
+              <div className="h-4 w-4 mr-1.5 border-2 border-purple-700 border-t-transparent rounded-full animate-spin"></div>
             ) : (
-              <Sparkles className="h-3 w-3 mr-1" />
+              <Sparkles className="h-4 w-4 mr-1.5" />
             )}
             Story
           </Button>

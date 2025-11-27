@@ -30,7 +30,7 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       try {
-        console.log('🚀 Initializing @telegram-apps/sdk v3.11...');
+        console.log('🚀 Initializing @telegram-apps/sdk v3.11.8 with best practices...');
         
         // Initialize the new SDK
         init();
@@ -38,7 +38,7 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
         // Mount core components synchronously for immediate availability
         if (miniApp.mount.isAvailable()) {
           miniApp.mount();
-          miniApp.ready();
+          miniApp.ready(); // Signal app is ready
         }
         
         if (themeParams.mount.isAvailable()) {
@@ -47,20 +47,43 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
         
         if (viewport.mount.isAvailable()) {
           viewport.mount();
-          viewport.expand();
+          viewport.expand(); // Expand to full height
         }
 
         const tg = window.Telegram.WebApp as TelegramWebApp;
         
-        // Disable vertical swipes for better UX (Telegram SDK 2.0+ best practice)
+        // Professional best practice: Always call ready()
+        if (tg.ready) {
+          tg.ready();
+          console.log('✅ WebApp.ready() called');
+        }
+        
+        // Best practice: Expand to full screen
+        if (tg.expand) {
+          tg.expand();
+          console.log('✅ WebApp.expand() called');
+        }
+        
+        // Best practice: Disable vertical swipes (prevents accidental mini app closure)
         if (tg.disableVerticalSwipes) {
           tg.disableVerticalSwipes();
           console.log('✅ Vertical swipes disabled');
         }
         
-        // Set theme colors for better integration
-        if (tg.setHeaderColor) tg.setHeaderColor('#ffffff');
-        if (tg.setBackgroundColor) tg.setBackgroundColor('#f8fafc');
+        // Best practice: Set theme colors dynamically based on Telegram theme
+        const isDark = tg.colorScheme === 'dark';
+        if (tg.setHeaderColor) {
+          tg.setHeaderColor(isDark ? tg.themeParams?.bg_color || '#1c1c1e' : '#ffffff');
+        }
+        if (tg.setBackgroundColor) {
+          tg.setBackgroundColor(isDark ? tg.themeParams?.bg_color || '#000000' : '#f8fafc');
+        }
+        
+        // Best practice: Enable closing confirmation (prevents accidental closure)
+        if (tg.enableClosingConfirmation) {
+          tg.enableClosingConfirmation();
+          console.log('✅ Closing confirmation enabled');
+        }
         
         // Handle viewport changes for better responsiveness
         const handleViewportChange = () => {
@@ -105,10 +128,7 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
         setUser(userData || tg.initDataUnsafe?.user || null);
         setIsReady(true);
         
-        // Enable closing confirmation for better UX
-        if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
-        
-        console.log('✅ @telegram-apps/sdk v3.11 initialized:', {
+        console.log('✅ @telegram-apps/sdk v3.11.8 initialized with best practices:', {
           version: tg.version,
           platform: tg.platform,
           viewportHeight: viewport.height(),
