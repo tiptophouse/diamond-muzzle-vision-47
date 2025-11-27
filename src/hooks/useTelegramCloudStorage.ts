@@ -1,54 +1,77 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useTelegramWebApp } from './useTelegramWebApp';
 
 /**
- * SDK 2.0 Enhanced Cloud Storage Hook
- * Store user preferences, filters, recent searches, bookmarks
- * Up to 1024 key-value pairs per user
+ * Telegram Cloud Storage Hook - Best Practice Implementation
+ * Uses window.Telegram.WebApp.CloudStorage for reliable access
+ * Enables offline caching and cross-device sync (up to 1024 key-value pairs)
  */
 export function useTelegramCloudStorage() {
-  const { webApp } = useTelegramWebApp();
   const [isSupported, setIsSupported] = useState(false);
 
   useEffect(() => {
-    setIsSupported(!!(webApp?.CloudStorage));
-  }, [webApp]);
+    try {
+      const hasCloudStorage = !!(window.Telegram?.WebApp?.CloudStorage);
+      setIsSupported(hasCloudStorage);
+      if (hasCloudStorage) {
+        console.log('✅ Telegram CloudStorage initialized');
+      } else {
+        console.log('⚠️ CloudStorage not available (Telegram version < 6.9)');
+      }
+    } catch (error) {
+      console.error('❌ CloudStorage initialization failed:', error);
+    }
+  }, []);
 
   const setItem = useCallback(async (key: string, value: string): Promise<boolean> => {
-    if (!webApp?.CloudStorage || !isSupported) return false;
+    if (!isSupported || !window.Telegram?.WebApp?.CloudStorage) {
+      console.warn('CloudStorage not available, falling back to localStorage');
+      try {
+        localStorage.setItem(`tg_cloud_${key}`, value);
+        return true;
+      } catch {
+        return false;
+      }
+    }
 
     return new Promise((resolve) => {
-      webApp.CloudStorage.setItem(key, value, (error) => {
+      window.Telegram.WebApp.CloudStorage.setItem(key, value, (error) => {
         if (error) {
-          console.error('CloudStorage setItem error:', error);
+          console.error(`❌ CloudStorage.setItem("${key}") failed:`, error);
           resolve(false);
         } else {
+          console.log(`✅ CloudStorage.set("${key}")`);
           resolve(true);
         }
       });
     });
-  }, [webApp, isSupported]);
+  }, [isSupported]);
 
   const getItem = useCallback(async (key: string): Promise<string | null> => {
-    if (!webApp?.CloudStorage || !isSupported) return null;
+    if (!isSupported || !window.Telegram?.WebApp?.CloudStorage) {
+      try {
+        return localStorage.getItem(`tg_cloud_${key}`);
+      } catch {
+        return null;
+      }
+    }
 
     return new Promise((resolve) => {
-      webApp.CloudStorage.getItem(key, (error, value) => {
+      window.Telegram.WebApp.CloudStorage.getItem(key, (error, value) => {
         if (error) {
-          console.error('CloudStorage getItem error:', error);
+          console.error(`❌ CloudStorage.getItem("${key}") failed:`, error);
           resolve(null);
         } else {
           resolve(value || null);
         }
       });
     });
-  }, [webApp, isSupported]);
+  }, [isSupported]);
 
   const getItems = useCallback(async (keys: string[]): Promise<Record<string, string>> => {
-    if (!webApp?.CloudStorage || !isSupported) return {};
+    if (!isSupported || !window.Telegram?.WebApp?.CloudStorage) return {};
 
     return new Promise((resolve) => {
-      webApp.CloudStorage.getItems(keys, (error, values) => {
+      window.Telegram.WebApp.CloudStorage.getItems(keys, (error, values) => {
         if (error) {
           console.error('CloudStorage getItems error:', error);
           resolve({});
@@ -57,28 +80,36 @@ export function useTelegramCloudStorage() {
         }
       });
     });
-  }, [webApp, isSupported]);
+  }, [isSupported]);
 
   const removeItem = useCallback(async (key: string): Promise<boolean> => {
-    if (!webApp?.CloudStorage || !isSupported) return false;
+    if (!isSupported || !window.Telegram?.WebApp?.CloudStorage) {
+      try {
+        localStorage.removeItem(`tg_cloud_${key}`);
+        return true;
+      } catch {
+        return false;
+      }
+    }
 
     return new Promise((resolve) => {
-      webApp.CloudStorage.removeItem(key, (error) => {
+      window.Telegram.WebApp.CloudStorage.removeItem(key, (error) => {
         if (error) {
-          console.error('CloudStorage removeItem error:', error);
+          console.error(`❌ CloudStorage.removeItem("${key}") failed:`, error);
           resolve(false);
         } else {
+          console.log(`✅ CloudStorage.delete("${key}")`);
           resolve(true);
         }
       });
     });
-  }, [webApp, isSupported]);
+  }, [isSupported]);
 
   const removeItems = useCallback(async (keys: string[]): Promise<boolean> => {
-    if (!webApp?.CloudStorage || !isSupported) return false;
+    if (!isSupported || !window.Telegram?.WebApp?.CloudStorage) return false;
 
     return new Promise((resolve) => {
-      webApp.CloudStorage.removeItems(keys, (error) => {
+      window.Telegram.WebApp.CloudStorage.removeItems(keys, (error) => {
         if (error) {
           console.error('CloudStorage removeItems error:', error);
           resolve(false);
@@ -87,13 +118,24 @@ export function useTelegramCloudStorage() {
         }
       });
     });
-  }, [webApp, isSupported]);
+  }, [isSupported]);
 
   const getKeys = useCallback(async (): Promise<string[]> => {
-    if (!webApp?.CloudStorage || !isSupported) return [];
+    if (!isSupported || !window.Telegram?.WebApp?.CloudStorage) {
+      const keys: string[] = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key?.startsWith('tg_cloud_')) {
+            keys.push(key.replace('tg_cloud_', ''));
+          }
+        }
+      } catch {}
+      return keys;
+    }
 
     return new Promise((resolve) => {
-      webApp.CloudStorage.getKeys((error, keys) => {
+      window.Telegram.WebApp.CloudStorage.getKeys((error, keys) => {
         if (error) {
           console.error('CloudStorage getKeys error:', error);
           resolve([]);
@@ -102,7 +144,7 @@ export function useTelegramCloudStorage() {
         }
       });
     });
-  }, [webApp, isSupported]);
+  }, [isSupported]);
 
   // Helper methods for common use cases
   const savePreferences = useCallback(async (preferences: Record<string, any>): Promise<boolean> => {
