@@ -163,8 +163,12 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
     console.log('🔨 Active auction check:', { stockNumber: diamond.stockNumber, hasAuction: !!activeAuction });
 
     // Create inline keyboard with Telegram deep links (fixes the broken URLs)
-    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
+    // Strip @ symbol from bot username if present
+    const botUsername = (Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot').replace(/^@/, '');
+    const telegramBotUrl = `https://t.me/${botUsername}`;
     const baseUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://brilliantbot.lovable.app';
+    
+    console.log('🔗 Generated Telegram bot URL:', telegramBotUrl);
     
     const inlineKeyboard = {
       reply_markup: {
