@@ -290,30 +290,30 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         </button>
       </div>
 
-      <div className="p-4 bg-white">
-        <div className="flex items-start justify-between mb-3">
+      <div className="p-4 bg-white space-y-3">
+        <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm leading-tight truncate">
+            <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">
               {diamond.carat} ct {diamond.shape}
             </h3>
-            <p className="text-xs text-gray-500 mt-1 truncate">
-              {diamond.stockNumber}
+            <p className="text-xs text-gray-500 truncate">
+              Stock: {diamond.stockNumber}
             </p>
           </div>
           <div className="ml-3 text-right">
             {priceDisplay ? (
-              <p className="text-sm font-bold text-gray-900">
+              <p className="text-base font-bold text-gray-900">
                 {priceDisplay}
               </p>
             ) : (
               <p className="text-xs text-gray-500 italic">
-                Contact for Price
+                Contact
               </p>
             )}
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 mb-3">
+        <div className="flex flex-col gap-2.5">
           {isFancyColor ? (
             <>
               <div className="flex items-center gap-1.5">
@@ -371,27 +371,26 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
         <div className="flex gap-2">
           <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1 h-8 text-xs border-gray-200 text-gray-700 hover:bg-gray-50"
-            onClick={handleContact}
-          >
-            <MessageCircle className="h-3 w-3 mr-1" />
-            Contact
-          </Button>
-          <Button 
             variant="default" 
-            size="sm" 
-            className="flex-1 h-8 text-xs bg-blue-600 text-white hover:bg-blue-700"
+            size="default" 
+            className="flex-1 h-10 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
             onClick={handleViewDetails}
           >
-            <Eye className="h-3 w-3 mr-1" />
-            Details
+            <Eye className="h-4 w-4 mr-2" />
+            View Details
+          </Button>
+          <Button 
+            variant="outline" 
+            size="default" 
+            className="h-10 px-3 border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm"
+            onClick={handleContact}
+          >
+            <MessageCircle className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Share Buttons */}
-        <div className="flex gap-2 mt-2">
+        <div className="flex gap-2">
           <P2PShareButton 
             diamond={diamond} 
             size="sm"
@@ -410,11 +409,15 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             className="flex-1 h-8 text-xs border-purple-200 text-purple-700 hover:bg-purple-50 disabled:opacity-50"
             onClick={async () => {
               if (!hasStorySharing) {
-                toast.error("Story sharing requires Telegram 7.2+");
+                toast.error("Story sharing requires Telegram 7.2+", {
+                  description: "Please update your Telegram app to use this feature"
+                });
                 return;
               }
+              
               impactOccurred('medium');
-              await shareToStory({
+              
+              const result = await shareToStory({
                 id: diamond.id,
                 stockNumber: diamond.stockNumber,
                 carat: diamond.carat,
@@ -427,11 +430,22 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
                 gem360Url: diamond.gem360Url,
                 picture: diamond.picture
               });
+              
+              // Show result feedback
+              if (!result) {
+                toast.error("Story sharing failed", {
+                  description: "Please check your Telegram version and try again"
+                });
+              }
             }}
             disabled={isStorySharing || !hasStorySharing}
             title={!hasStorySharing ? "Requires Telegram 7.2+" : "Share to Story"}
           >
-            <Sparkles className="h-3 w-3 mr-1" />
+            {isStorySharing ? (
+              <div className="h-3 w-3 mr-1 border-2 border-purple-700 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <Sparkles className="h-3 w-3 mr-1" />
+            )}
             Story
           </Button>
         </div>

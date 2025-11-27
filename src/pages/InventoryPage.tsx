@@ -13,6 +13,7 @@ import { useOptimizedDelete } from "@/hooks/useOptimizedDelete";
 import { useInventoryState } from "@/hooks/inventory/useInventoryState";
 import { DiamondForm } from "@/components/inventory/DiamondForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { UploadSuccessCard } from "@/components/upload/UploadSuccessCard";
 
@@ -196,18 +197,29 @@ export default function InventoryPage() {
           />
           
           <div className="w-full">
-            <InventoryTableView
-              diamonds={filteredDiamonds}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onStoreToggle={handleStoreToggle}
-            />
-            
-            <InventoryPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
+            {filteredDiamonds.length === 0 && displayDiamonds.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground mb-4">No diamonds in your inventory yet</p>
+                <Button onClick={handleAddDiamond} variant="default">
+                  Add Your First Diamond
+                </Button>
+              </div>
+            ) : (
+              <>
+                <InventoryTableView
+                  diamonds={filteredDiamonds}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onStoreToggle={handleStoreToggle}
+                />
+                
+                <InventoryPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </>
+            )}
           </div>
         </div>
 

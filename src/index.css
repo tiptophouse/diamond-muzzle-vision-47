@@ -58,6 +58,15 @@
   --shadow-large: 0 20px 25px -5px hsl(240 3.8% 46.1% / 0.1), 0 10px 10px -5px hsl(240 3.8% 46.1% / 0.04);
 }
 
+/* Telegram Mini App recommended CSS for fixed viewport */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  overscroll-behavior: none;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -70,6 +79,18 @@ body {
   letter-spacing: -0.01em;
   direction: ltr;
   text-align: left;
+  
+  /* Safe area support for Telegram native header */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Hebrew text gets Heebo font and RTL direction automatically */
@@ -86,6 +107,23 @@ body {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: var(--shadow-large);
+}
+
+/* Card system with consistent shadows */
+.card-elevated {
+  @apply bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700;
+  box-shadow: var(--shadow-soft);
+  transition: all 0.2s ease;
+}
+
+.card-elevated:hover {
+  box-shadow: var(--shadow-medium);
+  transform: translateY(-1px);
+}
+
+.card-elevated-active {
+  box-shadow: var(--shadow-medium);
+  transform: translateY(-1px);
 }
 
 .premium-button {

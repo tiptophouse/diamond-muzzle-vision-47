@@ -155,11 +155,11 @@ export function useTelegramAdvanced() {
     }, []),
   };
 
-  // Story Sharing (Telegram 7.2+)
+  // Story Sharing (Telegram 7.2+) with enhanced error handling
   const shareStory = useCallback(async (mediaUrl: string, options?: {
     text?: string;
     widgetLink?: { url: string; name?: string };
-  }) => {
+  }): Promise<{ success: boolean; error?: string }> => {
     console.log('📱 shareStory called:', {
       isInitialized,
       hasWebApp: !!webAppRef.current,
@@ -168,29 +168,33 @@ export function useTelegramAdvanced() {
     });
 
     if (!isInitialized) {
-      console.warn('⚠️ Story sharing attempted before initialization');
-      return false;
+      const error = 'Telegram SDK not initialized yet. Please wait...';
+      console.warn('⚠️', error);
+      return { success: false, error };
     }
 
     const webApp = webAppRef.current;
     if (!webApp) {
-      console.error('❌ WebApp not available');
-      return false;
+      const error = 'Telegram WebApp not available';
+      console.error('❌', error);
+      return { success: false, error };
     }
 
     if (!webApp.shareToStory) {
-      console.error('❌ shareToStory method not available (requires Telegram 7.2+)');
-      return false;
+      const error = 'Story sharing requires Telegram 7.2+. Please update your Telegram app.';
+      console.error('❌', error);
+      return { success: false, error };
     }
 
     // Validate image URL
     if (!mediaUrl || !mediaUrl.startsWith('http')) {
-      console.error('❌ Invalid media URL:', mediaUrl);
-      return false;
+      const error = `Invalid image URL: ${mediaUrl}. Must be a valid HTTPS URL.`;
+      console.error('❌', error);
+      return { success: false, error };
     }
 
     try {
-      console.log('🚀 Calling webApp.shareToStory...');
+      console.log('🚀 Calling webApp.shareToStory with validated URL...');
       await webApp.shareToStory(mediaUrl, {
         text: options?.text,
         widget_link: options?.widgetLink ? {
@@ -199,10 +203,17 @@ export function useTelegramAdvanced() {
         } : undefined
       });
       console.log('✅ Story share successful');
-      return true;
-    } catch (error) {
-      console.error('❌ Share to story failed:', error);
-      return false;
+      return { success: true };
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown error occurred while sharing to story';
+      console.error('❌ Share to story failed:', {
+        error,
+        errorMessage,
+        mediaUrl,
+        webAppVersion: webApp.version,
+        platform: webApp.platform
+      });
+      return { success: false, error: errorMessage };
     }
   }, [isInitialized]);
 
