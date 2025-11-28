@@ -299,7 +299,7 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
 
       console.log('🚀 Attempting story share:', { imageUrl, deepLink });
 
-      const success = await shareStory(imageUrl, {
+      const result = await shareStory(imageUrl, {
         text: `💎 ${diamond.carat}ct ${diamond.shape} Diamond - $${diamond.price.toLocaleString()}`,
         widgetLink: {
           url: deepLink,
@@ -307,7 +307,7 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
         }
       });
 
-      if (success) {
+      if (result.success) {
         console.log('✅ Story shared successfully');
         
         // Track story share
@@ -327,13 +327,13 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
         return { success: true };
       }
 
-      console.error('❌ Story share returned false');
+      console.error('❌ Story share failed:', result.error);
       toast({
         title: "Share Failed",
-        description: "Could not share to story. Please try again.",
+        description: result.error || "Could not share to story. Please try again.",
         variant: "destructive",
       });
-      return { success: false, error: "Story sharing failed" };
+      return { success: false, error: result.error || "Story sharing failed" };
     } catch (error) {
       console.error('❌ Story share error:', error);
       toast({

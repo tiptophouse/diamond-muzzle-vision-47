@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { shareStory as sdkShareStory } from '@telegram-apps/sdk';
 
 export function useTelegramAdvanced() {
   const webAppRef = useRef<any>(null);
@@ -155,16 +156,15 @@ export function useTelegramAdvanced() {
     }, []),
   };
 
-  // Story Sharing (Telegram 7.2+) with enhanced error handling
+  // Story Sharing (Telegram 7.2+) using SDK
   const shareStory = useCallback(async (mediaUrl: string, options?: {
     text?: string;
     widgetLink?: { url: string; name?: string };
   }): Promise<{ success: boolean; error?: string }> => {
     console.log('📱 shareStory called:', {
       isInitialized,
-      hasWebApp: !!webAppRef.current,
-      hasShareMethod: !!webAppRef.current?.shareToStory,
-      mediaUrl
+      mediaUrl,
+      isAvailable: sdkShareStory.isAvailable()
     });
 
     if (!isInitialized) {
@@ -173,14 +173,8 @@ export function useTelegramAdvanced() {
       return { success: false, error };
     }
 
-    const webApp = webAppRef.current;
-    if (!webApp) {
-      const error = 'Telegram WebApp not available';
-      console.error('❌', error);
-      return { success: false, error };
-    }
-
-    if (!webApp.shareToStory) {
+    // Check if story sharing is available using SDK
+    if (!sdkShareStory.isAvailable()) {
       const error = 'Story sharing requires Telegram 7.2+. Please update your Telegram app.';
       console.error('❌', error);
       return { success: false, error };
@@ -194,14 +188,17 @@ export function useTelegramAdvanced() {
     }
 
     try {
-      console.log('🚀 Calling webApp.shareToStory with validated URL...');
-      await webApp.shareToStory(mediaUrl, {
+      console.log('🚀 Calling SDK shareStory...');
+      
+      // Use SDK's shareStory directly
+      await sdkShareStory(mediaUrl, {
         text: options?.text,
-        widget_link: options?.widgetLink ? {
+        widgetLink: options?.widgetLink ? {
           url: options.widgetLink.url,
           name: options.widgetLink.name
         } : undefined
       });
+      
       console.log('✅ Story share successful');
       return { success: true };
     } catch (error: any) {
@@ -209,9 +206,7 @@ export function useTelegramAdvanced() {
       console.error('❌ Share to story failed:', {
         error,
         errorMessage,
-        mediaUrl,
-        webAppVersion: webApp.version,
-        platform: webApp.platform
+        mediaUrl
       });
       return { success: false, error: errorMessage };
     }
@@ -362,7 +357,7 @@ export function useTelegramAdvanced() {
       hasAccelerometer: !!webApp?.Accelerometer,
       hasGyroscope: !!webApp?.Gyroscope,
       hasDeviceOrientation: !!webApp?.DeviceOrientation,
-      hasStorySharing: !!webApp?.shareToStory,
+      hasStorySharing: sdkShareStory.isAvailable(), // Use SDK's feature detection
       hasFileDownload: !!webApp?.downloadFile,
       hasEmojiStatus: !!webApp?.setEmojiStatus,
       hasFullscreen: !!webApp?.requestFullscreen,
