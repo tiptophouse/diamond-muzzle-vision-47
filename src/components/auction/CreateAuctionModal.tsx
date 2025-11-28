@@ -114,27 +114,9 @@ export function CreateAuctionModal({
         duration: 2000,
       });
 
-      // Step 3: AUTO-SHARE TO TELEGRAM GROUPS
-      console.log('📤 Auto-sharing auction to groups...');
+      // Step 2: AUTO-SHARE TO MULTIPLE GROUPS (VIRAL MECHANICS)
       const endsAt = new Date();
       endsAt.setHours(endsAt.getHours() + Number(durationHours));
-      
-      try {
-        await shareToGroups({
-          auctionId: auction.id,
-          stockNumber: stockNumber,
-          diamondDescription: `${diamond.carat}ct ${diamond.shape}`,
-          currentPrice: Number(startingPrice),
-          minIncrement: Number(minIncrement),
-          currency: 'USD',
-          endsAt: endsAt.toISOString(),
-          imageUrl: diamond.picture,
-        });
-        console.log('✅ Auction shared to groups successfully');
-      } catch (shareError) {
-        console.error('⚠️ Failed to share auction to groups:', shareError);
-        // Don't block auction creation if sharing fails
-      }
 
       const diamondDescription = `💎 ${diamond.carat}ct ${diamond.shape}
 🎨 Color: ${diamond.color} | Clarity: ${diamond.clarity}

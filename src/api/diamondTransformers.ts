@@ -65,7 +65,7 @@ export interface FastAPIDiamondUpdate {
 export function transformToFastAPICreate(formData: DiamondFormData): FastAPIDiamondCreate {
   return {
     stock: formData.stockNumber,
-    shape: formData.shape?.toLowerCase() || 'round',
+    shape: formData.shape.toLowerCase(), // Backend expects lowercase
     weight: formData.carat,
     color: formData.color,
     clarity: formData.clarity,
@@ -74,11 +74,11 @@ export function transformToFastAPICreate(formData: DiamondFormData): FastAPIDiam
     length: formData.length || null,
     width: formData.width || null,
     depth: formData.depth || null,
-    ratio: formData.ratio || 1.0,
-    cut: formData.cut?.toUpperCase() || 'EXCELLENT',
-    polish: (formData.polish || 'EXCELLENT').toUpperCase(),
-    symmetry: (formData.symmetry || 'EXCELLENT').toUpperCase(),
-    fluorescence: (formData.fluorescence || 'NONE').toUpperCase(),
+    ratio: formData.ratio || null,
+    cut: formData.cut || null,
+    polish: (formData.polish || 'Good').toUpperCase(),
+    symmetry: (formData.symmetry || 'Good').toUpperCase(),
+    fluorescence: (formData.fluorescence || 'None').toUpperCase(),
     table: (formData.tablePercentage && formData.tablePercentage > 0) ? formData.tablePercentage : 57,
     depth_percentage: (formData.depthPercentage && formData.depthPercentage > 0) ? formData.depthPercentage : 61,
     gridle: formData.gridle || '',
@@ -97,7 +97,7 @@ export function transformToFastAPIUpdate(formData: Partial<DiamondFormData>): Fa
   const update: FastAPIDiamondUpdate = {};
   
   if (formData.stockNumber !== undefined) update.stock = formData.stockNumber;
-  if (formData.shape !== undefined) update.shape = formData.shape?.toLowerCase() || null;
+  if (formData.shape !== undefined) update.shape = formData.shape.toLowerCase(); // Backend expects lowercase
   if (formData.carat !== undefined) update.weight = formData.carat;
   if (formData.color !== undefined) update.color = formData.color;
   if (formData.clarity !== undefined) update.clarity = formData.clarity;
@@ -107,14 +107,14 @@ export function transformToFastAPIUpdate(formData: Partial<DiamondFormData>): Fa
   if (formData.width !== undefined) update.width = formData.width || null;
   if (formData.depth !== undefined) update.depth = formData.depth || null;
   if (formData.ratio !== undefined) update.ratio = formData.ratio || null;
-  if (formData.cut !== undefined) update.cut = formData.cut?.toUpperCase() || null;
-  if (formData.polish !== undefined) update.polish = formData.polish?.toUpperCase() || null;
-  if (formData.symmetry !== undefined) update.symmetry = formData.symmetry?.toUpperCase() || null;
-  if (formData.fluorescence !== undefined) update.fluorescence = formData.fluorescence?.toUpperCase() || null;
+  if (formData.cut !== undefined) update.cut = formData.cut || null;
+  if (formData.polish !== undefined) update.polish = formData.polish ? formData.polish.toUpperCase() : null;
+  if (formData.symmetry !== undefined) update.symmetry = formData.symmetry ? formData.symmetry.toUpperCase() : null;
+  if (formData.fluorescence !== undefined) update.fluorescence = formData.fluorescence ? formData.fluorescence.toUpperCase() : null;
   if (formData.tablePercentage !== undefined) update.table = (formData.tablePercentage && formData.tablePercentage > 0) ? formData.tablePercentage : null;
   if (formData.depthPercentage !== undefined) update.depth_percentage = (formData.depthPercentage && formData.depthPercentage > 0) ? formData.depthPercentage : null;
   if (formData.gridle !== undefined) update.gridle = formData.gridle || null;
-  if (formData.culet !== undefined) update.culet = formData.culet?.toUpperCase() || null;
+  if (formData.culet !== undefined) update.culet = formData.culet ? formData.culet.toUpperCase() : null;
   if (formData.certificateComment !== undefined) update.certificate_comment = formData.certificateComment || null;
   if (formData.rapnet !== undefined) update.rapnet = formData.rapnet || null;
   if (formData.pricePerCarat !== undefined) update.price_per_carat = formData.pricePerCarat || null;

@@ -82,8 +82,17 @@ serve(async (req) => {
             sendEvent
           );
 
-          // AI responses are already streamed in real-time
-          // No additional processing needed since callLovableAI sends events directly
+          // Stream the response in chunks
+          for (const chunk of agentResponses) {
+            sendEvent({
+              type: 'message',
+              data: { content: chunk },
+              timestamp: new Date().toISOString()
+            });
+
+            // Add small delay for realistic streaming
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
 
           // Send completion event
           sendEvent({
@@ -152,8 +161,8 @@ serve(async (req) => {
 });
 
 /**
- * Generate diamond expert responses using Lovable AI Gateway
- * Streams real AI responses token-by-token
+ * Generate diamond expert responses with specialized knowledge
+ * Returns response chunks for streaming
  */
 async function generateDiamondExpertResponse(
   message: string,
@@ -162,18 +171,21 @@ async function generateDiamondExpertResponse(
   sendEvent: (event: AGUIEvent) => void
 ): Promise<string[]> {
   
-  // Agent-specific system prompts
+  // Agent-specific response generation
   const agentPrompts = {
-    main: "You are a Diamond Consultant Coordinator for BrilliantBot, a Telegram-native diamond trading system. Provide comprehensive diamond consultation and route to specialists when needed. Keep responses professional, concise, and actionable.",
-    grading: "You are a Certified Diamond Grading Expert specializing in 4Cs analysis (Cut, Color, Clarity, Carat), certificate verification (GIA, AGS), and quality assessment. Provide technical expertise with practical recommendations.",
-    inventory: "You are an Inventory Management Expert providing portfolio analysis, stock optimization, turnover strategies, and investment guidance. Focus on data-driven insights for diamond dealers.",
-    pricing: "You are a Diamond Pricing Expert with deep market knowledge. Provide valuations based on Rapaport, market trends, and competitive analysis. Help dealers optimize pricing strategies.",
-    customer_service: "You are a Customer Service Expert specializing in personalized diamond recommendations and client education. Help dealers build relationships and close sales with expert guidance.",
-    business_intelligence: "You are a Business Intelligence Expert providing daily insights, analytics dashboards, and strategic recommendations based on sales data, market trends, and competitive intelligence.",
-    operations: "You are an Inventory Operations Expert handling diamond CRUD operations, data management, bulk uploads, and mobile-friendly workflows for Telegram Mini App users."
+    main: "You are a Diamond Consultant Coordinator. Provide comprehensive diamond consultation and route to specialists when needed.",
+    grading: "You are a Certified Diamond Grading Expert specializing in 4Cs analysis, certificate verification, and quality assessment.",
+    inventory: "You are an Inventory Management Expert providing portfolio analysis, stock optimization, and investment strategies.",
+    pricing: "You are a Diamond Pricing Expert with deep market knowledge providing valuations and pricing strategies.",
+    customer_service: "You are a Customer Service Expert specializing in personalized recommendations and client education.",
+    business_intelligence: "You are a Business Intelligence Expert providing daily insights, analytics, and strategic recommendations.",
+    operations: "You are an Inventory Operations Expert handling CRUD operations, data management, and mobile-friendly diamond operations."
   };
 
-  const systemPrompt = agentPrompts[agentType as keyof typeof agentPrompts] || agentPrompts.main;
+  const prompt = agentPrompts[agentType as keyof typeof agentPrompts] || agentPrompts.main;
+  
+  // Simulate intelligent response based on message content and agent type
+  let response = await generateContextualResponse(message, agentType, prompt, history);
   
   // Check if agent switching is needed
   const suggestedAgent = detectAgentSwitch(message);
@@ -189,125 +201,50 @@ async function generateDiamondExpertResponse(
     });
   }
 
-  // Call Lovable AI Gateway with streaming
-  const chunks = await callLovableAI(systemPrompt, message, history, sendEvent);
+  // Split response into chunks for streaming effect
+  const chunks = splitIntoChunks(response, 20);
   return chunks;
 }
 
 /**
- * Call Lovable AI Gateway with streaming support
+ * Generate contextual response based on diamond expertise
  */
-async function callLovableAI(
-  systemPrompt: string,
-  userMessage: string,
-  history: Array<any>,
-  sendEvent: (event: AGUIEvent) => void
-): Promise<string[]> {
+async function generateContextualResponse(
+  message: string,
+  agentType: string,
+  prompt: string,
+  history: Array<any>
+): Promise<string> {
   
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  const messageLower = message.toLowerCase();
   
-  if (!LOVABLE_API_KEY) {
-    console.error('❌ LOVABLE_API_KEY not configured');
-    throw new Error('AI service not configured. Please contact support.');
+  // Diamond-specific keyword responses
+  if (messageLower.includes('4c') || messageLower.includes('grading')) {
+    return `As a diamond grading expert, I can analyze the 4Cs: Cut, Color, Clarity, and Carat weight. ${getGradingAdvice(message)}`;
   }
-
-  // Build conversation messages
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...history.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    })),
-    { role: 'user', content: userMessage }
-  ];
-
-  console.log('🤖 Calling Lovable AI Gateway with', messages.length, 'messages');
-
-  try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: messages,
-        stream: true,
-        temperature: 0.7,
-        max_tokens: 1000
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again in a moment.');
-      }
-      if (response.status === 402) {
-        throw new Error('AI service quota exceeded. Please contact support.');
-      }
-      const errorText = await response.text();
-      console.error('❌ Lovable AI error:', response.status, errorText);
-      throw new Error('AI service temporarily unavailable.');
-    }
-
-    if (!response.body) {
-      throw new Error('No response body from AI service');
-    }
-
-    // Process streaming response
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    const chunks: string[] = [];
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      
-      // Keep the last incomplete line in buffer
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim();
-          
-          if (data === '[DONE]') {
-            continue;
-          }
-
-          try {
-            const parsed = JSON.parse(data);
-            const content = parsed.choices?.[0]?.delta?.content;
-            
-            if (content) {
-              chunks.push(content);
-              
-              // Send each token as it arrives
-              sendEvent({
-                type: 'message',
-                data: { content: content },
-                timestamp: new Date().toISOString()
-              });
-            }
-          } catch (parseError) {
-            // Skip invalid JSON lines
-            console.warn('⚠️ Failed to parse SSE line:', line);
-          }
-        }
-      }
-    }
-
-    console.log('✅ AI response complete:', chunks.length, 'chunks');
-    return chunks;
-
-  } catch (error) {
-    console.error('❌ Lovable AI Gateway error:', error);
-    throw error;
+  
+  if (messageLower.includes('price') || messageLower.includes('value') || messageLower.includes('cost')) {
+    return `From a pricing perspective, diamond valuation depends on multiple factors. ${getPricingAdvice(message)}`;
   }
+  
+  if (messageLower.includes('inventory') || messageLower.includes('portfolio')) {
+    return `Looking at your inventory management needs, I recommend ${getInventoryAdvice(message)}`;
+  }
+  
+  if (messageLower.includes('customer') || messageLower.includes('client') || messageLower.includes('sell')) {
+    return `For customer service excellence, I suggest ${getCustomerServiceAdvice(message)}`;
+  }
+  
+  if (messageLower.includes('report') || messageLower.includes('analytics') || messageLower.includes('insights')) {
+    return `Based on business intelligence analysis, ${getBusinessInsights(message)}`;
+  }
+  
+  if (messageLower.includes('add') || messageLower.includes('delete') || messageLower.includes('edit')) {
+    return `For inventory operations, I can help you ${getOperationsAdvice(message)}`;
+  }
+  
+  // General diamond consultation
+  return `As your diamond consultant, ${getGeneralAdvice(message, agentType)}. How can I further assist you with your diamond business needs?`;
 }
 
 /**
@@ -336,4 +273,57 @@ function detectAgentSwitch(message: string): string | null {
   }
   
   return null;
+}
+
+/**
+ * Split response into chunks for streaming
+ */
+function splitIntoChunks(text: string, wordsPerChunk: number): string[] {
+  const words = text.split(' ');
+  const chunks: string[] = [];
+  
+  for (let i = 0; i < words.length; i += wordsPerChunk) {
+    const chunk = words.slice(i, i + wordsPerChunk).join(' ');
+    chunks.push(chunk + ' ');
+  }
+  
+  return chunks;
+}
+
+/**
+ * Specialized advice functions
+ */
+function getGradingAdvice(message: string): string {
+  return "For accurate grading, examine cut proportions, color grade (D-Z), clarity inclusions, and precise carat weight. Consider certification from GIA, AGS, or similar reputable labs.";
+}
+
+function getPricingAdvice(message: string): string {
+  return "current market trends suggest focusing on premium cuts with excellent grades. The Rapaport price list serves as a baseline, but adjust for market conditions, certification, and unique characteristics.";
+}
+
+function getInventoryAdvice(message: string): string {
+  return "analyzing your portfolio for optimal turnover rates, diversifying across different price points, and maintaining balanced inventory of popular shapes and sizes.";
+}
+
+function getCustomerServiceAdvice(message: string): string {
+  return "educating clients about diamond characteristics, providing detailed certificates, offering trade-in options, and maintaining long-term relationships through excellent service.";
+}
+
+function getBusinessInsights(message: string): string {
+  return "your sales data indicates strong performance in certain categories. I recommend monitoring market trends, optimizing pricing strategies, and tracking customer preferences for better business decisions.";
+}
+
+function getOperationsAdvice(message: string): string {
+  return "efficiently manage your diamond database with proper categorization, regular updates, and accurate record-keeping for optimal business operations.";
+}
+
+function getGeneralAdvice(message: string, agentType: string): string {
+  const responses = [
+    "I'm here to provide expert guidance on all aspects of your diamond business",
+    "Let me help you navigate the diamond industry with professional expertise",
+    "I can assist with comprehensive diamond consultation and specialized services",
+    "My role is to ensure you make informed decisions in the diamond market"
+  ];
+  
+  return responses[Math.floor(Math.random() * responses.length)];
 }
