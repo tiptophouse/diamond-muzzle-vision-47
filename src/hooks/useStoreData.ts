@@ -5,7 +5,6 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryDataSync } from "./inventory/useInventoryDataSync";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { detectFancyColor } from "@/utils/fancyColorUtils";
-import { telegramInventoryCache } from "@/services/telegramInventoryCache";
 
 // Telegram memory management
 const tg = getTelegramWebApp();
@@ -321,27 +320,15 @@ export function useStoreData() {
         return;
       }
 
-      // PHASE 1: Check Telegram CloudStorage for instant load
-      if (useCache) {
-        console.log('⚡ CLOUD STORAGE: Checking cache for instant load...');
-        const cachedInventory = await telegramInventoryCache.getCachedInventory(user.id);
-        
-        if (cachedInventory && cachedInventory.length > 0) {
-          console.log('✅ CLOUD STORAGE: Loaded', cachedInventory.length, 'diamonds from cache (instant display)');
-          setDiamonds(cachedInventory);
-          setLoading(false);
-          
-          // Continue to PHASE 2: Background refresh
-          console.log('🔄 BACKGROUND SYNC: Fetching fresh data...');
-        } else {
-          console.log('📭 CLOUD STORAGE: No cache found, showing loader');
-          setLoading(true);
-        }
-      } else {
-        setLoading(true);
+      if (useCache && dataCache && (Date.now() - dataCache.timestamp) < CACHE_DURATION) {
+        console.log('✅ STORE DATA: Using cached data');
+        setDiamonds(dataCache.data);
+        setLoading(false);
+        return;
       }
 
-      // PHASE 2: Fetch fresh data from FastAPI (background or foreground)
+      setLoading(true);
+
       const result = await fetchInventoryData();
       
       console.log('🚨 RAW API RESPONSE:', {
@@ -384,22 +371,14 @@ export function useStoreData() {
             user2084882603Diamonds: transformedDiamonds.filter(d => d.stockNumber === '105604')
           });
           
-          // Update memory cache
           dataCache = {
             data: transformedDiamonds,
             timestamp: Date.now()
           };
 
-          // PHASE 3: Update Telegram CloudStorage for next instant load
-          console.log('💾 CLOUD STORAGE: Saving', transformedDiamonds.length, 'diamonds to cache...');
-          await telegramInventoryCache.cacheInventory(user.id, transformedDiamonds);
-          console.log('✅ CLOUD STORAGE: Cache updated successfully');
-
         setDiamonds(transformedDiamonds);
       } else {
         setDiamonds([]);
-        // Clear cache if no data
-        await telegramInventoryCache.clearCachedInventory(user.id);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load store diamonds';
