@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTelegramPerformance } from '@/hooks/useTelegramPerformance';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { useTelegramSDKInit } from '@/hooks/useTelegramSDKInit';
 import { logger } from '@/utils/logger';
 
 interface TelegramMiniAppProps {
@@ -10,6 +11,7 @@ interface TelegramMiniAppProps {
 export function TelegramMiniApp({ children }: TelegramMiniAppProps) {
   const { webApp, isReady } = useTelegramWebApp();
   const { isOptimized, metrics } = useTelegramPerformance();
+  const { isSDKReady } = useTelegramSDKInit(); // Initialize SDK with best practices
   const [showEmergencyMode, setShowEmergencyMode] = useState(false);
 
   useEffect(() => {
