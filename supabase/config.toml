@@ -62,6 +62,9 @@ verify_jwt = false
 [functions.generate-conversation-starter]
 verify_jwt = false
 
+[functions.call-n8n-workflow]
+verify_jwt = false
+
 # Auction functions
 [functions.track-auction-view]
 verify_jwt = false
