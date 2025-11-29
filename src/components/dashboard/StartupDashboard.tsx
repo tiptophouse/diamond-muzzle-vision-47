@@ -9,7 +9,6 @@ import { useSearchResults } from "@/hooks/useSearchResults";
 import { ColorDistributionChart } from "@/components/charts/ColorDistributionChart";
 import { ClarityDistributionChart } from "@/components/charts/ClarityDistributionChart";
 import { RecentDiamondsSection } from "@/components/charts/RecentDiamondsSection";
-import { DashboardCard, DashboardShimmer, DashboardErrorAlert } from "@/components/dashboard/DashboardAnimated";
 import { useState, useEffect } from "react";
 import { formatLargeNumber } from "@/utils/numberUtils";
 import { 
@@ -74,16 +73,6 @@ export function StartupDashboard() {
     impactOccurred('medium');
     await refetch();
   };
-
-  // Show loading shimmer while data loads
-  if (isLoading && colorDistribution.length === 0) {
-    return <DashboardShimmer />;
-  }
-
-  // Show error alert with retry option
-  if (error && !isLoading) {
-    return <DashboardErrorAlert message={error} onRetry={handleRefresh} />;
-  }
 
   useEffect(() => {
     // Simulate real-time metrics updates
@@ -158,128 +147,116 @@ export function StartupDashboard() {
           
           {/* Startup Metrics Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            <DashboardCard>
-              <Card className="bg-background/70 backdrop-blur-sm border-primary/20 h-full">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-primary/20">
-                      <Users className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground font-medium">Total Users</p>
-                      <p className="text-xl font-bold text-foreground">
-                        {metrics.totalUsers.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-green-600 font-medium">+{metrics.growthRate}%</p>
-                    </div>
+            <Card className="bg-background/70 backdrop-blur-sm border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-primary/20">
+                    <Users className="w-5 h-5 text-blue-600" />
                   </div>
-                </CardContent>
-              </Card>
-            </DashboardCard>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Total Users</p>
+                    <p className="text-xl font-bold text-foreground">
+                      {metrics.totalUsers.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-green-600 font-medium">+{metrics.growthRate}%</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             
-            <DashboardCard>
-              <Card className="bg-background/70 backdrop-blur-sm border-primary/20 h-full">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20">
-                      <Activity className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground font-medium">Active Today</p>
-                      <p className="text-xl font-bold text-foreground">
-                        {metrics.activeToday}
-                      </p>
-                      <p className="text-xs text-green-600 font-medium">Live</p>
-                    </div>
+            <Card className="bg-background/70 backdrop-blur-sm border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20">
+                    <Activity className="w-5 h-5 text-green-600" />
                   </div>
-                </CardContent>
-              </Card>
-            </DashboardCard>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Active Today</p>
+                    <p className="text-xl font-bold text-foreground">
+                      {metrics.activeToday}
+                    </p>
+                    <p className="text-xs text-green-600 font-medium">Live</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             
-            <DashboardCard>
-              <Card className="bg-background/70 backdrop-blur-sm border-primary/20 cursor-pointer hover:bg-background/80 transition-colors h-full" onClick={() => handleQuickAction('matches', '/notifications')}>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-                      <Search className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground font-medium">Matches</p>
-                      <p className="text-xl font-bold text-foreground">
-                        {searchResultsCount?.total || metrics.searchMatches}
-                      </p>
-                      <p className="text-xs text-purple-600 font-medium">New</p>
-                    </div>
+            <Card className="bg-background/70 backdrop-blur-sm border-primary/20 cursor-pointer hover:bg-background/80 transition-colors" onClick={() => handleQuickAction('matches', '/notifications')}>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                    <Search className="w-5 h-5 text-purple-600" />
                   </div>
-                </CardContent>
-              </Card>
-            </DashboardCard>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Matches</p>
+                    <p className="text-xl font-bold text-foreground">
+                      {searchResultsCount?.total || metrics.searchMatches}
+                    </p>
+                    <p className="text-xs text-purple-600 font-medium">New</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             
-            <DashboardCard>
-              <Card className="bg-background/70 backdrop-blur-sm border-primary/20 h-full">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500/20 to-yellow-500/20">
-                      <TrendingUp className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-muted-foreground font-medium">Revenue</p>
-                      <p className="text-xl font-bold text-foreground truncate" title={`$${metrics.totalRevenue.toLocaleString()}`}>
-                        ${formatLargeNumber(metrics.totalRevenue)}
-                      </p>
-                      <p className="text-xs text-orange-600 font-medium">Monthly</p>
-                    </div>
+            <Card className="bg-background/70 backdrop-blur-sm border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500/20 to-yellow-500/20">
+                    <TrendingUp className="w-5 h-5 text-orange-600" />
                   </div>
-                </CardContent>
-              </Card>
-            </DashboardCard>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted-foreground font-medium">Revenue</p>
+                    <p className="text-xl font-bold text-foreground truncate" title={`$${metrics.totalRevenue.toLocaleString()}`}>
+                      ${formatLargeNumber(metrics.totalRevenue)}
+                    </p>
+                    <p className="text-xs text-orange-600 font-medium">Monthly</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Personal Inventory Stats */}
           <div className="grid grid-cols-2 gap-3">
-            <DashboardCard>
-              <Card className="bg-gradient-to-br from-background/80 to-primary/5 backdrop-blur-sm border-primary/30 h-full">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/30">
-                      <Diamond className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground font-medium">My Diamonds</p>
-                      <p className="text-2xl font-bold text-foreground">
-                        {isLoading ? '...' : totalDiamonds.toLocaleString()}
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                        <p className="text-xs text-muted-foreground">Premium stock</p>
-                      </div>
+            <Card className="bg-gradient-to-br from-background/80 to-primary/5 backdrop-blur-sm border-primary/30">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/30">
+                    <Diamond className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">My Diamonds</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {isLoading ? '...' : totalDiamonds.toLocaleString()}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                      <p className="text-xs text-muted-foreground">Premium stock</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </DashboardCard>
+                </div>
+              </CardContent>
+            </Card>
             
-            <DashboardCard>
-              <Card className="bg-gradient-to-br from-background/80 to-green-500/5 backdrop-blur-sm border-green-500/30 h-full">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/30">
-                      <Target className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-muted-foreground font-medium">Portfolio Value</p>
-                      <p className="text-2xl font-bold text-foreground truncate" title={isLoading ? 'Loading...' : `$${totalInventoryValue.toLocaleString()}`}>
-                        {isLoading ? '...' : `$${formatLargeNumber(totalInventoryValue)}`}
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-green-500" />
-                        <p className="text-xs text-green-600 font-medium">Growing</p>
-                      </div>
+            <Card className="bg-gradient-to-br from-background/80 to-green-500/5 backdrop-blur-sm border-green-500/30">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/30">
+                    <Target className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted-foreground font-medium">Portfolio Value</p>
+                    <p className="text-2xl font-bold text-foreground truncate" title={isLoading ? 'Loading...' : `$${totalInventoryValue.toLocaleString()}`}>
+                      {isLoading ? '...' : `$${formatLargeNumber(totalInventoryValue)}`}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-green-500" />
+                      <p className="text-xs text-green-600 font-medium">Growing</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </DashboardCard>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

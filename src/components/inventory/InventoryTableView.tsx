@@ -8,8 +8,6 @@ import { Eye, Edit2, Trash2, ExternalLink } from 'lucide-react';
 import { UniversalImageHandler } from '@/components/store/UniversalImageHandler';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatPrice } from '@/utils/numberUtils';
-import { InventoryCard } from '@/components/inventory/InventoryAnimated';
-import { useRTL } from '@/hooks/useRTL';
 
 interface InventoryTableViewProps {
   diamonds: Diamond[];
@@ -25,94 +23,95 @@ export function InventoryTableView({
   onStoreToggle
 }: InventoryTableViewProps) {
   const isMobile = useIsMobile();
-  const { isRTL } = useRTL();
 
   if (isMobile) {
     return (
-      <div className="space-y-4" dir={isRTL ? 'rtl' : 'ltr'}>
-        {diamonds.map((diamond, index) => (
-          <InventoryCard key={diamond.id} index={index}>
-            <Card className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex gap-4">
-                  <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
-                    <UniversalImageHandler
-                      imageUrl={diamond.picture || diamond.gem360Url || ''}
-                      stockNumber={diamond.stockNumber}
-                      isInline={true}
-                      className="w-full h-full object-cover"
-                    />
+      <div className="space-y-4">
+        {diamonds.map((diamond) => (
+          <Card key={diamond.id} className="overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex gap-4">
+                <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                  <UniversalImageHandler
+                    imageUrl={diamond.picture || diamond.gem360Url || ''}
+                    stockNumber={diamond.stockNumber}
+                    isInline={true}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <div className="font-semibold text-base">{diamond.stockNumber}</div>
+                      <Badge variant="outline" className="text-xs">{diamond.shape}</Badge>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-lg">{formatPrice(diamond.price || 0)}</div>
+                      <Badge variant={diamond.status === 'Available' ? 'default' : 'secondary'} className={diamond.status === 'Available' ? 'bg-green-600 text-xs' : 'text-xs'}>
+                        {diamond.status}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div>
-                        <div className="font-semibold text-base">{diamond.stockNumber}</div>
-                        <Badge variant="outline" className="text-xs">{diamond.shape}</Badge>
-                      </div>
-                      <div className={isRTL ? 'text-left' : 'text-right'}>
-                        <div className="font-bold text-lg">{formatPrice(diamond.price || 0)}</div>
-                        <Badge 
-                          variant={diamond.status === 'Available' ? 'default' : 'secondary'} 
-                          className={diamond.status === 'Available' ? 'bg-green-600/10 text-green-700 border-green-200 text-xs' : 'text-xs'}
-                        >
-                          {diamond.status}
-                        </Badge>
-                      </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                    <div>
+                      <span className="text-muted-foreground">משקל: </span>
+                      <span className="font-medium">{diamond.carat?.toFixed(2) || 'N/A'}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                      <div>
-                        <span className="text-muted-foreground">משקל: </span>
-                        <span className="font-medium">{diamond.carat?.toFixed(2) || 'N/A'}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">צבע: </span>
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">{diamond.color}</Badge>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">ניקיון: </span>
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">{diamond.clarity}</Badge>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">חיתוך: </span>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">{diamond.cut || 'N/A'}</Badge>
-                      </div>
+                    <div>
+                      <span className="text-muted-foreground">צבע: </span>
+                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">{diamond.color}</Badge>
                     </div>
-                    <div className="flex items-center gap-2 pt-2 border-t">
+                    <div>
+                      <span className="text-muted-foreground">ניקיון: </span>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">{diamond.clarity}</Badge>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">חיתוך: </span>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">{diamond.cut || 'N/A'}</Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(diamond)}
+                      className="flex-1"
+                    >
+                      <Edit2 className="h-4 w-4 mr-1" />
+                      ערוך
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onDelete(diamond.id)}
+                      className="flex-1 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      מחק
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onStoreToggle(diamond.stockNumber, !diamond.store_visible)}
+                    >
+                      <Eye className={`h-4 w-4 ${diamond.store_visible ? 'text-green-600' : 'text-muted-foreground'}`} />
+                    </Button>
+                    {diamond.certificateUrl && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onEdit(diamond)}
-                        className="flex-1 h-9 gap-1.5 hover:bg-primary/5"
+                        asChild
                       >
-                        <Edit2 className="h-3.5 w-3.5" />
-                        <span className="text-xs">Edit</span>
+                        <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.open(`/diamond/${diamond.stockNumber}`, '_blank')}
-                        className="flex-1 h-9 gap-1.5 hover:bg-primary/5"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        <span className="text-xs">View</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const diamondIdToDelete = diamond.diamondId?.toString() || diamond.id;
-                          onDelete(diamondIdToDelete);
-                        }}
-                        className="h-9 px-3 text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </InventoryCard>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     );
@@ -219,10 +218,7 @@ export function InventoryTableView({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        const diamondIdToDelete = diamond.diamondId?.toString() || diamond.id;
-                        onDelete(diamondIdToDelete);
-                      }}
+                      onClick={() => onDelete(diamond.id)}
                       className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
