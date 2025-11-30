@@ -5,7 +5,7 @@ import { listMCPTools, callMCPTool } from './mcp-client';
  */
 export async function testMCPConnection() {
   console.log('🧪 Testing FastAPI MCP Connection...');
-  console.log('📍 Endpoint: https://api.mazalbot.com/mcp');
+  console.log('📍 Endpoint: https://api.mazalbot.com/mcp/messages');
   
   try {
     // Test 1: List available tools
