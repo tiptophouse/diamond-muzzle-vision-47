@@ -53,6 +53,9 @@ import SubscriptionTestPage from './pages/SubscriptionTestPage';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
+// Test MCP connection on dev
+import './lib/test-mcp';
+
 // Register service worker for offline support in Telegram Mini App
 registerServiceWorker();
 
