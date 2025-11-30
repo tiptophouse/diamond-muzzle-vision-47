@@ -90,18 +90,18 @@ export const apiEndpoints = {
   
   // Auction endpoints
   auctions: {
-    create: () => `/api/v1/auctions`,
+    create: () => `/api/v1/auctions/`,
     getById: (auctionId: string) => `/api/v1/auctions/${auctionId}`,
     getAll: (params?: { status?: string; limit?: number; offset?: number }) => {
       const query = new URLSearchParams();
       if (params?.status) query.set('status', params.status);
       if (params?.limit) query.set('limit', String(params.limit));
       if (params?.offset) query.set('offset', String(params.offset));
-      return `/api/v1/auctions?${query.toString()}`;
+      const queryString = query.toString();
+      return `/api/v1/auctions/${queryString ? '?' + queryString : ''}`;
     },
     placeBid: (auctionId: string) => `/api/v1/auctions/${auctionId}/bid`,
-    cancel: (auctionId: string) => `/api/v1/auctions/${auctionId}/cancel`,
-    myAuctions: (userId: number) => `/api/v1/users/${userId}/auctions`,
-    myBids: (userId: number) => `/api/v1/users/${userId}/bids`,
+    update: (auctionId: string) => `/api/v1/auctions/${auctionId}`,
+    close: (auctionId: string) => `/api/v1/auctions/${auctionId}/close`,
   },
 };
