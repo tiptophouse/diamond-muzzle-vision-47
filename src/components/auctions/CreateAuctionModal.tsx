@@ -5,14 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { useCreateAuction } from '@/hooks/api/useAuctions';
+import { createAuction, AuctionCreateRequest } from '@/lib/n8n-auction';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface CreateAuctionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   diamond: {
-    id: number; // FastAPI diamond_id
     stock_number: string;
     shape: string;
     weight: number;
@@ -27,11 +26,12 @@ interface CreateAuctionModalProps {
 
 export function CreateAuctionModal({ open, onOpenChange, diamond }: CreateAuctionModalProps) {
   const { user } = useTelegramAuth();
-  const createAuction = useCreateAuction();
+  const [isCreating, setIsCreating] = useState(false);
   
   const [bidIncrement, setBidIncrement] = useState<number>(100);
   const [customIncrement, setCustomIncrement] = useState<string>('');
   const [duration, setDuration] = useState<number>(30);
+  const [reservePrice, setReservePrice] = useState<string>('');
   const [startingPrice, setStartingPrice] = useState<string>(
     diamond.price_per_carat && diamond.weight 
       ? String(Math.round(diamond.price_per_carat * diamond.weight))
@@ -40,7 +40,7 @@ export function CreateAuctionModal({ open, onOpenChange, diamond }: CreateAuctio
 
   const handleCreate = async () => {
     if (!user) {
-      toast.error('Please sign in to create an auction');
+      toast.error('Authentication required');
       return;
     }
 
@@ -58,24 +58,44 @@ export function CreateAuctionModal({ open, onOpenChange, diamond }: CreateAuctio
       return;
     }
 
-    const now = new Date();
-    const startTime = new Date(now.getTime() + 60000); // Start in 1 minute
-    const endTime = new Date(startTime.getTime() + duration * 60000); // Add duration
+    setIsCreating(true);
 
-    createAuction.mutate(
-      {
-        diamond_id: diamond.id,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        start_price: Number(startingPrice),
-        min_increment: finalIncrement,
-      },
-      {
-        onSuccess: () => {
-          onOpenChange(false);
+    try {
+      const auctionRequest: AuctionCreateRequest = {
+        stockNumber: diamond.stock_number,
+        startingPrice: Number(startingPrice),
+        minIncrement: finalIncrement,
+        currency: 'USD',
+        durationMinutes: duration,
+        reservePrice: reservePrice ? Number(reservePrice) : undefined,
+        sellerTelegramId: user.id,
+        diamondData: {
+          shape: diamond.shape,
+          weight: diamond.weight,
+          color: diamond.color,
+          clarity: diamond.clarity,
+          cut: diamond.cut,
+          picture: diamond.picture,
+          certificateUrl: diamond.certificate_url,
+          pricePerCarat: diamond.price_per_carat,
         },
+        groupChatIds: [-1002312345678], // TODO: Get from settings
+      };
+
+      const result = await createAuction(auctionRequest);
+
+      if (result.success) {
+        toast.success('🎉 Auction created and broadcasted to groups!');
+        onOpenChange(false);
+      } else {
+        toast.error(result.error || 'Failed to create auction');
       }
-    );
+    } catch (error) {
+      console.error('Auction creation error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create auction');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -172,21 +192,25 @@ export function CreateAuctionModal({ open, onOpenChange, diamond }: CreateAuctio
             </Select>
           </div>
 
+          {/* Reserve Price (Optional) */}
+          <div className="space-y-2">
+            <Label htmlFor="reservePrice">Reserve Price (Optional)</Label>
+            <Input
+              id="reservePrice"
+              type="number"
+              value={reservePrice}
+              onChange={(e) => setReservePrice(e.target.value)}
+              placeholder="Minimum acceptable price"
+            />
+          </div>
         </div>
 
         <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)} 
-            disabled={createAuction.isPending}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isCreating}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleCreate} 
-            disabled={createAuction.isPending}
-          >
-            {createAuction.isPending ? 'Creating...' : 'Create Auction'}
+          <Button onClick={handleCreate} disabled={isCreating}>
+            {isCreating ? 'Creating...' : 'Create Auction'}
           </Button>
         </DialogFooter>
       </DialogContent>
