@@ -3,12 +3,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { createAuction } from '@/lib/auctions';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useAuctionViralMechanics } from '@/hooks/useAuctionViralMechanics';
 import { supabase } from '@/integrations/supabase/client';
+import { Gem, Clock, DollarSign } from 'lucide-react';
 
 interface DiamondData {
   stockNumber: string;
@@ -40,12 +43,34 @@ export function CreateAuctionModal({
 }: CreateAuctionModalProps) {
   const [startingPrice, setStartingPrice] = useState('');
   const [minIncrement, setMinIncrement] = useState('50');
-  const [durationHours, setDurationHours] = useState('24');
+  const [customIncrement, setCustomIncrement] = useState('');
+  const [duration, setDuration] = useState('60'); // minutes
+  const [buyNowPrice, setBuyNowPrice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { hapticFeedback } = useTelegramWebApp();
   const { user } = useTelegramAuth();
   const { shareToGroups, isSharing } = useAuctionViralMechanics();
+  
+  const BID_PRESETS = [
+    { value: '50', label: '$50' },
+    { value: '100', label: '$100' },
+    { value: '150', label: '$150' },
+    { value: 'custom', label: 'אחר' },
+  ];
+  
+  const DURATION_OPTIONS = [
+    { value: '15', label: '15 דקות' },
+    { value: '30', label: '30 דקות' },
+    { value: '45', label: '45 דקות' },
+    { value: '60', label: 'שעה' },
+    { value: '120', label: '2 שעות' },
+    { value: '180', label: '3 שעות' },
+  ];
+  
+  const activeBidIncrement = minIncrement === 'custom' 
+    ? customIncrement 
+    : minIncrement;
   
   // Safety check: Don't render if user context is not available
   if (!user) {
@@ -76,7 +101,13 @@ export function CreateAuctionModal({
     }
 
     console.log('✅ Validation passed');
-    console.log('🔨 Creating auction with:', { stockNumber, startingPrice, minIncrement, durationHours, userId });
+    console.log('🔨 Creating auction with:', { 
+      stockNumber, 
+      startingPrice, 
+      minIncrement: activeBidIncrement, 
+      duration: `${duration} minutes`, 
+      userId 
+    });
     setIsSubmitting(true);
     hapticFeedback.impact('light');
 
@@ -95,12 +126,13 @@ export function CreateAuctionModal({
         total_price: diamond.price,
       };
       
-      // Step 2: Create auction with snapshot
+      // Step 2: Create auction with snapshot (convert minutes to hours)
+      const durationHours = Number(duration) / 60;
       const auction = await createAuction({
         stock_number: stockNumber,
         starting_price: Number(startingPrice),
-        min_increment: Number(minIncrement),
-        duration_hours: Number(durationHours),
+        min_increment: Number(activeBidIncrement),
+        duration_hours: durationHours,
         seller_telegram_id: userId,
         diamond_snapshot: diamondSnapshot,
       });
@@ -114,9 +146,9 @@ export function CreateAuctionModal({
         duration: 2000,
       });
 
-      // Step 2: AUTO-SHARE TO MULTIPLE GROUPS (VIRAL MECHANICS)
+      // Step 3: AUTO-SHARE TO MULTIPLE GROUPS (VIRAL MECHANICS)
       const endsAt = new Date();
-      endsAt.setHours(endsAt.getHours() + Number(durationHours));
+      endsAt.setMinutes(endsAt.getMinutes() + Number(duration));
 
       const diamondDescription = `💎 ${diamond.carat}ct ${diamond.shape}
 🎨 Color: ${diamond.color} | Clarity: ${diamond.clarity}
@@ -130,7 +162,7 @@ export function CreateAuctionModal({
         stockNumber,
         diamondDescription,
         currentPrice: Number(startingPrice),
-        minIncrement: Number(minIncrement),
+        minIncrement: Number(activeBidIncrement),
         currency: 'USD',
         endsAt: endsAt.toISOString(),
         imageUrl: diamond.picture,
@@ -185,58 +217,146 @@ export function CreateAuctionModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>🔨 יצירת מכרז - {diamondName}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Gem className="h-5 w-5 text-primary" />
+            יצירת מכרז חדש
+          </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-2">
+          {/* Diamond Preview Card */}
+          <Card className="border-primary/20">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-3">
+                {diamond.picture && (
+                  <img 
+                    src={diamond.picture} 
+                    alt={diamondName}
+                    className="h-16 w-16 rounded-lg object-cover"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{diamondName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {diamond.carat}ct • {diamond.color} • {diamond.clarity}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    מלאי: {stockNumber}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Starting Price */}
           <div className="space-y-2">
-            <Label htmlFor="starting-price">מחיר התחלתי ($)</Label>
+            <Label htmlFor="starting-price" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              מחיר התחלתי ($)
+            </Label>
             <Input
               id="starting-price"
               type="number"
               value={startingPrice}
               onChange={(e) => setStartingPrice(e.target.value)}
-              placeholder="0"
+              placeholder="הזן מחיר התחלתי"
+              min="0"
+              step="100"
+              className="text-lg font-semibold"
+            />
+          </div>
+
+          {/* Bid Increment Presets */}
+          <div className="space-y-2">
+            <Label>הפרש הצעה מינימלי</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {BID_PRESETS.map((preset) => (
+                <Button
+                  key={preset.value}
+                  type="button"
+                  variant={minIncrement === preset.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setMinIncrement(preset.value);
+                    hapticFeedback.impact('light');
+                  }}
+                  className="font-semibold"
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+            {minIncrement === 'custom' && (
+              <Input
+                type="number"
+                value={customIncrement}
+                onChange={(e) => setCustomIncrement(e.target.value)}
+                placeholder="הזן סכום"
+                min="1"
+                step="10"
+                className="mt-2"
+              />
+            )}
+          </div>
+
+          {/* Duration Dropdown */}
+          <div className="space-y-2">
+            <Label htmlFor="duration" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              משך המכרז
+            </Label>
+            <Select value={duration} onValueChange={setDuration}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר משך זמן" />
+              </SelectTrigger>
+              <SelectContent>
+                {DURATION_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Buy Now Price (Optional) */}
+          <div className="space-y-2">
+            <Label htmlFor="buy-now-price" className="text-muted-foreground">
+              מחיר קנייה מיידית (אופציונלי)
+            </Label>
+            <Input
+              id="buy-now-price"
+              type="number"
+              value={buyNowPrice}
+              onChange={(e) => setBuyNowPrice(e.target.value)}
+              placeholder="השאר ריק אם אין"
               min="0"
               step="100"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="min-increment">הפרש מינימלי ($)</Label>
-            <Input
-              id="min-increment"
-              type="number"
-              value={minIncrement}
-              onChange={(e) => setMinIncrement(e.target.value)}
-              placeholder="50"
-              min="1"
-              step="10"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="duration">משך הזמן (שעות)</Label>
-            <Input
-              id="duration"
-              type="number"
-              value={durationHours}
-              onChange={(e) => setDurationHours(e.target.value)}
-              placeholder="24"
-              min="1"
-              max="168"
-            />
-          </div>
-
+          {/* Create Button */}
           <Button
             onClick={handleCreateAuction}
-            disabled={isSubmitting || isSharing}
-            className="w-full"
+            disabled={isSubmitting || isSharing || !startingPrice || !activeBidIncrement}
+            className="w-full h-12 text-base font-semibold"
           >
-            {isSubmitting || isSharing ? 'יוצר ומשתף...' : '🔨 צור מכרז'}
+            {isSubmitting || isSharing ? (
+              <>
+                <span className="animate-pulse">יוצר ומשתף...</span>
+              </>
+            ) : (
+              <>
+                🔨 צור מכרז ושתף לקבוצות
+              </>
+            )}
           </Button>
+          
+          <p className="text-xs text-center text-muted-foreground">
+            המכרז ישותף אוטומטית לקבוצות טלגרם עם כפתורי הצעה
+          </p>
         </div>
       </DialogContent>
     </Dialog>
