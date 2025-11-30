@@ -1,6 +1,9 @@
 
 project_id = "uhhljqgxhdhbbhpohxll"
 
+[functions.fastapi-mcp-bridge]
+verify_jwt = false
+
 [api]
 enabled = true
 port = 54321
