@@ -6,11 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createAuction } from '@/lib/auctions';
+import { callN8NWorkflow } from '@/lib/n8n';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useAuctionViralMechanics } from '@/hooks/useAuctionViralMechanics';
-import { supabase } from '@/integrations/supabase/client';
 import { Gem, Clock, DollarSign } from 'lucide-react';
 
 interface DiamondData {
@@ -50,7 +48,6 @@ export function CreateAuctionModal({
   const { toast } = useToast();
   const { hapticFeedback } = useTelegramWebApp();
   const { user } = useTelegramAuth();
-  const { shareToGroups, isSharing } = useAuctionViralMechanics();
   
   const BID_PRESETS = [
     { value: '50', label: '$50' },
@@ -112,92 +109,47 @@ export function CreateAuctionModal({
     hapticFeedback.impact('light');
 
     try {
-      console.log('📡 Calling createAuction...');
+      console.log('📡 Calling n8n AUCTION_CREATE_ENGINE workflow...');
       
-      // Step 1: Prepare diamond snapshot from FastAPI data
-      const diamondSnapshot = {
-        stock_number: diamond.stockNumber,
-        shape: diamond.shape,
-        weight: diamond.carat,
-        color: diamond.color,
-        clarity: diamond.clarity,
-        cut: diamond.cut,
-        picture: diamond.picture,
-        total_price: diamond.price,
-      };
-      
-      // Step 2: Create auction with snapshot (convert minutes to hours)
-      const durationHours = Number(duration) / 60;
-      const auction = await createAuction({
-        stock_number: stockNumber,
-        starting_price: Number(startingPrice),
-        min_increment: Number(activeBidIncrement),
-        duration_hours: durationHours,
-        seller_telegram_id: userId,
-        diamond_snapshot: diamondSnapshot,
-      });
-
-      console.log('✅ Auction created:', auction.id);
-      
-      hapticFeedback.notification('success');
-      toast({
-        title: '✅ מכרז נוצר בהצלחה!',
-        description: `מכרז ${stockNumber} נפתח`,
-        duration: 2000,
-      });
-
-      // Step 3: AUTO-SHARE TO MULTIPLE GROUPS (VIRAL MECHANICS)
-      const endsAt = new Date();
-      endsAt.setMinutes(endsAt.getMinutes() + Number(duration));
-
-      const diamondDescription = `💎 ${diamond.carat}ct ${diamond.shape}
-🎨 Color: ${diamond.color} | Clarity: ${diamond.clarity}
-✨ Cut: ${diamond.cut}
-📦 Stock: ${diamond.stockNumber}`;
-
-      console.log('📤 Starting auto-share to Telegram groups...');
-      
-      const sharedSuccessfully = await shareToGroups({
-        auctionId: auction.id,
-        stockNumber,
-        diamondDescription,
-        currentPrice: Number(startingPrice),
+      // Call n8n workflow to create auction + broadcast to Telegram groups
+      const result = await callN8NWorkflow('auction_create', {
+        stockNumber: diamond.stockNumber,
+        startingPrice: Number(startingPrice),
         minIncrement: Number(activeBidIncrement),
-        currency: 'USD',
-        endsAt: endsAt.toISOString(),
-        imageUrl: diamond.picture,
-        groupIds: [-1002178695748], // Test group for auction auto-sharing
+        duration: Number(duration), // minutes
+        buyNowPrice: buyNowPrice ? Number(buyNowPrice) : null,
+        sellerTelegramId: userId,
+        diamond: {
+          shape: diamond.shape,
+          carat: diamond.carat,
+          color: diamond.color,
+          clarity: diamond.clarity,
+          cut: diamond.cut,
+          picture: diamond.picture,
+          price: diamond.price,
+        },
       });
 
-      if (!sharedSuccessfully) {
-        console.error('⚠️ Sharing to groups failed but auction was created');
-        toast({ 
-          title: '⚠️ המכרז נוצר', 
-          description: 'אך השיתוף לטלגרם נכשל. בדוק לוגים.',
-          variant: 'default',
-          duration: 5000,
-        });
-        // Don't close modal on sharing failure - let user retry
-        return;
+      if (!result.success) {
+        throw new Error(result.error || 'n8n workflow failed');
       }
 
-      console.log('✅ Auction shared successfully to Telegram groups');
+      console.log('✅ Auction created via n8n:', result.data);
+      
       hapticFeedback.notification('success');
       toast({
-        title: '🎉 מכרז שותף בהצלחה!',
-        description: 'המכרז נשלח לטלגרם עם כפתורי הצעה',
+        title: '🎉 מכרז נוצר ושותף בהצלחה!',
+        description: `מכרז ${stockNumber} נשלח לטלגרם עם כפתורי הצעה`,
         duration: 3000,
       });
       
       onOpenChange(false);
-      onSuccess?.(auction.id);
+      onSuccess?.(result.data?.auctionId || '');
     } catch (error: any) {
       console.error('❌ AUCTION CREATION FAILED:', error);
       console.error('❌ Error details:', {
         message: error?.message,
         stack: error?.stack,
-        response: error?.response,
-        code: error?.code
       });
       
       hapticFeedback.notification('error');
@@ -340,10 +292,10 @@ export function CreateAuctionModal({
           {/* Create Button */}
           <Button
             onClick={handleCreateAuction}
-            disabled={isSubmitting || isSharing || !startingPrice || !activeBidIncrement}
+            disabled={isSubmitting || !startingPrice || !activeBidIncrement}
             className="w-full h-12 text-base font-semibold"
           >
-            {isSubmitting || isSharing ? (
+            {isSubmitting ? (
               <>
                 <span className="animate-pulse">יוצר ומשתף...</span>
               </>

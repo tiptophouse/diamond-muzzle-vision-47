@@ -5,8 +5,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// n8n webhook URL from MCP workflow details
-const N8N_WEBHOOK_URL = 'https://n8nlo.app.n8n.cloud/webhook/ae74c72e-bb87-4235-a5a8-392b0c3ea291';
+// n8n webhook URLs - Update these after creating workflows
+const N8N_WEBHOOKS = {
+  auction_create: 'https://n8nlo.app.n8n.cloud/webhook/auction-create',
+  auction_bid: 'https://n8nlo.app.n8n.cloud/webhook/auction-bid',
+  diamond_ai: 'https://n8nlo.app.n8n.cloud/webhook/ae74c72e-bb87-4235-a5a8-392b0c3ea291', // existing
+};
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -15,27 +19,27 @@ serve(async (req) => {
   }
 
   try {
-    const { message, telegram_id, group_id, additional_context } = await req.json();
+    const body = await req.json();
+    const { action, ...payload } = body;
     
-    console.log('📤 Calling n8n workflow with:', { 
-      message, 
-      telegram_id, 
-      group_id,
-      webhook: N8N_WEBHOOK_URL 
+    // Route to correct n8n workflow based on action
+    const webhookUrl = N8N_WEBHOOKS[action as keyof typeof N8N_WEBHOOKS] || N8N_WEBHOOKS.diamond_ai;
+    
+    console.log('📤 Calling n8n workflow:', { 
+      action,
+      webhook: webhookUrl,
+      payload: Object.keys(payload)
     });
 
-    // Call n8n webhook
-    const response = await fetch(N8N_WEBHOOK_URL, {
+    // Call n8n webhook with full payload
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        message: message || 'Hello from BrilliantBot',
-        telegram_id,
-        group_id,
+        ...payload,
         timestamp: new Date().toISOString(),
-        context: additional_context || {},
       }),
     });
 
