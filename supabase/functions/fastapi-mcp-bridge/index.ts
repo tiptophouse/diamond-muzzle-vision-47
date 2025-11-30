@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const FASTAPI_MCP_URL = 'https://api.mazalbot.com/mcp';
+const FASTAPI_MCP_URL = 'https://api.mazalbot.com/mcp/messages';
 
 serve(async (req) => {
   // Handle CORS preflight

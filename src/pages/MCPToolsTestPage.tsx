@@ -46,7 +46,7 @@ export default function MCPToolsTestPage() {
         <div>
           <h1 className="text-3xl font-bold mb-2">FastAPI MCP Tools</h1>
           <p className="text-muted-foreground">
-            Test connection to FastAPI MCP endpoint at api.mazalbot.com/mcp
+            Test connection to FastAPI MCP endpoint at api.mazalbot.com/mcp/messages
           </p>
         </div>
 
