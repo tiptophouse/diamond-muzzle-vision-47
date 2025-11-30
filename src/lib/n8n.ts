@@ -5,6 +5,7 @@ export interface N8NResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
+  details?: Record<string, any>;
 }
 
 export interface DiamondAIRequest {

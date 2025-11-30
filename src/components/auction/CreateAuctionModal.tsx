@@ -130,8 +130,28 @@ export function CreateAuctionModal({
         },
       });
 
+      console.log('📊 n8n response:', result);
+      
       if (!result.success) {
-        throw new Error(result.error || 'n8n workflow failed');
+        const errorMsg = result.error || 'n8n workflow failed';
+        const details = result.details || {};
+        
+        console.error('❌ n8n workflow returned error:', {
+          error: errorMsg,
+          details,
+        });
+        
+        hapticFeedback.notification('error');
+        
+        // Show detailed error with n8n context
+        toast({ 
+          title: 'שגיאה ביצירת מכרז', 
+          description: errorMsg,
+          variant: 'destructive',
+          duration: 7000,
+        });
+        alert(`❌ ${errorMsg}\n\nפרטים נוספים:\n${JSON.stringify(details, null, 2)}`);
+        return;
       }
 
       console.log('✅ Auction created via n8n:', result.data);
@@ -149,18 +169,20 @@ export function CreateAuctionModal({
       console.error('❌ AUCTION CREATION FAILED:', error);
       console.error('❌ Error details:', {
         message: error?.message,
+        response: error?.response,
         stack: error?.stack,
       });
       
       hapticFeedback.notification('error');
       
-      const errorMsg = error?.message || 'לא ניתן ליצור מכרז כרגע';
+      const errorMsg = error?.message || error?.error || 'לא ניתן ליצור מכרז כרגע';
       toast({ 
         title: 'שגיאה ביצירת מכרז', 
         description: errorMsg, 
-        variant: 'destructive' 
+        variant: 'destructive',
+        duration: 7000, 
       });
-      alert(`שגיאה: ${errorMsg}`); // Backup alert
+      alert(`❌ שגיאה: ${errorMsg}\n\nפרטים:\n${JSON.stringify(error, null, 2)}`); // Backup alert with full error
     } finally {
       console.log('🏁 Auction creation flow finished');
       setIsSubmitting(false);

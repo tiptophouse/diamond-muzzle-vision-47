@@ -46,7 +46,36 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ n8n webhook error:', response.status, errorText);
-      throw new Error(`n8n workflow failed: ${response.status} - ${errorText}`);
+      
+      // Parse n8n error for user-friendly message
+      let userMessage = 'n8n workflow failed';
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.code === 404) {
+          userMessage = '🔴 הווקפלו n8n לא פעיל. יש להפעיל את workflow "Auction Orchestration System" ב-n8n';
+        } else {
+          userMessage = errorData.message || errorText;
+        }
+      } catch {
+        userMessage = errorText || 'n8n connection failed';
+      }
+      
+      // Return 200 with error in body (not 500) so Supabase client parses it properly
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: userMessage,
+          details: {
+            status: response.status,
+            webhook: webhookUrl,
+            action,
+          }
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200, // Changed to 200 so Supabase client reads the body
+        }
+      );
     }
 
     const result = await response.json();
@@ -65,6 +94,8 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('💥 Error calling n8n workflow:', error);
+    
+    // Return 200 with error in body (not 500)
     return new Response(
       JSON.stringify({
         success: false,
@@ -72,7 +103,7 @@ serve(async (req) => {
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status: 200, // Changed to 200 so Supabase client reads the body
       }
     );
   }
