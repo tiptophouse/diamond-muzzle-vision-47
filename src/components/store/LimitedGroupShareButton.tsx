@@ -80,7 +80,7 @@ export function LimitedGroupShareButton({
         return;
       }
 
-      // Send test message to personal chat instead of group
+      // Send to group -1002178695748 with test mode flag
       const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
         body: {
           diamond: {
@@ -100,7 +100,8 @@ export function LimitedGroupShareButton({
             picture: (diamond as any).picture
           },
           sharedBy: userId,
-          testMode: true // This will send to personal chat instead of group
+          targetChatId: -1002178695748, // Send to Brilliantbot group
+          testMode: true // Mark as test for message prefix
         }
       });
 

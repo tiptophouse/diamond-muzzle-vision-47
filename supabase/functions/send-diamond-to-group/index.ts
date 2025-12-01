@@ -74,10 +74,11 @@ serve(async (req) => {
       );
     }
 
-    // Determine target chat: explicit targetChatId takes priority, then test mode, then group
-    const finalTargetChatId = targetChatId || (testMode ? sharedBy : (Deno.env.get('B2B_GROUP_ID') || -1002178695748));
+    // FIXED: Use group chat -1002178695748 as default target
+    const B2B_GROUP_ID = -1002178695748;
+    const finalTargetChatId = targetChatId || B2B_GROUP_ID;
     const messagePrefix = testMode ? '🧪 **TEST MESSAGE** - ' : '';
-    const chatType = targetChatId ? 'specified chat' : (testMode ? 'personal chat' : 'group');
+    const chatType = targetChatId ? 'specified chat' : 'group';
     
     console.log(`📧 Sending diamond to ${chatType}: ${finalTargetChatId}`);
 

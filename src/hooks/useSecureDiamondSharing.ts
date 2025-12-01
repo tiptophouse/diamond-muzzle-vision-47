@@ -135,6 +135,7 @@ export function useSecureDiamondSharing() {
           },
           sharedBy: userId,
           sharedByName: sharerName,
+          targetChatId: -1002178695748, // Always send to Brilliantbot group
           testMode: false
         }
       });
