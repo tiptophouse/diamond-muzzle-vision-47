@@ -155,28 +155,33 @@ export function useTelegramAdvanced() {
     }, []),
   };
 
-  // Story Sharing (Telegram 7.2+)
+  // Story Sharing (Telegram 7.8+)
   const shareStory = useCallback(async (mediaUrl: string, options?: {
     text?: string;
     widgetLink?: { url: string; name?: string };
   }) => {
     const webApp = webAppRef.current;
-    if (webApp?.shareToStory) {
-      try {
-        await webApp.shareToStory(mediaUrl, {
-          text: options?.text,
-          widget_link: options?.widgetLink ? {
-            url: options.widgetLink.url,
-            name: options.widgetLink.name
-          } : undefined
-        });
-        return true;
-      } catch (error) {
-        console.error('Share to story failed:', error);
-        return false;
-      }
+    
+    // Check version - shareToStory requires 7.8+
+    const version = parseFloat(webApp?.version || '0');
+    if (version < 7.8 || !webApp?.shareToStory) {
+      console.warn(`Story sharing requires Telegram 7.8+. Current: ${webApp?.version}`);
+      return false;
     }
-    return false;
+
+    try {
+      webApp.shareToStory(mediaUrl, {
+        text: options?.text,
+        widget_link: options?.widgetLink ? {
+          url: options.widgetLink.url,
+          name: options.widgetLink.name
+        } : undefined
+      });
+      return true;
+    } catch (error) {
+      console.error('Share to story failed:', error);
+      return false;
+    }
   }, []);
 
   // Enhanced CloudStorage with batch operations
@@ -316,13 +321,14 @@ export function useTelegramAdvanced() {
   }, []);
 
   // Check Feature Support
+  const version = parseFloat(webAppRef.current?.version || '0');
   const features = {
     hasSecondaryButton: !!webAppRef.current?.SecondaryButton,
     hasBottomBar: !!webAppRef.current?.BottomBar,
     hasAccelerometer: !!webAppRef.current?.Accelerometer,
     hasGyroscope: !!webAppRef.current?.Gyroscope,
     hasDeviceOrientation: !!webAppRef.current?.DeviceOrientation,
-    hasStorySharing: !!webAppRef.current?.shareToStory,
+    hasStorySharing: version >= 7.8 && !!webAppRef.current?.shareToStory,
     hasFileDownload: !!webAppRef.current?.downloadFile,
     hasEmojiStatus: !!webAppRef.current?.setEmojiStatus,
     hasFullscreen: !!webAppRef.current?.requestFullscreen,
