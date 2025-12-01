@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useSimpleTelegramAuth } from "@/hooks/useSimpleTelegramAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useDiamondShareAnalytics } from "@/hooks/useDiamondShareAnalytics";
 import { Diamond } from "@/components/inventory/InventoryTable";
@@ -19,6 +20,7 @@ export default function SecureDiamondPage() {
   const { diamonds, loading } = useStoreData();
   const { webApp } = useTelegramWebApp();
   const { user, isTelegramEnvironment } = useSimpleTelegramAuth();
+  const { isAdmin } = useIsAdmin();
   const { toast } = useToast();
   const [sessionStartTime] = useState(Date.now());
   const [hasViewedOthers, setHasViewedOthers] = useState(false);
@@ -52,7 +54,6 @@ export default function SecureDiamondPage() {
   } = useDiamondShareAnalytics(stockNumber || '');
 
   const diamond = diamonds?.find(d => d.stockNumber === stockNumber);
-  const isAdmin = user?.id === 2138564172;
 
   // Security: Only allow access from Telegram
   useEffect(() => {
