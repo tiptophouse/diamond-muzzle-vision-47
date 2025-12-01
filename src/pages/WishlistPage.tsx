@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
+import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import { WishlistContent } from '@/components/wishlist/WishlistContent';
 
 const WishlistPage = () => {
   return (
-    <TelegramMiniAppLayout>
+    <TelegramLayout>
       <WishlistContent />
-    </TelegramMiniAppLayout>
+    </TelegramLayout>
   );
 };
 

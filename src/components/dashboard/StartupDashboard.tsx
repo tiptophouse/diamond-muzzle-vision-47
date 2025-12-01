@@ -181,7 +181,7 @@ export function StartupDashboard() {
               </CardContent>
             </Card>
             
-            <Card className="bg-background/70 backdrop-blur-sm border-primary/20 cursor-pointer hover:bg-background/80 transition-colors" onClick={() => handleQuickAction('matches', '/notifications')}>
+            <Card className="bg-background/70 backdrop-blur-sm border-primary/20">
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">

@@ -4,7 +4,6 @@
  */
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { shareStory as sdkShareStory } from '@telegram-apps/sdk';
 
 export function useTelegramAdvanced() {
   const webAppRef = useRef<any>(null);
@@ -156,59 +155,54 @@ export function useTelegramAdvanced() {
     }, []),
   };
 
-  // Story Sharing (Telegram 7.2+) using SDK
+  // Story Sharing (Telegram 7.2+)
   const shareStory = useCallback(async (mediaUrl: string, options?: {
     text?: string;
     widgetLink?: { url: string; name?: string };
-  }): Promise<{ success: boolean; error?: string }> => {
+  }) => {
     console.log('📱 shareStory called:', {
       isInitialized,
-      mediaUrl,
-      isAvailable: sdkShareStory.isAvailable()
+      hasWebApp: !!webAppRef.current,
+      hasShareMethod: !!webAppRef.current?.shareToStory,
+      mediaUrl
     });
 
     if (!isInitialized) {
-      const error = 'Telegram SDK not initialized yet. Please wait...';
-      console.warn('⚠️', error);
-      return { success: false, error };
+      console.warn('⚠️ Story sharing attempted before initialization');
+      return false;
     }
 
-    // Check if story sharing is available using SDK
-    if (!sdkShareStory.isAvailable()) {
-      const error = 'Story sharing requires Telegram 7.2+. Please update your Telegram app.';
-      console.error('❌', error);
-      return { success: false, error };
+    const webApp = webAppRef.current;
+    if (!webApp) {
+      console.error('❌ WebApp not available');
+      return false;
+    }
+
+    if (!webApp.shareToStory) {
+      console.error('❌ shareToStory method not available (requires Telegram 7.2+)');
+      return false;
     }
 
     // Validate image URL
     if (!mediaUrl || !mediaUrl.startsWith('http')) {
-      const error = `Invalid image URL: ${mediaUrl}. Must be a valid HTTPS URL.`;
-      console.error('❌', error);
-      return { success: false, error };
+      console.error('❌ Invalid media URL:', mediaUrl);
+      return false;
     }
 
     try {
-      console.log('🚀 Calling SDK shareStory...');
-      
-      // Use SDK's shareStory directly
-      await sdkShareStory(mediaUrl, {
+      console.log('🚀 Calling webApp.shareToStory...');
+      await webApp.shareToStory(mediaUrl, {
         text: options?.text,
-        widgetLink: options?.widgetLink ? {
+        widget_link: options?.widgetLink ? {
           url: options.widgetLink.url,
           name: options.widgetLink.name
         } : undefined
       });
-      
       console.log('✅ Story share successful');
-      return { success: true };
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Unknown error occurred while sharing to story';
-      console.error('❌ Share to story failed:', {
-        error,
-        errorMessage,
-        mediaUrl
-      });
-      return { success: false, error: errorMessage };
+      return true;
+    } catch (error) {
+      console.error('❌ Share to story failed:', error);
+      return false;
     }
   }, [isInitialized]);
 
@@ -357,7 +351,7 @@ export function useTelegramAdvanced() {
       hasAccelerometer: !!webApp?.Accelerometer,
       hasGyroscope: !!webApp?.Gyroscope,
       hasDeviceOrientation: !!webApp?.DeviceOrientation,
-      hasStorySharing: sdkShareStory.isAvailable(), // Use SDK's feature detection
+      hasStorySharing: !!webApp?.shareToStory,
       hasFileDownload: !!webApp?.downloadFile,
       hasEmojiStatus: !!webApp?.setEmojiStatus,
       hasFullscreen: !!webApp?.requestFullscreen,

@@ -47,13 +47,6 @@ export function useDiamondFormLogic({ form, onSuccess }: UseDiamondFormLogicProp
     console.log('🔵 FORM: User ID:', user.id);
 
     try {
-      console.log('🚀 Submitting diamond to FastAPI:', {
-        stockNumber: data.stockNumber,
-        userId: user.id,
-        shape: data.shape,
-        carat: data.carat
-      });
-      
       await createDiamond.mutateAsync({ 
         data, 
         userId: user.id 
@@ -62,21 +55,9 @@ export function useDiamondFormLogic({ form, onSuccess }: UseDiamondFormLogicProp
       console.log('✅ Diamond added successfully via FastAPI');
       setUploadSuccess(true);
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ Form submission error:', error);
-      console.error('❌ Error details:', {
-        message: error?.message,
-        status: error?.status,
-        response: error?.response
-      });
-      
-      // Show user-friendly error
-      toast({
-        title: '❌ שגיאה בהוספת יהלום',
-        description: error?.message || 'נסה שוב או פנה לתמיכה',
-        variant: 'destructive',
-        duration: 5000,
-      });
+      // Error toast is already handled by useCreateDiamond
     } finally {
       setIsSubmitting(false);
     }

@@ -96,21 +96,19 @@ serve(async (req) => {
       gem360_url: diamond.video_url,
     };
 
-    // Build DiamondCardOptions with auction context (WEBHOOK-FREE)
-    const baseUrl = Deno.env.get('WEBAPP_URL') || 'https://brilliantbot.lovable.app';
+    // Build DiamondCardOptions with auction context
     const options: DiamondCardOptions = {
       context: 'auction',
       customMessage: `🔴 LIVE: ${spectatorCount} צופים\n\n💰 מחיר נוכחי: ${current_price} ${currency}\n📈 הצעה הבאה: ${current_price + min_increment} ${currency}\n⏰ זמן נותר: ~${timeRemaining} שעות\n🔥 ${bidCount} הצעות`,
       additionalButtons: [
         {
           text: `💰 הצע ${current_price + min_increment} ${currency}`,
-          web_app: { url: `${baseUrl}/public/auction/${auction_id}?action=bid` },
+          callback_data: `bid:${auction_id}`,
         }
       ],
       includePrice: false, // Don't show diamond price, show auction price instead
       includeStoreButton: false, // Don't show store button in auctions
       botUsername: TELEGRAM_BOT_USERNAME,
-      baseUrl,
     };
 
     console.log('📤 Sending auction message to chat:', chat_id);

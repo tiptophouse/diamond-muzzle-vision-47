@@ -22,7 +22,7 @@ export interface DiamondCardOptions {
   sharedById?: number;
   context?: 'group_share' | 'auction' | 'notification' | 'offer';
   includePrice?: boolean;
-  additionalButtons?: Array<{ text: string; url?: string; web_app?: { url: string }; callback_data?: string }>;
+  additionalButtons?: Array<{ text: string; url?: string; callback_data?: string }>;
   includeStoreButton?: boolean; // Default true
   botUsername?: string;
   baseUrl?: string;
@@ -114,7 +114,7 @@ ${priceText}
 export function createDiamondInlineButtons(
   diamond: DiamondCardData,
   options: DiamondCardOptions = {}
-): Array<Array<{ text: string; url?: string; web_app?: { url: string }; callback_data?: string }>> {
+): Array<Array<{ text: string; url?: string; callback_data?: string }>> {
   const {
     sharedById,
     additionalButtons = [],
@@ -123,15 +123,17 @@ export function createDiamondInlineButtons(
     baseUrl = Deno.env.get('WEBAPP_URL') || 'https://bc6a5b8a-3262-41f9-a127-aae26f8063fe.lovableproject.com',
   } = options;
 
-  const buttons: Array<Array<{ text: string; url?: string; web_app?: { url: string }; callback_data?: string }>> = [];
+  const telegramBotUrl = `https://t.me/${botUsername}`;
+
+  const buttons: Array<Array<{ text: string; url?: string; callback_data?: string }>> = [];
 
   // Main action buttons (first row)
-  const mainButtons: Array<{ text: string; url?: string; web_app?: { url: string }; callback_data?: string }> = [];
+  const mainButtons: Array<{ text: string; url?: string; callback_data?: string }> = [];
 
-  // Use web_app buttons for direct Mini App navigation (fixes deep link issue)
+  // Always use Telegram deep links for diamond details (works in all contexts)
   mainButtons.push({
     text: '💎 פרטים מלאים',
-    web_app: { url: `${baseUrl}/public/diamond/${diamond.stock_number}?shared=true${sharedById ? `&from=${sharedById}` : ''}` }
+    url: `${telegramBotUrl}?startapp=diamond_${diamond.stock_number}`
   });
 
   buttons.push(mainButtons);
@@ -149,7 +151,7 @@ export function createDiamondInlineButtons(
     buttons.push([
       {
         text: '🏪 כל היהלומים',
-        web_app: { url: sharedById ? `${baseUrl}/store?seller=${sharedById}` : `${baseUrl}/store` }
+        url: `${telegramBotUrl}?startapp=store`
       }
     ]);
   }
@@ -165,7 +167,7 @@ export function createDiamondCard(
   options: DiamondCardOptions = {}
 ): {
   message: string;
-  inline_keyboard: Array<Array<{ text: string; url?: string; web_app?: { url: string }; callback_data?: string }>>;
+  inline_keyboard: Array<Array<{ text: string; url?: string; callback_data?: string }>>;
   parse_mode: string;
 } {
   return {

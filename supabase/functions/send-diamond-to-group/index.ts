@@ -162,43 +162,41 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
 
     console.log('🔨 Active auction check:', { stockNumber: diamond.stockNumber, hasAuction: !!activeAuction });
 
-    // Create inline keyboard - IMPORTANT: web_app buttons don't work in groups!
-    // Groups require url buttons with deep links to Mini App
-    const botUsername = (Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot').replace(/^@/, '');
+    // Create inline keyboard with Telegram deep links (fixes the broken URLs)
+    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
     const baseUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://brilliantbot.lovable.app';
-    
-    console.log('🔗 Bot username:', botUsername);
-    console.log('🔗 Mini App base URL:', baseUrl);
     
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: testMode ? [
-          // Personal chat - can use web_app buttons
+          // Personal chat - use web_app with proper deep links
           [
             {
               text: '💎 פרטים מלאים',
-              web_app: { url: `${baseUrl}/public/diamond/${diamond.stockNumber}?from=${sharedBy}&shared=true` }
+              web_app: {
+                url: `${telegramBotUrl}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+              }
             }
           ],
           [
             {
               text: '📱 צור קשר',
-              web_app: { url: `${baseUrl}/public/diamond/${diamond.stockNumber}?contact=true&seller=${sharedBy}` }
+              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
             {
               text: '🏪 עוד יהלומים מהמוכר',
-              web_app: { url: `${baseUrl}/store?seller=${sharedBy}` }
+              url: `${telegramBotUrl}?startapp=store_${sharedBy}`
             }
           ]
         ] : (() => {
-          // Group chat - MUST use url buttons (web_app doesn't work in groups!)
+          // Group chat - use Telegram deep links that actually work
           const buttons = [
             [
               {
                 text: '💎 פרטים מלאים + תמונות HD',
-                url: `https://t.me/${botUsername}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+                url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
               }
             ]
           ];
@@ -208,7 +206,9 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             buttons.push([
               {
                 text: '🔨 הצע מחיר במכרז',
-                url: `https://t.me/${botUsername}/app?startapp=auction_${activeAuction.id}`
+                web_app: {
+                  url: `${baseUrl}/public/auction/${activeAuction.id}?shared=true`
+                }
               }
             ]);
           }
@@ -216,18 +216,18 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           buttons.push([
             {
               text: '📱 צור קשר למחיר ולפרטים',
-              url: `https://t.me/${botUsername}/app?startapp=contact_${diamond.stockNumber}_${sharedBy}`
+              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ]);
 
           buttons.push([
             {
               text: '🏪 עוד יהלומים מהמוכר',
-              url: `https://t.me/${botUsername}/app?startapp=store_${sharedBy}`
+              url: `${telegramBotUrl}?startapp=store_${sharedBy}`
             },
             {
               text: '🤖 עזרה בבחירה',
-              url: `https://t.me/${botUsername}/app?startapp=ai_${diamond.stockNumber}`
+              url: `${telegramBotUrl}?start=ai_assistant_${diamond.stockNumber}`
             }
           ]);
 

@@ -69,13 +69,13 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Main Content Area with safe padding for bottom nav and top header */}
-      <main className="flex-1 pb-20 overflow-y-auto" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      {/* Main Content Area */}
+      <main className="flex-1 pb-20">
         {children}
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.1)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
         <div className="grid grid-cols-5 max-w-screen-sm mx-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;

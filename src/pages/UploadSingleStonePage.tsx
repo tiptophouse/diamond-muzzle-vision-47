@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
+import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { DiamondForm } from "@/components/upload/stone/DiamondForm";
 import { UploadForm } from "@/components/upload/UploadForm";
 import { UploadWizard } from "@/components/upload/UploadWizard";
@@ -112,7 +112,7 @@ export default function UploadSingleStonePage() {
 
   const t = text[language];
   
-  return <TelegramMiniAppLayout>
+  return <TelegramLayout>
       <div className="min-h-screen bg-background pb-safe">
         {!hasScannedCertificate ? (
           <div className="px-3 pt-2 space-y-3">
@@ -178,5 +178,5 @@ export default function UploadSingleStonePage() {
           onScanSuccess={handleScanSuccess} 
         />
       </div>
-    </TelegramMiniAppLayout>;
+    </TelegramLayout>;
 }

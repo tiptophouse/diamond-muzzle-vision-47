@@ -41,14 +41,14 @@ export function ColorDistributionChart({ distribution, isLoading }: ColorDistrib
   };
 
   return (
-    <Card className="card-elevated mb-6">
+    <Card className="bg-background/60 backdrop-blur-sm border-primary/10">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Palette className="w-5 h-5 text-primary" />
           Color Distribution
         </CardTitle>
       </CardHeader>
-      <CardContent className="pb-6">
+      <CardContent>
         {isLoading ? (
           <div className="h-48 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -61,7 +61,7 @@ export function ColorDistributionChart({ distribution, isLoading }: ColorDistrib
             </div>
           </div>
         ) : (
-          <div className="h-56 pb-4" onClick={handleChartClick}>
+          <div className="h-48" onClick={handleChartClick}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

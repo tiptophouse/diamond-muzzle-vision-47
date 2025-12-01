@@ -191,7 +191,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
       </div>
       
       {isOpen && (
-        <div className="grid gap-4 p-4 mb-4 border rounded-lg bg-white shadow-sm max-h-[60vh] overflow-y-auto pb-24">
+        <div className="grid gap-4 p-4 mb-4 border rounded-lg bg-white">
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               <Label htmlFor="shape">Shape</Label>

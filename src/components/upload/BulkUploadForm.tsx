@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useTelegramMainButton } from "@/hooks/useTelegramMainButton";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { BulkFileUploadArea } from "./BulkFileUploadArea";
 import { CsvValidationResults } from "./CsvValidationResults";
 import { BulkUploadProgress } from "./BulkUploadProgress";

@@ -41,13 +41,13 @@ const NotificationsPage = () => {
       
       setLoadingInventory(true);
       try {
-        const response = await http<any[]>(
+        const response = await http<{ diamonds: any[] }>(
           apiEndpoints.getAllStones(userId),
           { method: 'GET' }
         );
         
         const inventoryMap = new Map();
-        response?.forEach((diamond: any) => {
+        response.diamonds?.forEach((diamond: any) => {
           // Map by stock_number and diamond_id
           if (diamond.stock_number) {
             inventoryMap.set(diamond.stock_number, diamond);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useTelegramPerformance } from '@/hooks/useTelegramPerformance';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { logger } from '@/utils/logger';
@@ -10,7 +10,6 @@ interface TelegramMiniAppProps {
 export function TelegramMiniApp({ children }: TelegramMiniAppProps) {
   const { webApp, isReady } = useTelegramWebApp();
   const { isOptimized, metrics } = useTelegramPerformance();
-  const [showEmergencyMode, setShowEmergencyMode] = useState(false);
 
   useEffect(() => {
     if (isReady && webApp) {
@@ -40,28 +39,12 @@ export function TelegramMiniApp({ children }: TelegramMiniAppProps) {
     }
   }, [isReady, webApp, isOptimized, metrics]);
 
-  // Emergency timeout fallback - show UI after 3 seconds maximum
-  useEffect(() => {
-    const emergencyTimeout = setTimeout(() => {
-      if (!isReady) {
-        logger.error('Emergency mode activated - Telegram SDK init timeout');
-        setShowEmergencyMode(true);
-      }
-    }, 3000);
-
-    return () => clearTimeout(emergencyTimeout);
-  }, [isReady]);
-
-  if (!isReady && !showEmergencyMode) {
+  if (!isReady) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center animate-fade-in">
-          <div className="relative w-16 h-16 mx-auto mb-4">
-            <div className="absolute inset-0 border-3 border-primary/20 rounded-full animate-ping" style={{ animationDuration: '1s' }}></div>
-            <div className="absolute inset-0 border-3 border-primary border-t-transparent rounded-full animate-spin" style={{ animationDuration: '0.8s' }}></div>
-          </div>
-          <p className="text-base font-medium text-foreground mb-1">Loading BrilliantBot</p>
-          <p className="text-sm text-muted-foreground">Initializing Telegram Mini App...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Initializing Telegram Mini App...</p>
         </div>
       </div>
     );

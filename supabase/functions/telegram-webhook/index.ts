@@ -220,31 +220,43 @@ serve(async (req) => {
       return new Response('OK', { status: 200, headers: corsHeaders });
     }
 
-    // 🤖 Forward diamond requests to n8n AI workflow
-    console.log('🤖 Forwarding message to n8n AI workflow');
+    // Parse diamond request from message
+    const diamondRequest = parseDiamondRequest(message.text);
     
-    try {
-      const n8nResponse = await supabase.functions.invoke('call-n8n-workflow', {
-        body: {
-          message: message.text,
-          telegram_id: message.from.id,
-          group_id: chatId,
-          additional_context: {
-            from: message.from,
-            chat: message.chat,
-            message_id: message.message_id,
-            timestamp: new Date(message.date * 1000).toISOString()
-          }
+    if (diamondRequest.confidence < 0.3) {
+      console.log('📱 Low confidence diamond request, skipping');
+      return new Response('OK', { status: 200, headers: corsHeaders });
+    }
+
+    console.log('📱 Parsed diamond request:', diamondRequest);
+
+    // Find matching diamonds from all dealers
+    const matches = await findMatchingDiamonds(diamondRequest);
+    
+    if (matches.length === 0) {
+      console.log('📱 No matching diamonds found');
+      return new Response('OK', { status: 200, headers: corsHeaders });
+    }
+
+    console.log(`📱 Found ${matches.length} matching diamonds`);
+
+    // Create notifications for dealers with matching inventory
+    for (const match of matches) {
+      await createGroupNotification({
+        telegram_id: match.dealer_telegram_id,
+        message_type: 'group_diamond_request',
+        message_content: `💎 New diamond request in B2B group: ${message.text}`,
+        metadata: {
+          original_message: message.text,
+          requester: message.from,
+          group_chat_id: chatId,
+          group_title: message.chat.title,
+          matching_diamonds: match.diamonds,
+          confidence_score: diamondRequest.confidence,
+          request_details: diamondRequest,
+          message_timestamp: new Date(message.date * 1000).toISOString()
         }
       });
-
-      if (n8nResponse.error) {
-        console.error('❌ n8n workflow error:', n8nResponse.error);
-      } else {
-        console.log('✅ n8n workflow completed:', n8nResponse.data);
-      }
-    } catch (error) {
-      console.error('❌ Error calling n8n workflow:', error);
     }
 
     return new Response('OK', { status: 200, headers: corsHeaders });

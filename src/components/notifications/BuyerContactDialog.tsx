@@ -321,11 +321,6 @@ export function BuyerContactDialog({
 
       // Send AI message + all diamonds in one call to buyer's personal chat
       console.log('📤 Invoking send-rich-diamond-message edge function...');
-      console.log('📤 Request payload:', {
-        telegram_id: buyerId,
-        message_length: generatedMessage.length,
-        diamonds_count: diamondsToSend.length,
-      });
       
       const { data, error } = await supabase.functions.invoke('send-rich-diamond-message', {
         body: {
@@ -334,8 +329,6 @@ export function BuyerContactDialog({
           diamonds: diamondsToSend,
         },
       });
-      
-      console.log('📤 Edge function invoke completed:', { hasData: !!data, hasError: !!error });
 
       console.log('📤 Edge function returned!');
       console.log('📤 Edge function response:', { 
