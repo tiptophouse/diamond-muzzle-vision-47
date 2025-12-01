@@ -3,13 +3,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { createAuction } from '@/lib/auctions';
+import { useCreateAuction } from '@/hooks/api/useAuctions';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { Card } from '@/components/ui/card';
 
 interface DiamondData {
+  id: number;
   stockNumber: string;
   carat: number;
   shape: string;
@@ -26,7 +29,9 @@ interface CreateAuctionModalProps {
   stockNumber: string;
   diamondName: string;
   diamond: DiamondData;
-  onSuccess?: (auctionId: string) => void;
+  sellerTelegramId: number;
+  sellerUsername?: string;
+  onSuccess?: (auctionId: number) => void;
 }
 
 export function CreateAuctionModal({
@@ -35,15 +40,16 @@ export function CreateAuctionModal({
   stockNumber,
   diamondName,
   diamond,
+  sellerTelegramId,
+  sellerUsername,
   onSuccess,
 }: CreateAuctionModalProps) {
   const [startingPrice, setStartingPrice] = useState('');
   const [minIncrement, setMinIncrement] = useState('50');
-  const [durationHours, setDurationHours] = useState('24');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [expiryHours, setExpiryHours] = useState('24');
   const { toast } = useToast();
   const { hapticFeedback } = useTelegramWebApp();
-  const { user } = useTelegramAuth();
+  const createAuctionMutation = useCreateAuction();
 
   const handleCreateAuction = async () => {
     if (!startingPrice || Number(startingPrice) <= 0) {
@@ -52,49 +58,44 @@ export function CreateAuctionModal({
       return;
     }
 
-    const userId = user?.id;
-    if (!userId) {
-      toast({ title: 'שגיאה', description: 'לא ניתן לזהות משתמש', variant: 'destructive' });
-      hapticFeedback.notification('error');
+    if (!diamond.id) {
+      toast({ title: 'שגיאה', description: 'מזהה יהלום חסר', variant: 'destructive' });
       return;
     }
 
-    console.log('🔨 Creating auction with seller_telegram_id:', userId);
-    setIsSubmitting(true);
+    console.log('🔨 Creating auction via FastAPI...');
     hapticFeedback.impact('light');
 
     try {
-      // Step 1: Create auction
-      const auction = await createAuction({
-        stock_number: stockNumber,
-        starting_price: Number(startingPrice),
+      // Calculate end time
+      const startTime = new Date();
+      const endTime = new Date();
+      endTime.setHours(endTime.getHours() + Number(expiryHours));
+
+      // Step 1: Create auction via FastAPI
+      const auction = await createAuctionMutation.mutateAsync({
+        diamond_id: diamond.id,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        start_price: Number(startingPrice),
         min_increment: Number(minIncrement),
-        duration_hours: Number(durationHours),
-        seller_telegram_id: userId,
       });
 
-      console.log('✅ Auction created:', auction.id);
+      console.log('✅ Auction created via FastAPI:', auction.id);
 
-      // Step 2: Send message to test group
+      // Step 2: Send message to Telegram group
       try {
-        const endsAt = new Date();
-        endsAt.setHours(endsAt.getHours() + Number(durationHours));
-
-        const diamondDescription = `💎 ${diamond.carat}ct ${diamond.shape}
-🎨 Color: ${diamond.color} | Clarity: ${diamond.clarity}
-✨ Cut: ${diamond.cut}
-📦 Stock: ${diamond.stockNumber}`;
-
         const { error: sendError } = await supabase.functions.invoke('send-auction-message', {
           body: {
-            auction_id: auction.id,
+            auction_id: auction.id.toString(),
             stock_number: stockNumber,
-            diamond_description: diamondDescription,
             current_price: Number(startingPrice),
             min_increment: Number(minIncrement),
             currency: 'USD',
-            ends_at: endsAt.toISOString(),
+            ends_at: endTime.toISOString(),
             image_url: diamond.picture || undefined,
+            seller_telegram_id: sellerTelegramId,
+            seller_username: sellerUsername,
           }
         });
 
@@ -107,7 +108,6 @@ export function CreateAuctionModal({
           });
         } else {
           console.log('✅ Auction message sent to group');
-          hapticFeedback.notification('success');
           toast({ 
             title: '✅ המכרז נוצר ושותף בהצלחה!', 
             description: 'המכרז נשלח לקבוצת הבדיקה' 
@@ -126,14 +126,7 @@ export function CreateAuctionModal({
       onSuccess?.(auction.id);
     } catch (error) {
       console.error('Failed to create auction:', error);
-      hapticFeedback.notification('error');
-      toast({ 
-        title: 'שגיאה', 
-        description: 'לא ניתן ליצור מכרז כרגע', 
-        variant: 'destructive' 
-      });
-    } finally {
-      setIsSubmitting(false);
+      // Error toast handled by mutation
     }
   };
 
@@ -141,10 +134,29 @@ export function CreateAuctionModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>🔨 יצירת מכרז - {diamondName}</DialogTitle>
+          <DialogTitle>🔨 יצירת מכרז</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
+          {/* Diamond Preview Card */}
+          <Card className="p-4 bg-muted/50">
+            <div className="flex gap-3">
+              {diamond.picture && (
+                <img 
+                  src={diamond.picture} 
+                  alt={diamondName}
+                  className="w-16 h-16 object-cover rounded"
+                />
+              )}
+              <div className="flex-1">
+                <p className="font-medium">{diamondName}</p>
+                <p className="text-sm text-muted-foreground">
+                  {diamond.carat}ct • {diamond.color} • {diamond.clarity}
+                </p>
+              </div>
+            </div>
+          </Card>
+
           <div className="space-y-2">
             <Label htmlFor="starting-price">מחיר התחלתי ($)</Label>
             <Input
@@ -152,44 +164,49 @@ export function CreateAuctionModal({
               type="number"
               value={startingPrice}
               onChange={(e) => setStartingPrice(e.target.value)}
-              placeholder="0"
+              placeholder="5000"
               min="0"
               step="100"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="min-increment">הפרש מינימלי ($)</Label>
-            <Input
-              id="min-increment"
-              type="number"
-              value={minIncrement}
-              onChange={(e) => setMinIncrement(e.target.value)}
-              placeholder="50"
-              min="1"
-              step="10"
-            />
+            <Label htmlFor="min-increment">הפרש מינימלי להצעה</Label>
+            <Select value={minIncrement} onValueChange={setMinIncrement}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="50">$50</SelectItem>
+                <SelectItem value="100">$100</SelectItem>
+                <SelectItem value="150">$150</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="duration">משך הזמן (שעות)</Label>
-            <Input
-              id="duration"
-              type="number"
-              value={durationHours}
-              onChange={(e) => setDurationHours(e.target.value)}
-              placeholder="24"
-              min="1"
-              max="168"
-            />
+            <Label htmlFor="expiry">זמן תפוגה</Label>
+            <Select value={expiryHours} onValueChange={setExpiryHours}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">שעה אחת</SelectItem>
+                <SelectItem value="3">3 שעות</SelectItem>
+                <SelectItem value="6">6 שעות</SelectItem>
+                <SelectItem value="12">12 שעות</SelectItem>
+                <SelectItem value="24">24 שעות</SelectItem>
+                <SelectItem value="48">48 שעות</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Button
             onClick={handleCreateAuction}
-            disabled={isSubmitting}
+            disabled={createAuctionMutation.isPending}
             className="w-full"
           >
-            {isSubmitting ? 'יוצר מכרז...' : '🔨 צור מכרז'}
+            {createAuctionMutation.isPending ? 'שולח לקבוצה...' : '📤 שלח לקבוצה'}
           </Button>
         </div>
       </DialogContent>
