@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
 import { formatPrice } from '@/utils/numberUtils';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface DiamondMatch {
   stock_number: string;
@@ -57,6 +58,7 @@ export function BuyerContactDialog({
   const [totalValue, setTotalValue] = useState(0);
   const [diamondImages, setDiamondImages] = useState<string[]>([]);
   const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
+  const { user } = useTelegramAuth();
 
   useEffect(() => {
     if (open && diamonds.length > 0) {
@@ -189,6 +191,9 @@ export function BuyerContactDialog({
           telegram_id: buyerId, // ✅ Direct to buyer's personal chat
           message: generatedMessage, // AI-generated message
           diamonds: diamondsToSend, // All diamonds at once
+          seller_telegram_id: sellerTelegramId,
+          seller_username: user?.username,
+          seller_name: user?.first_name || 'המוכר',
         },
       });
 

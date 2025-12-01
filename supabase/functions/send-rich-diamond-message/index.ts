@@ -18,6 +18,9 @@ interface RequestBody {
   telegram_id: number;
   message: string;
   diamonds: DiamondData[];
+  seller_telegram_id?: number;
+  seller_username?: string;
+  seller_name?: string;
 }
 
 serve(async (req) => {
@@ -26,12 +29,13 @@ serve(async (req) => {
   }
 
   try {
-    const { telegram_id, message, diamonds }: RequestBody = await req.json();
+    const { telegram_id, message, diamonds, seller_telegram_id, seller_username, seller_name }: RequestBody = await req.json();
 
     console.log('📤 Sending rich diamond message:', {
       telegram_id,
       message_length: message?.length,
-      diamonds_count: diamonds?.length
+      diamonds_count: diamonds?.length,
+      seller_info: { seller_telegram_id, seller_username, seller_name }
     });
 
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
@@ -101,21 +105,34 @@ serve(async (req) => {
         // Format diamond message with emojis and structure
         const diamondMessage = formatDiamondMessage(diamond);
         
-        // Create inline keyboard with proper Telegram deep links
-        const inlineKeyboard = [
+        // Create inline keyboard with web_app format for Mini App routes
+        const inlineKeyboard: any[][] = [
           [
             {
               text: '💎 פרטים מלאים + תמונות HD',
-              url: `${telegramBotUrl}?startapp=diamond_${diamond.stock_number}`
-            }
-          ],
-          [
-            {
-              text: '🏪 כל היהלומים',
-              url: `${telegramBotUrl}?startapp=store`
+              web_app: {
+                url: `${MINI_APP_URL}/public/diamond/${diamond.stock_number}?shared=true`
+              }
             }
           ]
         ];
+
+        // Add contact seller button if seller info is provided
+        if (seller_username) {
+          inlineKeyboard.push([
+            {
+              text: `💬 צור קשר עם ${seller_name || 'המוכר'}`,
+              url: `https://t.me/${seller_username}`
+            }
+          ]);
+        } else if (seller_telegram_id) {
+          inlineKeyboard.push([
+            {
+              text: `💬 צור קשר עם ${seller_name || 'המוכר'}`,
+              url: `tg://user?id=${seller_telegram_id}`
+            }
+          ]);
+        }
 
         // Try to send with photo first
         if (imageUrl) {
