@@ -14,6 +14,7 @@ interface Diamond {
   price_per_carat: number;
   cut?: string;
   picture?: string;
+  certificate_url?: string;
 }
 
 serve(async (req) => {
@@ -57,8 +58,13 @@ serve(async (req) => {
             if (response.ok) {
               const data = await response.json();
               if (data && data.length > 0) {
-                // Use the picture from FastAPI response
-                return { ...d, picture: data[0].picture || d.picture };
+                // Use the picture and certificate_url from FastAPI response
+                return { 
+                  ...d, 
+                  picture: data[0].picture || d.picture,
+                  certificate_url: data[0].certificate_url || d.certificate_url,
+                  cut: data[0].cut || d.cut
+                };
               }
             }
           }
@@ -158,8 +164,10 @@ REMEMBER:
             weight: d.weight,
             color: d.color,
             clarity: d.clarity,
+            cut: d.cut || 'EXCELLENT',
             price: totalPrice,
-            picture: d.picture
+            picture: d.picture,
+            certificate_url: d.certificate_url
           };
         }),
         totalValue,

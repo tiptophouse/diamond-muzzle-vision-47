@@ -181,9 +181,11 @@ export function BuyerContactDialog({
         clarity: d.clarity,
         cut: d.cut || 'EXCELLENT',
         price: d.price,
-        picture: d.picture,
-        certificate_url: d.certificate_url,
+        picture: d.picture || null,
+        certificate_url: d.certificate_url || null,
       }));
+
+      console.log('📤 Sending diamonds with images:', diamondsToSend.filter(d => d.picture).length);
 
       // Send AI message + all diamonds in one call to buyer's personal chat
       const { error } = await supabase.functions.invoke('send-rich-diamond-message', {
