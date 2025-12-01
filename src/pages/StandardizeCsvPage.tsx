@@ -92,7 +92,7 @@ export default function StandardizeCsvPage() {
           text: 'Upload to Inventory',
           isVisible: true,
           isActive: true,
-          onClick: () => navigate('/upload')
+          onClick: () => navigate('/upload-single-stone')
         };
       default:
         return { text: '', isVisible: false, isActive: false, onClick: undefined };
@@ -414,7 +414,7 @@ export default function StandardizeCsvPage() {
                 </p>
                 <div className="flex flex-col gap-3 mt-6">
                   <Button 
-                    onClick={() => navigate('/upload')}
+                    onClick={() => navigate('/upload-single-stone')}
                     className="w-full"
                     size="lg"
                   >
