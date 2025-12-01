@@ -54,6 +54,7 @@ export function QuickShareActions({ diamond, className = "" }: QuickShareActions
             picture: (diamond as any).picture
           },
           sharedBy: userId,
+          targetChatId: -1002178695748, // Send to Brilliantbot group
           testMode: true
         }
       });

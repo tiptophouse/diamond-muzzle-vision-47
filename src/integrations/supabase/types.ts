@@ -115,6 +115,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_concierge_analytics: {
+        Row: {
+          conversion_occurred: boolean | null
+          created_at: string | null
+          diamonds_matched: number | null
+          id: string
+          metadata: Json | null
+          query_text: string | null
+          response_time_ms: number | null
+          telegram_group_id: number | null
+          telegram_id: number | null
+          user_clicked: boolean | null
+        }
+        Insert: {
+          conversion_occurred?: boolean | null
+          created_at?: string | null
+          diamonds_matched?: number | null
+          id?: string
+          metadata?: Json | null
+          query_text?: string | null
+          response_time_ms?: number | null
+          telegram_group_id?: number | null
+          telegram_id?: number | null
+          user_clicked?: boolean | null
+        }
+        Update: {
+          conversion_occurred?: boolean | null
+          created_at?: string | null
+          diamonds_matched?: number | null
+          id?: string
+          metadata?: Json | null
+          query_text?: string | null
+          response_time_ms?: number | null
+          telegram_group_id?: number | null
+          telegram_id?: number | null
+          user_clicked?: boolean | null
+        }
+        Relationships: []
+      }
       ai_learning_patterns: {
         Row: {
           created_at: string | null
@@ -1207,6 +1246,39 @@ export type Database = {
           user_telegram_id?: number | null
           viewed_360?: boolean | null
           viewed_certificate?: boolean | null
+        }
+        Relationships: []
+      }
+      diamond_embeddings: {
+        Row: {
+          content: string
+          created_at: string | null
+          diamond_id: number
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          stock_number: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          diamond_id: number
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          stock_number: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          diamond_id?: number
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          stock_number?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
