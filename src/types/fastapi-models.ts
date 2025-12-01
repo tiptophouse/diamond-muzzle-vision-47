@@ -279,7 +279,77 @@ export interface HTTPValidationError {
   detail?: ValidationError[];
 }
 
-// Auction Types
+// ============================================================================
+// FASTAPI AUCTION MODELS (Production)
+// ============================================================================
+
+// Auction Diamond Schema (embedded in FastAPI auction response)
+export interface AuctionDiamondSchema {
+  id: number;
+  stock: string;
+  shape: string;
+  weight: number;
+  color: string;
+  clarity: string;
+  lab: string;
+  certificate_number: number;
+  cut: string;
+  polish: string;
+  symmetry: string;
+  fluorescence: string;
+  table: number;
+  depth_percentage: number;
+  culet: string;
+  rapnet: number | null;
+  price_per_carat: number | null;
+  picture: string | null;
+}
+
+// Auction State
+export type FastAPIAuctionState = 'scheduled' | 'active' | 'closed' | 'cancelled';
+
+// FastAPI Auction Response
+export interface FastAPIAuctionSchema {
+  id: number;
+  auction_diamond_id: number;
+  start_time: string;
+  end_time: string;
+  start_price: number;
+  current_price: number;
+  current_winner_id: number | null;
+  min_increment: number;
+  state: FastAPIAuctionState;
+  auction_diamond: AuctionDiamondSchema;
+}
+
+// FastAPI Auction Create Request
+export interface FastAPIAuctionCreateRequest {
+  diamond_id: number;
+  start_time: string;
+  end_time: string;
+  start_price: number;
+  min_increment: number;
+}
+
+// FastAPI Bid Request
+export interface FastAPIBidRequest {
+  user_id: number;
+  amount: number;
+}
+
+// FastAPI Bid Response
+export interface FastAPIBidSchema {
+  id: number;
+  auction_id: number;
+  user_id: number;
+  amount: number;
+  created_at: string;
+}
+
+// ============================================================================
+// LEGACY AUCTION TYPES (for backward compatibility)
+// ============================================================================
+
 export interface AuctionSchema {
   id: string;
   stock_number: string;

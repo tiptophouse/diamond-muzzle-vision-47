@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { listAuctions } from '@/api/auctions';
+import type { FastAPIAuctionSchema } from '@/types/fastapi-models';
 
 export interface AuctionWithDiamond {
-  id: string;
+  id: number;  // Changed from string to number
   stock_number: string;
   starting_price: number;
   current_price: number;
@@ -26,6 +27,35 @@ export interface AuctionWithDiamond {
   } | null;
 }
 
+// Transform FastAPI response to UI format
+function transformAuction(auction: FastAPIAuctionSchema): AuctionWithDiamond {
+  const d = auction.auction_diamond;
+  return {
+    id: auction.id,
+    stock_number: d?.stock || `Auction-${auction.id}`,
+    starting_price: auction.start_price,
+    current_price: auction.current_price,
+    min_increment: auction.min_increment,
+    currency: 'USD',
+    status: auction.state === 'scheduled' || auction.state === 'active' ? 'active' : auction.state,
+    starts_at: auction.start_time,
+    ends_at: auction.end_time,
+    seller_telegram_id: 0, // FastAPI doesn't return this yet
+    bid_count: 0, // Will be populated via real-time
+    diamond: d ? {
+      stock_number: d.stock,
+      shape: d.shape,
+      weight: d.weight,
+      color: d.color,
+      clarity: d.clarity,
+      cut: d.cut || undefined,
+      picture: d.picture || undefined,
+      certificate_number: d.certificate_number,
+      lab: d.lab,
+    } : null,
+  };
+}
+
 export function useAuctionsData() {
   const [auctions, setAuctions] = useState<AuctionWithDiamond[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,83 +66,12 @@ export function useAuctionsData() {
       setLoading(true);
       setError(null);
 
-      console.log('🎯 Fetching active auctions...');
-
-      // Fetch active auctions
-      const { data: auctionsData, error: auctionsError } = await (supabase as any)
-        .from('auctions')
-        .select('*')
-        .eq('status', 'active')
-        .gt('ends_at', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (auctionsError) {
-        console.error('❌ Error fetching auctions:', auctionsError);
-        throw auctionsError;
-      }
-
-      console.log(`✅ Found ${auctionsData?.length || 0} active auctions`);
-
-      // Fetch auction IDs for diamonds and bids
-      const auctionIds = auctionsData?.map((a: any) => a.id) || [];
+      // Fetch from FastAPI - each auction has its own diamond embedded!
+      const data = await listAuctions();
+      const transformed = data.map(transformAuction);
       
-      if (auctionIds.length === 0) {
-        console.warn('⚠️ No active auctions found');
-        setAuctions([]);
-        setLoading(false);
-        return;
-      }
-      
-      // Fetch diamond snapshots from auction_diamonds table
-      const { data: diamondsData, error: diamondsError } = await (supabase as any)
-        .from('auction_diamonds')
-        .select('auction_id, stock_number, shape, weight, color, clarity, cut, picture, certificate_number, lab')
-        .in('auction_id', auctionIds);
-
-      if (diamondsError) {
-        console.error('❌ Error fetching diamonds:', diamondsError);
-      }
-
-      console.log(`💎 Found ${diamondsData?.length || 0} diamond snapshots`);
-
-      // Fetch bid counts
-      const { data: bidsData, error: bidsError } = await (supabase as any)
-        .from('auction_bids')
-        .select('auction_id')
-        .in('auction_id', auctionIds);
-
-      if (bidsError) {
-        console.error('❌ Error fetching bids:', bidsError);
-      }
-
-      console.log(`📊 Found ${bidsData?.length || 0} bids`);
-
-      // Map bid counts
-      const bidCounts: Record<string, number> = {};
-      bidsData?.forEach((bid: any) => {
-        bidCounts[bid.auction_id] = (bidCounts[bid.auction_id] || 0) + 1;
-      });
-
-      // Combine data
-      const diamondsMap = new Map(
-        diamondsData?.map((d: any) => [d.auction_id, d]) || []
-      );
-
-      const enrichedAuctions: AuctionWithDiamond[] = auctionsData?.map((auction: any) => ({
-        ...auction,
-        diamond: diamondsMap.get(auction.id) || null,
-        bid_count: bidCounts[auction.id] || 0,
-      })) || [];
-
-      console.log('🎯 Final auctions with diamonds:', {
-        total: enrichedAuctions.length,
-        withDiamonds: enrichedAuctions.filter(a => a.diamond).length,
-        withoutDiamonds: enrichedAuctions.filter(a => !a.diamond).length
-      });
-
-      setAuctions(enrichedAuctions);
+      setAuctions(transformed);
     } catch (err) {
-      console.error('❌ Error fetching auctions:', err);
       setError(err as Error);
     } finally {
       setLoading(false);

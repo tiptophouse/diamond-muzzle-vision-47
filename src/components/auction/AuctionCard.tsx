@@ -18,8 +18,8 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   const navigate = useNavigate();
   const tg = getTelegramWebApp();
   const { user } = useTelegramAuth();
-  const { viewCount, uniqueViewers } = useRealtimeAuctionViews(auction.id);
-  const { currentPrice, bidCount, lastBidTime } = useRealtimeAuctionBids(auction.id);
+  const { viewCount, uniqueViewers } = useRealtimeAuctionViews(String(auction.id));
+  const { currentPrice, bidCount, lastBidTime } = useRealtimeAuctionBids(String(auction.id));
 
   // Use realtime price if available, otherwise fall back to auction prop
   const displayPrice = currentPrice || auction.current_price;
