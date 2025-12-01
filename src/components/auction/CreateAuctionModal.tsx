@@ -96,6 +96,16 @@ export function CreateAuctionModal({
             image_url: diamond.picture || undefined,
             seller_telegram_id: sellerTelegramId,
             seller_username: sellerUsername,
+            diamond: {
+              shape: diamond.shape,
+              weight: diamond.carat,
+              color: diamond.color,
+              clarity: diamond.clarity,
+              cut: diamond.cut,
+              stock_number: stockNumber,
+              price_per_carat: diamond.price / diamond.carat,
+              picture: diamond.picture,
+            },
           }
         });
 
