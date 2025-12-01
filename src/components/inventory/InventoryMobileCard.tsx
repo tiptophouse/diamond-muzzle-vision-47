@@ -26,7 +26,7 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
     if (!features.hasStorySharing) {
       toast({
         title: "❌ לא נתמך",
-        description: "Story sharing requires Telegram 7.2+. Please update your Telegram app.",
+        description: "Story sharing requires Telegram 7.8+ (mobile only). Please update your Telegram app.",
         variant: "destructive",
       });
       return;
@@ -36,11 +36,16 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
     hapticFeedback.impact('light');
 
     try {
-      // Use the diamond image or a placeholder
-      const imageUrl = diamond.imageUrl || diamond.picture || diamond.gem360Url || 'https://via.placeholder.com/400?text=Diamond';
+      // Use diamond image - must be public HTTPS URL
+      const imageUrl = diamond.imageUrl || diamond.picture || diamond.gem360Url;
       
-      // Create the widget button that links back to diamond detail
-      const widgetUrl = `https://mazalbot.app/public/diamond/${diamond.diamondId || diamond.id}?shared=true`;
+      if (!imageUrl) {
+        throw new Error('No image URL available');
+      }
+      
+      // Use t.me deep link format for best compatibility
+      const botUsername = 'MazalBotApp'; // Replace with actual bot username
+      const widgetUrl = `https://t.me/${botUsername}?startapp=diamond_${diamond.diamondId || diamond.id}`;
       
       const success = await shareStory(imageUrl, {
         text: `💎 ${diamond.carat}ct ${diamond.shape} | ${diamond.color} • ${diamond.clarity}\n${formatPrice(diamond.price)}`,
@@ -64,7 +69,7 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
       hapticFeedback.notification('error');
       toast({
         title: "❌ שגיאה",
-        description: "לא ניתן לשתף לסטורי כרגע",
+        description: "לא ניתן לשתף לסטורי כרגע. ודא שיש תמונה ושאתה במכשיר נייד.",
         variant: "destructive",
       });
     } finally {
