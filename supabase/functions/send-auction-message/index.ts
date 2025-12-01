@@ -65,23 +65,6 @@ serve(async (req) => {
     const endsAtDate = new Date(ends_at);
     const timeRemaining = Math.floor((endsAtDate.getTime() - Date.now()) / (1000 * 60 * 60));
 
-    // Fetch bid count
-    const { data: bids, error: bidsError } = await supabase
-      .from('auction_bids')
-      .select('id', { count: 'exact', head: true })
-      .eq('auction_id', auction_id);
-
-    const bidCount = bidsError ? 0 : (bids || 0);
-
-    // Fetch spectator count (active watchers in last 5 minutes)
-    const { data: spectators, error: spectatorsError } = await supabase
-      .from('auction_presence')
-      .select('telegram_id', { count: 'exact', head: true })
-      .eq('auction_id', auction_id)
-      .gte('last_heartbeat', new Date(Date.now() - 5 * 60 * 1000).toISOString());
-
-    const spectatorCount = spectatorsError ? 0 : (spectators || 0);
-
     // Build DiamondCardData from snapshot
     const diamondData: DiamondCardData = {
       id: diamond.id || stock_number, // Use snapshot ID or stock_number as fallback
@@ -99,7 +82,7 @@ serve(async (req) => {
     // Build DiamondCardOptions with auction context
     const options: DiamondCardOptions = {
       context: 'auction',
-      customMessage: `🔴 LIVE: ${spectatorCount} צופים\n\n💰 מחיר נוכחי: ${current_price} ${currency}\n📈 הצעה הבאה: ${current_price + min_increment} ${currency}\n⏰ זמן נותר: ~${timeRemaining} שעות\n🔥 ${bidCount} הצעות`,
+      customMessage: `💰 מחיר נוכחי: ${current_price} ${currency}\n📈 הצעה הבאה: ${current_price + min_increment} ${currency}\n⏰ זמן נותר: ~${timeRemaining} שעות\n🔥 0 הצעות`,
       additionalButtons: [
         {
           text: `💰 הצע ${current_price + min_increment} ${currency}`,

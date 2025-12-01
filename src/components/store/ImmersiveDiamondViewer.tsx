@@ -256,41 +256,25 @@ Can we discuss this further?`;
   };
 
   const handleShareToStory = async () => {
-    console.log('📱 handleShareToStory called:', {
-      hasStorySharing: features.hasStorySharing,
-      hasImage: !!diamond.imageUrl,
-      imageUrl: diamond.imageUrl
-    });
-
     haptic?.impact?.('medium');
 
     if (!features.hasStorySharing) {
-      console.warn('⚠️ Story sharing not available');
-      toast.error('Story sharing not available (requires Telegram 7.2+)');
+      toast.error('Story sharing not available on this device (requires Telegram 7.2+)');
       return;
     }
 
-    // Use imageUrl or picture as fallback
-    const imageUrl = diamond.imageUrl || diamond.picture;
-    if (!imageUrl) {
-      console.warn('⚠️ No image URL found');
+    if (!diamond.imageUrl) {
       toast.error('No image available for sharing');
       return;
     }
 
-    if (!imageUrl.startsWith('http')) {
-      console.error('❌ Invalid image URL:', imageUrl);
-      toast.error('Invalid image URL (must be HTTPS)');
-      return;
-    }
-
     try {
-      const botUsername = 'BrilliantBot_bot';
-      const deepLink = `https://t.me/${botUsername}?startapp=diamond_${diamond.stockNumber}_${user?.id || 'guest'}_story`;
+      // Create deep link with stock number for tracking
+      const botUsername = 'BrilliantBot_bot'; // Your bot username
+      const deepLink = `https://t.me/${botUsername}?start=diamond_${diamond.stockNumber}_${user?.id || 'guest'}_story`;
       
-      console.log('🚀 Attempting story share:', { imageUrl, deepLink });
-      
-      const success = await shareStory(imageUrl, {
+      // Share to Telegram Story with widget link using the proper hook
+      const success = await shareStory(diamond.imageUrl, {
         text: `💎 ${diamond.carat}ct ${diamond.shape} Diamond - $${diamond.price.toLocaleString()}`,
         widgetLink: {
           url: deepLink,
@@ -299,12 +283,9 @@ Can we discuss this further?`;
       });
 
       if (!success) {
-        console.error('❌ Story share returned false');
         toast.error('Failed to share to story');
         return;
       }
-
-      console.log('✅ Story shared successfully');
 
       // Track story share in database
       await supabase.from('diamond_story_shares').insert({
@@ -316,9 +297,10 @@ Can we discuss this further?`;
       });
 
       toast.success('🎉 Shared to your story! Watch the engagement roll in!');
+      console.log('📱 Shared to Telegram Story:', deepLink);
     } catch (error) {
-      console.error('❌ Story share error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to share to story');
+      console.error('Failed to share to story:', error);
+      toast.error('Failed to share to story');
     }
   };
 
@@ -555,12 +537,10 @@ Can we discuss this further?`;
                 onClick={handleShareToStory}
                 variant="outline"
                 size="lg"
-                disabled={!features.hasStorySharing}
-                title={!features.hasStorySharing ? "Requires Telegram 7.2+" : "Share to Story"}
-                className="w-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-white hover:from-pink-500/30 hover:to-purple-500/30 gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-white hover:from-pink-500/30 hover:to-purple-500/30 gap-2"
               >
                 <Share2 className="h-5 w-5" />
-                {features.hasStorySharing ? 'Share to Story (Viral 🚀)' : 'Story (Requires Telegram 7.2+)'}
+                Share to Story (Viral 🚀)
               </Button>
             </div>
           )}

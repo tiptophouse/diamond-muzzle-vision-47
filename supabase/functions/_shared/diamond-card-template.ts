@@ -120,7 +120,7 @@ export function createDiamondInlineButtons(
     additionalButtons = [],
     includeStoreButton = true, // Default to true
     botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot_bot',
-    baseUrl = Deno.env.get('WEBAPP_URL') || 'https://bc6a5b8a-3262-41f9-a127-aae26f8063fe.lovableproject.com',
+    baseUrl = Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '') || 'https://uhhljqgxhdhbbhpohxll.supabase.co',
   } = options;
 
   const telegramBotUrl = `https://t.me/${botUsername}`;
@@ -130,11 +130,17 @@ export function createDiamondInlineButtons(
   // Main action buttons (first row)
   const mainButtons: Array<{ text: string; url?: string; callback_data?: string }> = [];
 
-  // Always use Telegram deep links for diamond details (works in all contexts)
-  mainButtons.push({
-    text: '💎 פרטים מלאים',
-    url: `${telegramBotUrl}?startapp=diamond_${diamond.stock_number}`
-  });
+  if (diamond.id) {
+    mainButtons.push({
+      text: '💎 פרטים מלאים',
+      url: `${baseUrl}/diamond/${diamond.id}?shared=true${sharedById ? `&from=${sharedById}` : ''}&verify=true`
+    });
+  } else {
+    mainButtons.push({
+      text: '💎 פרטים מלאים',
+      url: `${telegramBotUrl}?startapp=diamond_${diamond.stock_number}`
+    });
+  }
 
   buttons.push(mainButtons);
 

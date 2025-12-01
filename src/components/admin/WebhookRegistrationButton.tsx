@@ -4,7 +4,6 @@ import { Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
-import { WebhookDeleteButton } from './WebhookDeleteButton';
 
 export function WebhookRegistrationButton() {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -34,17 +33,14 @@ export function WebhookRegistrationButton() {
   };
 
   return (
-    <div className="flex gap-2">
-      <Button
-        onClick={handleRegisterWebhook}
-        disabled={isRegistering}
-        variant="outline"
-        size="sm"
-      >
-        <Settings className="w-4 h-4 mr-2" />
-        {isRegistering ? 'רושם...' : 'רשום Telegram Webhook'}
-      </Button>
-      <WebhookDeleteButton />
-    </div>
+    <Button
+      onClick={handleRegisterWebhook}
+      disabled={isRegistering}
+      variant="outline"
+      size="sm"
+    >
+      <Settings className="w-4 h-4 mr-2" />
+      {isRegistering ? 'רושם...' : 'רשום Telegram Webhook'}
+    </Button>
   );
 }

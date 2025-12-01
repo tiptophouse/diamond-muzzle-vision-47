@@ -281,22 +281,13 @@ async function handleBidCallback(
       const endsAt = new Date(auction.ends_at);
       const timeRemaining = Math.floor((endsAt.getTime() - Date.now()) / (1000 * 60 * 60));
 
-      // Fetch spectator count
-      const { data: spectators } = await supabase
-        .from('auction_presence')
-        .select('telegram_id', { count: 'exact', head: true })
-        .eq('auction_id', auctionId)
-        .gte('last_heartbeat', new Date(Date.now() - 5 * 60 * 1000).toISOString());
-
-      const spectatorCount = spectators || 0;
-
       await editDiamondCard(
         message.chat.id,
         message.message_id,
         diamondData,
         {
           context: 'auction',
-          customMessage: `🔴 LIVE: ${spectatorCount} צופים\n\n💰 מחיר נוכחי: ${nextBidAmount} ${auction.currency}\n📈 הצעה הבאה: ${nextBidAmount + auction.min_increment} ${auction.currency}\n⏰ זמן נותר: ~${timeRemaining} שעות\n🔥 ${(auction.bid_count || 0) + 1} הצעות`,
+          customMessage: `💰 מחיר נוכחי: ${nextBidAmount} ${auction.currency}\n📈 הצעה הבאה: ${nextBidAmount + auction.min_increment} ${auction.currency}\n⏰ זמן נותר: ~${timeRemaining} שעות\n🔥 ${(auction.bid_count || 0) + 1} הצעות`,
           additionalButtons: [
             {
               text: `💰 הצע ${nextBidAmount + auction.min_increment} ${auction.currency}`,
@@ -370,15 +361,6 @@ async function updateAllAuctionMessages(
     const endsAt = new Date(auction.ends_at);
     const timeRemaining = Math.floor((endsAt.getTime() - Date.now()) / (1000 * 60 * 60));
 
-    // Fetch spectator count (active watchers in last 5 minutes)
-    const { data: spectators, error: spectatorsError } = await supabase
-      .from('auction_presence')
-      .select('telegram_id', { count: 'exact', head: true })
-      .eq('auction_id', auction.id)
-      .gte('last_heartbeat', new Date(Date.now() - 5 * 60 * 1000).toISOString());
-
-    const spectatorCount = spectatorsError ? 0 : (spectators || 0);
-
     const diamondData: DiamondCardData = {
       id: diamond.id,
       stock_number: diamond.stock_number,
@@ -399,7 +381,7 @@ async function updateAllAuctionMessages(
         diamondData,
         {
           context: 'auction',
-          customMessage: `🔴 LIVE: ${spectatorCount} צופים\n\n💰 מחיר נוכחי: ${newPrice} ${auction.currency}\n📈 הצעה הבאה: ${newPrice + auction.min_increment} ${auction.currency}\n⏰ זמן נותר: ~${timeRemaining} שעות\n🔥 ${auction.bid_count || 0} הצעות`,
+          customMessage: `💰 מחיר נוכחי: ${newPrice} ${auction.currency}\n📈 הצעה הבאה: ${newPrice + auction.min_increment} ${auction.currency}\n⏰ זמן נותר: ~${timeRemaining} שעות\n🔥 ${auction.bid_count || 0} הצעות`,
           additionalButtons: [
             {
               text: `💰 הצע ${newPrice + auction.min_increment} ${auction.currency}`,

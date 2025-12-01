@@ -404,36 +404,33 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             className="flex-1"
             variant="default"
           />
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 h-8 text-xs border-purple-200 text-purple-700 hover:bg-purple-50 disabled:opacity-50"
-            onClick={async () => {
-              if (!hasStorySharing) {
-                toast.error("Story sharing requires Telegram 7.2+");
-                return;
-              }
-              impactOccurred('medium');
-              await shareToStory({
-                id: diamond.id,
-                stockNumber: diamond.stockNumber,
-                carat: diamond.carat,
-                shape: diamond.shape,
-                color: diamond.color,
-                clarity: diamond.clarity,
-                cut: diamond.cut || '',
-                price: diamond.price,
-                imageUrl: diamond.imageUrl,
-                gem360Url: diamond.gem360Url,
-                picture: diamond.picture
-              });
-            }}
-            disabled={isStorySharing || !hasStorySharing}
-            title={!hasStorySharing ? "Requires Telegram 7.2+" : "Share to Story"}
-          >
-            <Sparkles className="h-3 w-3 mr-1" />
-            Story
-          </Button>
+          {hasStorySharing && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 h-8 text-xs border-purple-200 text-purple-700 hover:bg-purple-50"
+              onClick={async () => {
+                impactOccurred('medium');
+                await shareToStory({
+                  id: diamond.id,
+                  stockNumber: diamond.stockNumber,
+                  carat: diamond.carat,
+                  shape: diamond.shape,
+                  color: diamond.color,
+                  clarity: diamond.clarity,
+                  cut: diamond.cut || '',
+                  price: diamond.price,
+                  imageUrl: diamond.imageUrl,
+                  gem360Url: diamond.gem360Url,
+                  picture: diamond.picture
+                });
+              }}
+              disabled={isStorySharing}
+            >
+              <Sparkles className="h-3 w-3 mr-1" />
+              Story
+            </Button>
+          )}
         </div>
       </div>
     </div>
