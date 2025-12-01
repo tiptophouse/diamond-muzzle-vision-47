@@ -17,9 +17,9 @@ export function useIsAdmin() {
       }
 
       try {
-        console.log('🔍 useIsAdmin: ⚡ CHECKING ADMIN for Telegram ID:', user.id);
+        console.log('🔍 useIsAdmin: Checking admin status for Telegram ID:', user.id);
         const adminStatus = await isAdminTelegramId(user.id);
-        console.log('🔍 useIsAdmin: ✅ ADMIN RESULT:', adminStatus, '| User ID:', user.id);
+        console.log('🔍 useIsAdmin: Admin status result:', adminStatus);
         setIsAdmin(adminStatus);
       } catch (error) {
         console.error('❌ useIsAdmin: Error checking admin status:', error);

@@ -24,7 +24,6 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
 
   const checkAdminStatus = async () => {
     if (!user?.id) {
-      console.log('🔐 EnhancedTelegramAdminGuard: No user ID - denying access');
       setIsAdminUser(false);
       setIsVerifying(false);
       return;
@@ -33,13 +32,13 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
     try {
       setIsVerifying(true);
       setVerificationError(null);
-      console.log('🔐 EnhancedTelegramAdminGuard: ⚡ CHECKING ADMIN for user:', user.id, '| Name:', user.first_name);
+      console.log('🔐 Checking admin status for:', user.id);
       
       const adminStatus = await isAdminTelegramId(user.id);
       setIsAdminUser(adminStatus);
       
       if (adminStatus) {
-        console.log('✅ EnhancedTelegramAdminGuard: ADMIN ACCESS GRANTED for', user.id);
+        console.log('✅ Admin access granted');
         haptics?.success();
         toast({
           title: "Admin Access Granted",
@@ -47,11 +46,11 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
           duration: 2000,
         });
       } else {
-        console.log('❌ EnhancedTelegramAdminGuard: ADMIN ACCESS DENIED for', user.id);
+        console.log('❌ Admin access denied');
         haptics?.error();
       }
     } catch (error) {
-      console.error('❌ EnhancedTelegramAdminGuard: Admin check FAILED:', error);
+      console.error('❌ Admin check failed:', error);
       setVerificationError(error instanceof Error ? error.message : 'Verification failed');
       haptics?.error();
     } finally {

@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { AdminStoreControls } from "./AdminStoreControls";
+
+const ADMIN_TELEGRAM_ID = 2138564172;
 
 interface EnhancedDiamondCardProps {
   diamond: Diamond;
@@ -18,7 +19,7 @@ interface EnhancedDiamondCardProps {
 export function EnhancedDiamondCard({ diamond, index, onUpdate, onDelete }: EnhancedDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
   const { user } = useTelegramAuth();
-  const { isAdmin } = useIsAdmin();
+  const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
 
   const handleContactOwner = () => {
     const message = `Hi! I'm interested in your diamond:\n\n` +

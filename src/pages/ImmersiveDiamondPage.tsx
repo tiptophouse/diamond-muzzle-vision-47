@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStoreData } from '@/hooks/useStoreData';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { ImmersiveDiamondViewer } from '@/components/store/ImmersiveDiamondViewer';
 import { Loader2 } from 'lucide-react';
 
@@ -16,7 +15,6 @@ export default function ImmersiveDiamondPage() {
   const navigate = useNavigate();
   const { diamonds, loading } = useStoreData();
   const { user } = useTelegramAuth();
-  const { isAdmin } = useIsAdmin();
   const [diamond, setDiamond] = useState<any>(null);
 
   useEffect(() => {
@@ -41,10 +39,12 @@ export default function ImmersiveDiamondPage() {
     );
   }
 
+  const isOwner = user?.id === 2138564172; // Check if current user is the admin/owner
+
   return (
     <ImmersiveDiamondViewer
       diamond={diamond}
-      isOwner={isAdmin}
+      isOwner={isOwner}
       onBack={() => navigate(-1)}
     />
   );
