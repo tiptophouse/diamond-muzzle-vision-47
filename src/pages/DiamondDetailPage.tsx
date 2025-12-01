@@ -563,23 +563,31 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
           </div>
         </div>
         
-        {/* Auction Modal - Moved outside nested structure */}
-        <CreateAuctionModal
-          open={showAuctionModal}
-          onOpenChange={setShowAuctionModal}
-          stockNumber={diamond.stockNumber}
-          diamondName={`${diamond.carat}ct ${diamond.shape}`}
-          diamond={{
-            stockNumber: diamond.stockNumber,
-            carat: diamond.carat,
-            shape: diamond.shape,
-            color: diamond.color,
-            clarity: diamond.clarity,
-            cut: diamond.cut,
-            price: diamond.price,
-            picture: diamond.picture,
-          }}
-        />
+        {/* Auction Modal */}
+        {user && (
+          <CreateAuctionModal
+            open={showAuctionModal}
+            onOpenChange={setShowAuctionModal}
+            stockNumber={diamond.stockNumber}
+            diamondName={`${diamond.carat}ct ${diamond.shape}`}
+            diamond={{
+              id: Number(diamond.id) || 0,
+              stockNumber: diamond.stockNumber,
+              carat: diamond.carat,
+              shape: diamond.shape,
+              color: diamond.color,
+              clarity: diamond.clarity,
+              cut: diamond.cut,
+              price: diamond.price,
+              picture: diamond.imageUrl,
+            }}
+            sellerTelegramId={user.id}
+            sellerUsername={user.username}
+            onSuccess={(auctionId) => {
+              console.log('Auction created:', auctionId);
+            }}
+          />
+        )}
       </div>
     </>
   );
