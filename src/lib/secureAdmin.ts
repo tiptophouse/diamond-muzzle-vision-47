@@ -39,11 +39,12 @@ export async function isAdminTelegramId(telegramId: number | undefined | null): 
 
   // Check cache first
   if (adminCache[cacheKey] && (now - adminCache[cacheKey].timestamp < ADMIN_CACHE_DURATION)) {
-    console.log('🔐 SecureAdmin: Using cached result for', telegramId, '→', adminCache[cacheKey].isAdmin);
-    return adminCache[cacheKey].isAdmin;
+    const cached = adminCache[cacheKey];
+    console.log('🔐 SecureAdmin: Using cached result for', telegramId, '→', cached.isAdmin, '(cached', Math.floor((now - cached.timestamp) / 1000), 'seconds ago)');
+    return cached.isAdmin;
   }
 
-  console.log('🔐 SecureAdmin: Validating admin status for Telegram ID:', telegramId);
+  console.log('🔐 SecureAdmin: ⚡ CHECKING ADMIN STATUS (no cache) for Telegram ID:', telegramId);
 
   try {
     // Call edge function with service role (bypasses RLS)
@@ -66,7 +67,7 @@ export async function isAdminTelegramId(telegramId: number | undefined | null): 
       role,
     };
 
-    console.log('🔐 SecureAdmin: Admin status for', telegramId, '→', isAdmin, role ? `(${role})` : '');
+    console.log('🔐 SecureAdmin: ✅ FRESH RESULT - Admin status for', telegramId, '→', isAdmin, role ? `(${role})` : '', '| Edge function returned:', JSON.stringify(data));
     return isAdmin;
 
   } catch (error) {
