@@ -20,13 +20,6 @@ function AuctionsListPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   
-  console.log('🎯 AuctionsListPage rendered:', {
-    totalAuctions: auctions?.length,
-    isLoading: loading,
-    hasError: !!error,
-    errorMessage: error?.message
-  });
-  
   // Filter states
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
   const [selectedShapes, setSelectedShapes] = useState<string[]>([]);

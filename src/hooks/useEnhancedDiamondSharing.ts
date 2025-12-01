@@ -186,7 +186,6 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
         diamond,
         sharedBy: sharerId,
         sharedByName: sharerName,
-        targetChatId: -1002178695748, // Always send to Brilliantbot group
         testMode,
         customMessage
       }

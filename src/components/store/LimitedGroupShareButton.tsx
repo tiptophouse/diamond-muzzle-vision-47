@@ -35,38 +35,18 @@ export function LimitedGroupShareButton({
   const { user } = useTelegramWebApp();
 
   const handleShareClick = () => {
-    console.log('🔘 SHARE BUTTON CLICKED', { isAdmin, quotaData, loading, user });
     impactOccurred('light');
     
     // Admin users bypass quota checks entirely
     if (isAdmin) {
-      console.log('✅ Admin bypass - opening dialog');
       setShowConfirmDialog(true);
       return;
     }
     
-    // If still loading, allow click but show loading state
-    if (loading) {
-      console.log('⏳ Still loading quota data...');
-      toast({
-        title: "טוען...",
-        description: "אנא המתן",
-      });
-      return;
-    }
-    
     if (!quotaData || quotaData.sharesRemaining <= 0) {
-      console.log('❌ No quota remaining', quotaData);
       notificationOccurred('error');
-      toast({
-        title: "אין שיתופים נותרים",
-        description: "צור קשר עם מנהל להגדלת מכסה",
-        variant: "destructive"
-      });
       return;
     }
-    
-    console.log('✅ Opening share dialog', { sharesRemaining: quotaData.sharesRemaining });
     setShowConfirmDialog(true);
   };
 
@@ -100,7 +80,7 @@ export function LimitedGroupShareButton({
         return;
       }
 
-      // Send to group -1002178695748 with test mode flag
+      // Send test message to personal chat instead of group
       const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
         body: {
           diamond: {
@@ -120,8 +100,7 @@ export function LimitedGroupShareButton({
             picture: (diamond as any).picture
           },
           sharedBy: userId,
-          targetChatId: -1002178695748, // Send to Brilliantbot group
-          testMode: true // Mark as test for message prefix
+          testMode: true // This will send to personal chat instead of group
         }
       });
 
@@ -223,39 +202,23 @@ export function LimitedGroupShareButton({
     return "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white";
   };
 
-  // If no user, show auth error state
-  if (!user?.id && !loading) {
+  if (loading) {
     return (
-      <Button variant="outline" size={size} className={className} disabled>
-        <AlertTriangle className="h-4 w-4 mr-2" />
-        <span className="text-xs">Not logged in</span>
+      <Button variant="outline" size={size} disabled className={className}>
+        <Share className="h-4 w-4 animate-pulse" />
+        <span className="hidden sm:inline ml-2">Loading...</span>
       </Button>
     );
   }
 
-  // Don't block button while loading - let user click and handle loading state in onClick
-  if (loading) {
-    console.log('⏳ LimitedGroupShareButton: Still loading quota data');
-  }
-
   return (
-    <>
-      {/* Add console log to track rendering */}
-      {console.log('🎨 LimitedGroupShareButton: Rendering', { 
-        userId: user?.id, 
-        loading, 
-        quotaData, 
-        isAdmin,
-        disabled: !isAdmin && !loading && quotaData && quotaData.sharesRemaining <= 0
-      })}
-      
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+    <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
       <DialogTrigger asChild>
         <Button
           variant={getButtonVariant()}
           size={size}
           onClick={handleShareClick}
-          disabled={!isAdmin && !loading && quotaData && quotaData.sharesRemaining <= 0}
+          disabled={!isAdmin && (!quotaData || quotaData.sharesRemaining <= 0)}
           className={`flex items-center gap-2 relative ${getButtonColor()} ${className}`}
         >
           {quotaData && quotaData.sharesRemaining <= 2 && quotaData.sharesRemaining > 0 && (
@@ -389,6 +352,5 @@ export function LimitedGroupShareButton({
         </div>
       </DialogContent>
     </Dialog>
-    </>
   );
 }

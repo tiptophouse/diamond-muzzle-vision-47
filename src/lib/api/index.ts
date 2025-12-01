@@ -5,7 +5,6 @@ import { http } from '@/api/http';
 interface ApiResponse<T> {
   data?: T;
   error?: string;
-  status?: number;
 }
 
 // Create api adapter for backward compatibility with { data, error } response structure
@@ -17,7 +16,7 @@ export const api = {
     } catch (error) {
       const status = (error as any).status || 0;
       console.error('API GET Error:', { endpoint, status, error });
-      return { error: error instanceof Error ? error.message : 'Unknown error', status };
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
   post: async <T>(endpoint: string, body: Record<string, any>): Promise<ApiResponse<T>> => {
@@ -33,7 +32,7 @@ export const api = {
     } catch (error) {
       const status = (error as any).status || 0;
       console.error('API POST Error:', { endpoint, status, error });
-      return { error: error instanceof Error ? error.message : 'Unknown error', status };
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
   put: async <T>(endpoint: string, body: Record<string, any>): Promise<ApiResponse<T>> => {
@@ -49,7 +48,7 @@ export const api = {
     } catch (error) {
       const status = (error as any).status || 0;
       console.error('API PUT Error:', { endpoint, status, error });
-      return { error: error instanceof Error ? error.message : 'Unknown error', status };
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
   delete: async <T>(endpoint: string): Promise<ApiResponse<T>> => {
@@ -61,7 +60,7 @@ export const api = {
     } catch (error) {
       const status = (error as any).status || 0;
       console.error('API DELETE Error:', { endpoint, status, error });
-      return { error: error instanceof Error ? error.message : 'Unknown error', status };
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {

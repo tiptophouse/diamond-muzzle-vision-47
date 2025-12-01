@@ -1,5 +1,4 @@
 import { ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,27 +12,8 @@ interface SubscriptionPaywallProps {
 }
 
 export function SubscriptionPaywall({ children, loadingFallback }: SubscriptionPaywallProps) {
-  const location = useLocation();
   const { subscriptionStatus, isLoading, isBlocked, requestPaymentLink, refetch } = useSubscriptionPaywall();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
-
-  // Public routes that bypass subscription check
-  const publicRoutes = [
-    '/auctions',
-    '/public/auction/',
-    '/public/diamond/',
-    '/privacy-policy',
-    '/diagnostic',
-    '/'
-  ];
-
-  const isPublicRoute = publicRoutes.some(route => location.pathname.startsWith(route));
-
-  // Bypass paywall for public routes
-  if (isPublicRoute) {
-    console.log('🌐 Public route detected, bypassing paywall:', location.pathname);
-    return <>{children}</>;
-  }
 
   // Admin bypass - admins always get access
   if (isAdmin) {

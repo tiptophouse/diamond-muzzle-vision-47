@@ -8,16 +8,12 @@ import { getAuctionById, placeBid } from '@/lib/auctions';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { formatDistance } from 'date-fns';
-import { Gavel, TrendingUp, Share2, Eye, Flame } from 'lucide-react';
+import { Clock, Gavel, TrendingUp, Share2, Eye, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimeAuctionViews } from '@/hooks/useRealtimeAuctionViews';
 import { useRealtimeAuctionBids } from '@/hooks/useRealtimeAuctionBids';
 import { useAuctionViralMechanics } from '@/hooks/useAuctionViralMechanics';
-import { useAuctionInterest } from '@/hooks/useAuctionInterest';
 import { supabase } from '@/integrations/supabase/client';
-import { AuctionCountdown } from '@/components/auction/AuctionCountdown';
-import { AuctionReactions } from '@/components/auction/AuctionReactions';
-import { AuctionPresence } from '@/components/auction/AuctionPresence';
 
 export default function PublicAuctionPage() {
   const { auctionId } = useParams<{ auctionId: string }>();
@@ -33,7 +29,6 @@ export default function PublicAuctionPage() {
   const { viewCount, uniqueViewers } = useRealtimeAuctionViews(auctionId || '');
   const { bids: realtimeBids, currentPrice: realtimePrice, bidCount: realtimeBidCount, lastBidTime } = useRealtimeAuctionBids(auctionId || '');
   const { checkBidWarMode } = useAuctionViralMechanics();
-  const { interestCount, hasInterest, toggleInterest, isTogglingInterest } = useAuctionInterest(auctionId || '');
 
   // Fetch auction details
   const { data: auction, isLoading, refetch } = useQuery({
@@ -159,20 +154,6 @@ export default function PublicAuctionPage() {
   const displayPrice = realtimePrice || (auction as any).current_price;
   const displayBidCount = realtimeBidCount || (auction as any).bid_count;
   const nextBidAmount = displayPrice + (auction as any).min_increment;
-  
-  // Get heat level indicator
-  const getHeatBadge = (heatLevel: string) => {
-    switch (heatLevel) {
-      case 'fire':
-        return <Badge variant="destructive" className="gap-1 animate-pulse">🔥 מלחמה!</Badge>;
-      case 'hot':
-        return <Badge variant="default" className="gap-1">🟠 חם!</Badge>;
-      case 'warm':
-        return <Badge variant="secondary" className="gap-1">🟡 מתחמם</Badge>;
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
@@ -181,8 +162,14 @@ export default function PublicAuctionPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">🔨 מכרז</h1>
           <div className="flex items-center gap-2">
-            <AuctionPresence auctionId={auctionId || ''} />
-            {getHeatBadge((auction as any).heat_level || 'cold')}
+            <Badge variant="outline" className="gap-1">
+              <Eye className="h-3 w-3" />
+              {viewCount}
+            </Badge>
+            <Badge variant="outline" className="gap-1">
+              <Users className="h-3 w-3" />
+              {uniqueViewers}
+            </Badge>
             <Badge variant={isActive ? 'default' : 'secondary'}>
               {(auction as any).status === 'active' ? 'פעיל' : 'הסתיים'}
             </Badge>
@@ -235,26 +222,23 @@ export default function PublicAuctionPage() {
           )}
         </div>
 
-        {/* Countdown Timer */}
+        {/* Time Remaining */}
         {isActive && (
-          <AuctionCountdown 
-            endsAt={(auction as any).ends_at} 
-            extensionCount={(auction as any).extension_count || 0}
-          />
+          <div className="flex items-center gap-2 text-sm">
+            <Clock className="w-4 h-4" />
+            <span>{timeRemaining}</span>
+          </div>
         )}
 
-        {/* Interest Signals & Stats */}
+        {/* Bid Stats - REAL-TIME */}
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="text-2xl font-bold transition-all duration-300">{displayBidCount}</div>
             <div className="text-xs text-muted-foreground">הצעות</div>
           </div>
           <div>
-            <div className="text-2xl font-bold flex items-center justify-center gap-1">
-              <Flame className={`w-5 h-5 ${interestCount > 5 ? 'text-orange-500' : 'text-muted-foreground'}`} />
-              {interestCount}
-            </div>
-            <div className="text-xs text-muted-foreground">מתעניינים</div>
+            <div className="text-2xl font-bold">${(auction as any).starting_price}</div>
+            <div className="text-xs text-muted-foreground">מחיר התחלתי</div>
           </div>
           <div>
             <div className="text-2xl font-bold">${(auction as any).min_increment}</div>
@@ -262,27 +246,13 @@ export default function PublicAuctionPage() {
           </div>
         </div>
 
-        {/* Reactions */}
-        <AuctionReactions auctionId={auctionId || ''} />
-
         {/* Action Buttons */}
         <div className="space-y-2">
           {isActive && !isSeller && user && (
-            <>
-              <Button onClick={handlePlaceBid} className="w-full" size="lg">
-                <Gavel className="w-4 h-4 mr-2" />
-                הצע ${nextBidAmount}
-              </Button>
-              <Button 
-                onClick={toggleInterest} 
-                disabled={isTogglingInterest}
-                variant={hasInterest ? 'default' : 'outline'}
-                className="w-full"
-              >
-                <Flame className="w-4 h-4 mr-2" />
-                {hasInterest ? 'מעוניין ✓' : 'אני מעוניין'}
-              </Button>
-            </>
+            <Button onClick={handlePlaceBid} className="w-full" size="lg">
+              <Gavel className="w-4 h-4 mr-2" />
+              הצע ${nextBidAmount}
+            </Button>
           )}
           
           {isSeller && (

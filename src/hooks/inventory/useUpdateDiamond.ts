@@ -1,6 +1,6 @@
 
 import { useToast } from '@/hooks/use-toast';
-import { api, apiEndpoints, getBackendAuthToken } from '@/lib/api';
+import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { roundToInteger } from '@/utils/numberUtils';
@@ -50,25 +50,6 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       console.log('📝 UPDATE: Starting update for diamond:', numericId);
       console.log('📝 UPDATE: Form data received:', data);
       
-      // Verify JWT token before making request using the correct auth method
-      const jwtToken = getBackendAuthToken();
-      console.log('🔐 UPDATE: JWT Token Check:', {
-        exists: !!jwtToken,
-        preview: jwtToken ? `${jwtToken.substring(0, 15)}...${jwtToken.substring(jwtToken.length - 10)}` : '❌ MISSING',
-        length: jwtToken?.length || 0,
-        timestamp: new Date().toISOString()
-      });
-      
-      if (!jwtToken) {
-        console.error('❌ UPDATE: No JWT token available - request will fail');
-        toast({
-          variant: "destructive",
-          title: "❌ Authentication Required",
-          description: 'JWT token is missing. Please refresh the app.',
-        });
-        return false;
-      }
-      
       const endpoint = apiEndpoints.updateDiamond(numericId);
       console.log('📝 UPDATE: Using endpoint:', endpoint);
       console.log('📝 UPDATE: User ID:', user.id, 'type:', typeof user.id);
@@ -115,29 +96,16 @@ export function useUpdateDiamond(onSuccess?: () => void) {
 
       console.log('📝 UPDATE: Sending data to FastAPI (all integers):', updateData);
       
-      // Log the complete request details before sending
-      const jwtForRequest = getBackendAuthToken();
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📤 SENDING UPDATE REQUEST:');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('Endpoint:', endpoint);
-      console.log('Method: PUT');
-      console.log('Authorization Header:', jwtForRequest ? `Bearer ${jwtForRequest}` : '❌ MISSING');
-      console.log('Request Body:', JSON.stringify(updateData, null, 2));
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      
       const response = await api.put(endpoint, updateData);
       
       if (response.error) {
         console.error('❌ UPDATE: FastAPI returned error:', response.error);
         const errorDetails = {
           error: response.error,
-          data: response.data,
-          status: response.status
+          data: response.data
         };
         const error = new Error(response.error);
         (error as any).responseDetails = errorDetails;
-        (error as any).status = response.status;
         throw error;
       }
 
@@ -160,13 +128,6 @@ export function useUpdateDiamond(onSuccess?: () => void) {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
       const responseDetails = (error as any)?.responseDetails;
-      const statusCode = (error as any)?.status || 'Unknown';
-      
-      // Get JWT token info using the correct auth method
-      const jwtToken = getBackendAuthToken();
-      const tokenInfo = jwtToken 
-        ? `Bearer ${jwtToken}`
-        : '❌ MISSING - Authentication Error';
       
       console.error('[CRUD FAIL]', {
         action: 'UPDATE',
@@ -174,12 +135,51 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         userId: user.id,
         stockNumber: data.stockNumber,
         error: errorMessage,
-        statusCode,
-        hasToken: !!jwtToken,
         responseDetails,
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString()
       });
+      
+      // Build detailed alert message
+      let alertMessage = `❌ UPDATE DIAMOND FAILED
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 REQUEST DETAILS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Endpoint: PUT /api/v1/diamonds/${numericId}
+Stock Number: ${data.stockNumber}
+Diamond ID: ${numericId}
+User ID: ${user.id}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ ERROR:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${errorMessage}`;
+
+      // Add server response if available
+      if (responseDetails) {
+        alertMessage += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 SERVER RESPONSE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+        
+        if (responseDetails.data) {
+          alertMessage += `\nResponse Data: ${JSON.stringify(responseDetails.data, null, 2)}`;
+        }
+        
+        if (responseDetails.error) {
+          alertMessage += `\nError Details: ${responseDetails.error}`;
+        }
+      }
+      
+      alertMessage += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏰ Timestamp: ${new Date().toISOString()}`;
+      
+      // Show detailed alert
+      alert(alertMessage);
       
       toast({
         variant: "destructive",

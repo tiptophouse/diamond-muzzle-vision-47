@@ -18,7 +18,6 @@ import { formatPrice } from '@/utils/numberUtils';
 
 interface DiamondMatch {
   stock_number: string;
-  stock?: string; // Some APIs use 'stock' instead of 'stock_number'
   shape: string;
   weight: number;
   color: string;
@@ -91,53 +90,20 @@ export function BuyerContactDialog({
       }
 
       // Filter to get only selected diamonds with full data
-      // Handle both 'stock' and 'stock_number' field names for robustness
       const selectedDiamonds = diamonds.map(match => {
-        const matchStock = match.stock_number || match.stock;
-        const fullDiamond = allDiamonds.find(d => 
-          (d.stock === matchStock || d.stock_number === matchStock)
-        );
-        
-        if (fullDiamond) {
-          console.log(`✅ Found full data for diamond ${matchStock}:`, {
-            hasPicture: !!fullDiamond.picture,
-            picture: fullDiamond.picture?.substring(0, 50) + '...'
-          });
-          return fullDiamond;
-        } else {
-          console.warn(`⚠️ Using partial data for diamond ${matchStock} (not found in FastAPI)`);
-          return match;
-        }
+        const fullDiamond = allDiamonds.find(d => d.stock === match.stock_number);
+        return fullDiamond || match;
       });
 
-      console.log('💎 Setting diamond data directly as fallback:', selectedDiamonds.length);
-      // ALWAYS set diamond data so button can work even if AI generation fails
-      setDiamondData(selectedDiamonds);
-      setTotalValue(selectedDiamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0));
+      console.log('📸 Selected diamonds with images:', selectedDiamonds);
 
-      // Extract image URLs from diamonds
+      // Extract image URLs
       const images = selectedDiamonds
         .map(d => d.picture)
-        .filter(pic => {
-          if (!pic) return false;
-          return typeof pic === 'string' && pic.trim().length > 0;
-        });
-
-      console.log(`📸 Image extraction summary:`, {
-        totalDiamonds: selectedDiamonds.length,
-        diamondsWithPictures: selectedDiamonds.filter(d => d.picture).length,
-        extractedImages: images.length,
-        imageUrls: images.map(img => img.substring(0, 50) + '...')
-      });
+        .filter(pic => pic && (pic.startsWith('http://') || pic.startsWith('https://')));
 
       setDiamondImages(images);
-      
-      if (images.length === 0) {
-        console.warn('⚠️ No images found for any diamonds! This might be a problem.');
-        toast.info('אין תמונות', {
-          description: 'יהלומים יישלחו ללא תמונות',
-        });
-      }
+      console.log(`Found ${images.length} diamond images`);
 
       // Generate AI message
       console.log('🤖 Generating AI message for buyer:', buyerName);
@@ -156,36 +122,18 @@ export function BuyerContactDialog({
       }
 
       if (!data) {
-        console.warn('⚠️ No data returned from AI edge function, using fallback');
-        setGeneratedMessage(`היי ${buyerName}, מצאתי ${selectedDiamonds.length} יהלומים שמתאימים לחיפוש שלך!`);
-        impactOccurred('light');
-        toast.info('הודעה נוצרה', {
-          description: 'הודעה בסיסית (שירות ה-AI זמנית לא זמין)',
-        });
-        console.log('🟢 fetchDiamondsAndGenerate COMPLETED with fallback');
-        return;
+        throw new Error('No data returned from edge function');
       }
 
       console.log('✅ AI message generated successfully');
       console.log('📊 Generated data:', { 
         messageLength: data.message?.length, 
         diamondsCount: data.diamonds?.length,
-        totalValue: data.totalValue,
-        diamondsWithPictures: data.diamonds?.filter((d: any) => d.picture).length
+        totalValue: data.totalValue 
       });
-      console.log('📊 Diamond data details:', data.diamonds?.map((d: any) => ({
-        stock: d.stock,
-        picture: d.picture,
-        hasPicture: !!d.picture
-      })));
       setGeneratedMessage(data.message);
-      // Update diamondData with AI-enhanced version if available
-      if (data.diamonds && data.diamonds.length > 0) {
-        setDiamondData(data.diamonds);
-      }
-      if (data.totalValue) {
-        setTotalValue(data.totalValue);
-      }
+      setDiamondData(data.diamonds);
+      setTotalValue(data.totalValue);
       impactOccurred('light');
       toast.success('הודעה נוצרה בהצלחה!', {
         description: `עם ${images.length} תמונות יהלומים`,
@@ -228,100 +176,73 @@ export function BuyerContactDialog({
   };
 
   const handleSendMessage = async () => {
+    console.log('🔵 handleSendMessage called');
+    console.log('🔵 State check:', { 
+      generatedMessage: !!generatedMessage, 
+      buyerId, 
+      buyerName,
+      diamondDataLength: diamondData.length,
+      loading
+    });
+
+    if (!generatedMessage) {
+      console.error('❌ No generated message');
+      toast.error('אין הודעה', {
+        description: 'נא לנסות לסגור ולפתוח מחדש את החלון'
+      });
+      return;
+    }
+
+    if (!buyerId) {
+      console.error('❌ No buyer ID');
+      toast.error('מזהה קונה חסר', {
+        description: 'אנא נסה שנית'
+      });
+      return;
+    }
+
+    if (diamondData.length === 0) {
+      console.error('❌ No diamond data');
+      toast.error('אין נתוני יהלומים', {
+        description: 'אנא נסה שנית'
+      });
+      return;
+    }
+
+    setLoading(true);
+    console.log('🔵 Loading state set to true');
+    
+    // Show immediate feedback to user
+    toast.info('שולח הודעה...', {
+      description: `שולח ${diamondData.length} יהלומים לקונה`
+    });
+    
     try {
-      console.log('🔵 ========== START SEND MESSAGE ==========');
-      console.log('🔵 Button clicked - checking state:', { 
-        generatedMessage: !!generatedMessage, 
-        messageLength: generatedMessage?.length,
-        buyerId, 
-        buyerName,
-        diamondDataLength: diamondData.length,
-        diamondImages: diamondImages.length,
-        loading,
-        buttonShouldBeDisabled: loading || !generatedMessage || diamondData.length === 0
-      });
-
-      if (!generatedMessage) {
-        console.error('❌ VALIDATION FAILED: No generated message');
-        toast.error('אין הודעה', {
-          description: 'נא לנסות לסגור ולפתוח מחדש את החלון'
-        });
-        return;
-      }
-
-      if (!buyerId) {
-        console.error('❌ VALIDATION FAILED: No buyer ID');
-        toast.error('מזהה קונה חסר', {
-          description: 'אנא נסה שנית'
-        });
-        return;
-      }
-
-      if (diamondData.length === 0) {
-        console.error('❌ VALIDATION FAILED: No diamond data');
-        toast.error('אין נתוני יהלומים', {
-          description: 'אנא נסה שנית'
-        });
-        return;
-      }
-
-      console.log('✅ All validations passed, proceeding with send...');
-      setLoading(true);
       impactOccurred('medium');
-      
-      console.log('🚀 ABOUT TO CALL EDGE FUNCTION');
-      console.log('📤 Edge function will be called with:', {
-        telegram_id: buyerId,
-        message_preview: generatedMessage.substring(0, 100),
-        diamonds_count: diamondData.length
-      });
-      
-      // Show immediate feedback to user
-      toast.info('שולח הודעה...', {
-        description: `שולח ${diamondData.length} יהלומים לקונה`
-      });
       
       console.log('📤 Starting message send process...');
       console.log('📤 Buyer ID:', buyerId);
       console.log('📤 Buyer Name:', buyerName);
       console.log(`📤 Sending ${diamondData.length} diamonds with AI message`);
-      console.log('📤 Generated message preview:', generatedMessage.substring(0, 100) + '...');
+      console.log('📤 Generated message:', generatedMessage.substring(0, 100) + '...');
 
       // Map diamonds to the format expected by send-rich-diamond-message
-      const diamondsToSend = diamondData.map(d => {
-        const payload = {
-          stock_number: d.stock || d.stock_number,
-          shape: d.shape,
-          carat: d.weight,
-          color: d.color,
-          clarity: d.clarity,
-          cut: d.cut || 'EXCELLENT',
-          price: d.price || (d.price_per_carat * d.weight),
-          picture: d.picture,
-          certificate_url: d.certificate_url,
-        };
-        
-        // Log each diamond's payload for debugging
-        console.log(`💎 Diamond payload for ${payload.stock_number}:`, {
-          hasPicture: !!payload.picture,
-          pictureUrl: payload.picture?.substring(0, 50),
-          price: payload.price
-        });
-        
-        return payload;
-      });
+      const diamondsToSend = diamondData.map(d => ({
+        stock_number: d.stock,
+        shape: d.shape,
+        carat: d.weight,
+        color: d.color,
+        clarity: d.clarity,
+        cut: d.cut || 'EXCELLENT',
+        price: d.price,
+        picture: d.picture,
+        certificate_url: d.certificate_url,
+      }));
 
-      console.log('📤 Payload summary:', {
-        telegram_id: buyerId,
-        message_length: generatedMessage.length,
-        diamonds_count: diamondsToSend.length,
-        diamonds_with_pictures: diamondsToSend.filter(d => d.picture).length,
-        total_value: diamondsToSend.reduce((sum, d) => sum + d.price, 0)
-      });
+      console.log('📤 Diamonds to send:', diamondsToSend.map(d => d.stock_number));
 
       // Send AI message + all diamonds in one call to buyer's personal chat
       console.log('📤 Invoking send-rich-diamond-message edge function...');
-      
       const { data, error } = await supabase.functions.invoke('send-rich-diamond-message', {
         body: {
           telegram_id: buyerId,
@@ -330,44 +251,14 @@ export function BuyerContactDialog({
         },
       });
 
-      console.log('📤 Edge function returned!');
-      console.log('📤 Edge function response:', { 
-        data, 
-        error,
-        hasData: !!data,
-        hasError: !!error,
-        dataType: typeof data,
-        errorType: typeof error
-      });
-      
-      if (error) {
-        console.error('📤 Edge function ERROR details:', JSON.stringify(error, null, 2));
-      }
-      if (data) {
-        console.log('📤 Edge function DATA details:', JSON.stringify(data, null, 2));
-      }
+      console.log('📤 Edge function response:', { data, error });
 
       if (error) {
-        console.error('❌ Edge function returned error:', {
-          message: error.message,
-          details: error,
-          stack: error.stack
-        });
-        
-        // Provide specific error message based on error type
-        if (error.message?.includes('TELEGRAM_BOT_TOKEN')) {
-          throw new Error('🔧 הבוט לא מוגדר במערכת. צור קשר עם התמיכה.');
-        } else if (error.message?.includes('Max number of functions')) {
-          throw new Error('⚠️ השירות זמני לא זמין. יש מגבלת פונקציות. צור קשר עם התמיכה.');
-        } else if (error.message?.includes('blocked')) {
-          throw new Error('🚫 הקונה חסם את הבוט. לא ניתן לשלוח הודעה.');
-        } else {
-          throw new Error(`❌ שגיאה בשליחה: ${error.message || 'נסה שוב'}`);
-        }
+        console.error('❌ Edge function returned error:', error);
+        throw error;
       }
 
       console.log('✅ Message and diamonds sent successfully to buyer:', buyerId);
-      console.log('✅ Send result:', data);
 
 
       // Track the contact (fire and forget)
@@ -396,21 +287,7 @@ export function BuyerContactDialog({
       onOpenChange(false);
       
     } catch (error: any) {
-      console.error('❌ ========== SEND MESSAGE FAILED ==========');
-      console.error('❌ Error type:', typeof error);
-      console.error('❌ Error:', error);
-      console.error('❌ Error message:', error?.message);
-      console.error('❌ Error details:', {
-        name: error?.name,
-        message: error?.message,
-        status: error?.status,
-        statusText: error?.statusText,
-        context: error?.context,
-        details: error?.details,
-        stack: error?.stack
-      });
-      
-      notificationOccurred('error');
+      console.error('❌ Failed to send message:', error);
       
       if (error?.message?.includes('blocked')) {
         toast.error('לא ניתן לשלוח הודעה', {
@@ -420,17 +297,12 @@ export function BuyerContactDialog({
         toast.error('לא ניתן לשלוח הודעה', {
           description: 'הקונה לא נמצא',
         });
-      } else if (error?.message?.includes('TELEGRAM_BOT_TOKEN')) {
-        toast.error('שגיאת תצורה', {
-          description: 'הבוט לא מוגדר. צור קשר עם התמיכה',
-        });
       } else {
         toast.error('שגיאה בשליחת ההודעה', {
-          description: error?.message || 'נסה שוב או צור קשר עם התמיכה',
+          description: 'נסה שוב או צור קשר עם התמיכה',
         });
       }
     } finally {
-      console.log('🔵 ========== END SEND MESSAGE ==========');
       setLoading(false);
     }
   };
@@ -552,8 +424,8 @@ export function BuyerContactDialog({
                 </Button>
                 <Button
                   onClick={handleSendMessage}
-                  disabled={loading || !generatedMessage || diamondData.length === 0}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50"
+                  disabled={loading}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                 >
                   {loading ? (
                     <>
@@ -563,8 +435,7 @@ export function BuyerContactDialog({
                   ) : (
                     <>
                       <Send className="h-4 w-4 mr-2" />
-                      שלח בטלגרם ({diamondData.length} יהלומים
-                      {diamondImages.length > 0 && `, ${diamondImages.length} תמונות`})
+                      שלח בטלגרם
                     </>
                   )}
                 </Button>
