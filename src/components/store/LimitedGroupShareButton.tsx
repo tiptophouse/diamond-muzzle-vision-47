@@ -80,7 +80,13 @@ export function LimitedGroupShareButton({
         return;
       }
 
-      // Send test message to personal chat instead of group
+      // Send test message to personal chat instead of group  
+      console.log('🚀 Calling send-diamond-to-group edge function:', {
+        stockNumber: diamond.stockNumber,
+        userId,
+        testMode: true
+      });
+      
       const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
         body: {
           diamond: {
