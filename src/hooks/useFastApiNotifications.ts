@@ -201,7 +201,9 @@ export function useFastApiNotifications() {
               price_per_carat: d.price_per_carat ?? d.price,
               status: d.status || 'Available',
               confidence: d.confidence || 0.9,
-              total_price: (d.price_per_carat ?? d.price) * (d.weight ?? d.carat)
+              total_price: (d.price_per_carat ?? d.price) * (d.weight ?? d.carat),
+              picture: d.picture || d.image_url || d.imageUrl || d.thumbnail_url || d.image || d.media_url,
+              video_url: d.video_url || d.videoUrl || d["Video link"]
             }));
             
             return {

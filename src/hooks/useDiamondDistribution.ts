@@ -5,6 +5,7 @@ import { INVENTORY_CHANGE_EVENT } from './inventory/useInventoryDataSync';
 
 interface DiamondData {
   id: string;
+  stock_number: string;
   shape: string;
   color: string;
   clarity: string;
@@ -83,6 +84,7 @@ export function useDiamondDistribution() {
             
             return {
               id: d.id || d.stock_number || '',
+              stock_number: d.stock_number || d.id || '',
               shape: d.shape || 'Round',
               color: d.color || 'H',
               clarity: d.clarity || 'VS1',
@@ -99,14 +101,14 @@ export function useDiamondDistribution() {
         console.log('🔍 Not authenticated, using demo data for diamond distribution');
         // Provide realistic demo data with proper total prices
         diamonds = [
-          { id: '1', shape: 'Round', color: 'D', clarity: 'FL', carat: 2.5, price: 37500, certificate_number: '12345', created_at: new Date().toISOString() },
-          { id: '2', shape: 'Princess', color: 'E', clarity: 'VVS1', carat: 1.8, price: 21600, certificate_number: '12346', created_at: new Date().toISOString() },
-          { id: '3', shape: 'Emerald', color: 'F', clarity: 'VVS2', carat: 3.2, price: 57600, certificate_number: '12347', created_at: new Date().toISOString() },
-          { id: '4', shape: 'Round', color: 'G', clarity: 'VS1', carat: 1.5, price: 12000, certificate_number: '12348', created_at: new Date().toISOString() },
-          { id: '5', shape: 'Oval', color: 'H', clarity: 'VS2', carat: 2.1, price: 23100, certificate_number: '12349', created_at: new Date().toISOString() },
-          { id: '6', shape: 'Cushion', color: 'I', clarity: 'SI1', carat: 1.9, price: 18050, certificate_number: '12350', created_at: new Date().toISOString() },
-          { id: '7', shape: 'Pear', color: 'J', clarity: 'SI2', carat: 2.3, price: 24150, certificate_number: '12351', created_at: new Date().toISOString() },
-          { id: '8', shape: 'Marquise', color: 'K', clarity: 'I1', carat: 1.7, price: 12750, certificate_number: '12352', created_at: new Date().toISOString() }
+          { id: '1', stock_number: 'DEMO-001', shape: 'Round', color: 'D', clarity: 'FL', carat: 2.5, price: 37500, certificate_number: '12345', created_at: new Date().toISOString() },
+          { id: '2', stock_number: 'DEMO-002', shape: 'Princess', color: 'E', clarity: 'VVS1', carat: 1.8, price: 21600, certificate_number: '12346', created_at: new Date().toISOString() },
+          { id: '3', stock_number: 'DEMO-003', shape: 'Emerald', color: 'F', clarity: 'VVS2', carat: 3.2, price: 57600, certificate_number: '12347', created_at: new Date().toISOString() },
+          { id: '4', stock_number: 'DEMO-004', shape: 'Round', color: 'G', clarity: 'VS1', carat: 1.5, price: 12000, certificate_number: '12348', created_at: new Date().toISOString() },
+          { id: '5', stock_number: 'DEMO-005', shape: 'Oval', color: 'H', clarity: 'VS2', carat: 2.1, price: 23100, certificate_number: '12349', created_at: new Date().toISOString() },
+          { id: '6', stock_number: 'DEMO-006', shape: 'Cushion', color: 'I', clarity: 'SI1', carat: 1.9, price: 18050, certificate_number: '12350', created_at: new Date().toISOString() },
+          { id: '7', stock_number: 'DEMO-007', shape: 'Pear', color: 'J', clarity: 'SI2', carat: 2.3, price: 24150, certificate_number: '12351', created_at: new Date().toISOString() },
+          { id: '8', stock_number: 'DEMO-008', shape: 'Marquise', color: 'K', clarity: 'I1', carat: 1.7, price: 12750, certificate_number: '12352', created_at: new Date().toISOString() }
         ];
       }
 

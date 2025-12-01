@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTelegramWebApp } from './useTelegramWebApp';
 import { useDiamondShareAnalytics } from './useDiamondShareAnalytics';
@@ -11,13 +11,23 @@ export function useStartParamRouter() {
   const navigate = useNavigate();
   const { webApp } = useTelegramWebApp();
 
+  const processedRef = React.useRef(false);
+
   useEffect(() => {
     if (!webApp) return;
+    // Avoid double-processing when both Telegram initData and URL params are present
+    if (processedRef.current) return;
 
-    // Get start_param from Telegram WebApp (fix type issue)
-    const startParam = (webApp as any)?.initDataUnsafe?.start_param;
+    // Prefer Telegram init data when available, but fall back to URL parameters for
+    // web previews or direct deep links (e.g. ?tgWebAppStartParam=story_123)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlStartParam = urlParams.get('tgWebAppStartParam') || urlParams.get('startapp');
+
+    const startParam = (webApp as any)?.initDataUnsafe?.start_param || urlStartParam;
     
     if (!startParam) return;
+
+    processedRef.current = true;
 
     console.log('🔗 Processing start_param:', startParam);
 

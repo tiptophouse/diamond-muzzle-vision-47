@@ -117,11 +117,11 @@ export function UploadForm() {
               <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
                 Use our single stone upload to add individual diamonds to your inventory.
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 className="w-full sm:w-auto"
-                onClick={() => navigate('/upload?action=scan')}
+                onClick={() => navigate('/upload-single-stone?action=scan')}
               >
                 Add Single Diamond
               </Button>

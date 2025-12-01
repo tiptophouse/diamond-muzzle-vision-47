@@ -1,5 +1,5 @@
 
-import { memo, useState, useCallback, useMemo } from "react";
+import { memo, useState, useCallback, useMemo, useEffect } from "react";
 import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -38,9 +38,9 @@ export default function InventoryPage() {
   const displayDiamonds = stateAllDiamonds.length > 0 ? stateAllDiamonds : allDiamonds;
   const currentDiamonds = stateDiamonds.length > 0 ? stateDiamonds : diamonds;
 
-  // Update state when new data arrives
-  useMemo(() => {
-    if (allDiamonds.length > 0 && stateAllDiamonds.length === 0) {
+  // Keep local state in sync with latest backend data so CRUD actions reflect immediately
+  useEffect(() => {
+    if (allDiamonds.length > 0 && stateAllDiamonds.length !== allDiamonds.length) {
       updateDiamonds(allDiamonds);
     }
   }, [allDiamonds, stateAllDiamonds.length, updateDiamonds]);
