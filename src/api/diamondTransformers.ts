@@ -65,7 +65,7 @@ export interface FastAPIDiamondUpdate {
 export function transformToFastAPICreate(formData: DiamondFormData): FastAPIDiamondCreate {
   return {
     stock: formData.stockNumber,
-    shape: formData.shape.toLowerCase(), // Backend expects lowercase
+    shape: formData.shape,
     weight: formData.carat,
     color: formData.color,
     clarity: formData.clarity,
@@ -76,13 +76,13 @@ export function transformToFastAPICreate(formData: DiamondFormData): FastAPIDiam
     depth: formData.depth || null,
     ratio: formData.ratio || null,
     cut: formData.cut || null,
-    polish: (formData.polish || 'Good').toUpperCase(),
-    symmetry: (formData.symmetry || 'Good').toUpperCase(),
-    fluorescence: (formData.fluorescence || 'None').toUpperCase(),
-    table: (formData.tablePercentage && formData.tablePercentage > 0) ? formData.tablePercentage : 57,
-    depth_percentage: (formData.depthPercentage && formData.depthPercentage > 0) ? formData.depthPercentage : 61,
+    polish: formData.polish || 'GOOD',
+    symmetry: formData.symmetry || 'GOOD',
+    fluorescence: formData.fluorescence || 'NONE',
+    table: formData.tablePercentage || 0,
+    depth_percentage: formData.depthPercentage || 0,
     gridle: formData.gridle || '',
-    culet: (formData.culet || 'NONE').toUpperCase(),
+    culet: formData.culet || 'NONE',
     certificate_comment: formData.certificateComment || null,
     rapnet: formData.rapnet || null,
     price_per_carat: formData.pricePerCarat || null,
@@ -97,7 +97,7 @@ export function transformToFastAPIUpdate(formData: Partial<DiamondFormData>): Fa
   const update: FastAPIDiamondUpdate = {};
   
   if (formData.stockNumber !== undefined) update.stock = formData.stockNumber;
-  if (formData.shape !== undefined) update.shape = formData.shape.toLowerCase(); // Backend expects lowercase
+  if (formData.shape !== undefined) update.shape = formData.shape;
   if (formData.carat !== undefined) update.weight = formData.carat;
   if (formData.color !== undefined) update.color = formData.color;
   if (formData.clarity !== undefined) update.clarity = formData.clarity;
@@ -108,13 +108,13 @@ export function transformToFastAPIUpdate(formData: Partial<DiamondFormData>): Fa
   if (formData.depth !== undefined) update.depth = formData.depth || null;
   if (formData.ratio !== undefined) update.ratio = formData.ratio || null;
   if (formData.cut !== undefined) update.cut = formData.cut || null;
-  if (formData.polish !== undefined) update.polish = formData.polish ? formData.polish.toUpperCase() : null;
-  if (formData.symmetry !== undefined) update.symmetry = formData.symmetry ? formData.symmetry.toUpperCase() : null;
-  if (formData.fluorescence !== undefined) update.fluorescence = formData.fluorescence ? formData.fluorescence.toUpperCase() : null;
-  if (formData.tablePercentage !== undefined) update.table = (formData.tablePercentage && formData.tablePercentage > 0) ? formData.tablePercentage : null;
-  if (formData.depthPercentage !== undefined) update.depth_percentage = (formData.depthPercentage && formData.depthPercentage > 0) ? formData.depthPercentage : null;
+  if (formData.polish !== undefined) update.polish = formData.polish || null;
+  if (formData.symmetry !== undefined) update.symmetry = formData.symmetry || null;
+  if (formData.fluorescence !== undefined) update.fluorescence = formData.fluorescence || null;
+  if (formData.tablePercentage !== undefined) update.table = formData.tablePercentage || null;
+  if (formData.depthPercentage !== undefined) update.depth_percentage = formData.depthPercentage || null;
   if (formData.gridle !== undefined) update.gridle = formData.gridle || null;
-  if (formData.culet !== undefined) update.culet = formData.culet ? formData.culet.toUpperCase() : null;
+  if (formData.culet !== undefined) update.culet = formData.culet || null;
   if (formData.certificateComment !== undefined) update.certificate_comment = formData.certificateComment || null;
   if (formData.rapnet !== undefined) update.rapnet = formData.rapnet || null;
   if (formData.pricePerCarat !== undefined) update.price_per_carat = formData.pricePerCarat || null;

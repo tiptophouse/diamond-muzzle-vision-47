@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Diamond } from "./InventoryTable";
 import { Edit, Trash } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
+import { UserImageUpload } from "./UserImageUpload";
+import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
 import { formatPrice } from "@/utils/numberUtils";
 
 interface InventoryTableRowProps {
@@ -12,11 +14,29 @@ interface InventoryTableRowProps {
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
+  onImageUpdate?: () => void;
 }
 
-export const InventoryTableRow = memo(function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: InventoryTableRowProps) {
+export const InventoryTableRow = memo(function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, onImageUpdate }: InventoryTableRowProps) {
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
+      {/* Image */}
+      <TableCell className="p-2">
+        <div className="flex items-center space-x-2">
+          <OptimizedDiamondImage
+            imageUrl={diamond.imageUrl}
+            gem360Url={diamond.gem360Url}
+            stockNumber={diamond.stockNumber}
+            shape={diamond.shape}
+            className="w-12 h-12 rounded"
+          />
+          <UserImageUpload 
+            diamond={diamond}
+            onUpdate={onImageUpdate || (() => {})}
+          />
+        </div>
+      </TableCell>
+      
       <TableCell className="font-mono text-xs font-medium text-slate-600 dark:text-slate-400">
         {diamond.diamondId || 'N/A'}
       </TableCell>

@@ -2,7 +2,9 @@
 import { memo, useState, useCallback, useMemo } from "react";
 import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
+import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryTableView } from "@/components/inventory/InventoryTableView";
+import { InventoryViewToggle } from "@/components/inventory/InventoryViewToggle";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 import { InventorySearch } from "@/components/inventory/InventorySearch";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
@@ -78,6 +80,7 @@ export default function InventoryPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
   const [showAddSuccess, setShowAddSuccess] = useState(false);
+  const [viewType, setViewType] = useState<'cards' | 'table'>('cards');
 
   const handleEdit = useCallback((diamond: Diamond) => {
     console.log('📝 Edit diamond clicked:', diamond.stockNumber);
@@ -112,7 +115,6 @@ export default function InventoryPage() {
         certificateNumber: diamond.certificateNumber,
         certificateUrl: diamond.certificateUrl,
         lab: diamond.lab,
-        ratio: diamond.ratio || 1,
       };
       
       const success = await updateDiamond(diamond.id, updateData);
@@ -195,13 +197,32 @@ export default function InventoryPage() {
             onFilterChange={setFilters}
           />
           
-          <div className="w-full">
-            <InventoryTableView
-              diamonds={filteredDiamonds}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onStoreToggle={handleStoreToggle}
+          <div className="flex justify-between items-center mb-4">
+            <InventoryViewToggle 
+              view={viewType} 
+              onViewChange={setViewType} 
             />
+          </div>
+          
+          <div className="w-full">
+            {viewType === 'table' ? (
+              <InventoryTableView
+                diamonds={filteredDiamonds}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onStoreToggle={handleStoreToggle}
+              />
+            ) : (
+        <InventoryTable
+          data={filteredDiamonds}
+          loading={false}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onStoreToggle={handleStoreToggle}
+          onImageUpdate={handleRefresh}
+          data-tutorial="inventory-table"
+        />
+            )}
             
             <InventoryPagination
               currentPage={currentPage}

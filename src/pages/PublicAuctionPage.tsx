@@ -11,8 +11,6 @@ import { formatDistance } from 'date-fns';
 import { Clock, Gavel, TrendingUp, Share2, Eye, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimeAuctionViews } from '@/hooks/useRealtimeAuctionViews';
-import { useRealtimeAuctionBids } from '@/hooks/useRealtimeAuctionBids';
-import { useAuctionViralMechanics } from '@/hooks/useAuctionViralMechanics';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function PublicAuctionPage() {
@@ -27,8 +25,6 @@ export default function PublicAuctionPage() {
   const { toast } = useToast();
   const [timeRemaining, setTimeRemaining] = useState('');
   const { viewCount, uniqueViewers } = useRealtimeAuctionViews(auctionId || '');
-  const { bids: realtimeBids, currentPrice: realtimePrice, bidCount: realtimeBidCount, lastBidTime } = useRealtimeAuctionBids(auctionId || '');
-  const { checkBidWarMode } = useAuctionViralMechanics();
 
   // Fetch auction details
   const { data: auction, isLoading, refetch } = useQuery({
@@ -107,12 +103,6 @@ export default function PublicAuctionPage() {
       hapticFeedback.notification('success');
       toast({ title: '✅ ההצעה נרשמה בהצלחה!' });
       refetch();
-
-      // Check for bid war mode activation
-      const bidWarResult = await checkBidWarMode(auction.id);
-      if (bidWarResult.extended) {
-        console.log('🔥 Bid war mode activated, auction extended!');
-      }
     } catch (error) {
       console.error('Failed to place bid:', error);
       hapticFeedback.notification('error');
@@ -149,11 +139,7 @@ export default function PublicAuctionPage() {
 
   const isSeller = user?.id === (auction as any).seller_telegram_id;
   const isActive = (auction as any).status === 'active';
-  
-  // Use realtime price if available, otherwise fall back to auction data
-  const displayPrice = realtimePrice || (auction as any).current_price;
-  const displayBidCount = realtimeBidCount || (auction as any).bid_count;
-  const nextBidAmount = displayPrice + (auction as any).min_increment;
+  const nextBidAmount = (auction as any).current_price + (auction as any).min_increment;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
@@ -201,23 +187,13 @@ export default function PublicAuctionPage() {
           </div>
         )}
 
-        {/* Current Price - REAL-TIME UPDATE */}
-        <div className="bg-primary/10 rounded-lg p-4 relative">
-          {lastBidTime && (
-            <Badge variant="secondary" className="absolute top-2 right-2 text-[10px] animate-pulse">
-              🔴 LIVE
-            </Badge>
-          )}
+        {/* Current Price */}
+        <div className="bg-primary/10 rounded-lg p-4">
           <div className="text-sm text-muted-foreground">מחיר נוכחי</div>
-          <div className="text-3xl font-bold transition-all duration-300">${displayPrice}</div>
+          <div className="text-3xl font-bold">${(auction as any).current_price}</div>
           {isActive && (
             <div className="text-sm text-muted-foreground mt-1">
               הצעה הבאה: ${nextBidAmount}
-            </div>
-          )}
-          {lastBidTime && (
-            <div className="text-[10px] text-muted-foreground mt-1">
-              עודכן לפני {Math.floor((Date.now() - lastBidTime.getTime()) / 1000)}s
             </div>
           )}
         </div>
@@ -230,10 +206,10 @@ export default function PublicAuctionPage() {
           </div>
         )}
 
-        {/* Bid Stats - REAL-TIME */}
+        {/* Bid Stats */}
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-bold transition-all duration-300">{displayBidCount}</div>
+            <div className="text-2xl font-bold">{(auction as any).bid_count}</div>
             <div className="text-xs text-muted-foreground">הצעות</div>
           </div>
           <div>
@@ -273,19 +249,16 @@ export default function PublicAuctionPage() {
           </div>
         </div>
 
-        {/* Latest Bids - REAL-TIME */}
-        {realtimeBids && realtimeBids.length > 0 && (
+        {/* Latest Bids */}
+        {(auction as any).bids && (auction as any).bids.length > 0 && (
           <div className="space-y-2">
             <h3 className="font-semibold flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
-              הצעות אחרונות (עדכון אוטומטי)
+              הצעות אחרונות
             </h3>
             <div className="space-y-1">
-              {realtimeBids.slice(0, 5).map((bid, index) => (
-                <div 
-                  key={bid.id} 
-                  className="flex justify-between items-center text-sm p-2 bg-muted rounded transition-all duration-300"
-                >
+              {(auction as any).bids.slice(0, 5).map((bid: any) => (
+                <div key={bid.id} className="flex justify-between items-center text-sm p-2 bg-muted rounded">
                   <span>{bid.bidder_name || 'משתמש'}</span>
                   <span className="font-semibold">${bid.bid_amount}</span>
                 </div>

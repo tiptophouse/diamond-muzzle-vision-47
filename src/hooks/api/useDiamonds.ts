@@ -8,9 +8,6 @@ import type { DiamondCreateRequest, DiamondUpdateRequest } from '@/types/fastapi
 import * as diamondsApi from '@/api/diamonds';
 import { apiEndpoints } from '@/lib/api/endpoints';
 import { http } from '@/api/http';
-import { transformToFastAPICreate, transformToFastAPIUpdate } from '@/api/diamondTransformers';
-import { API_BASE_URL } from '@/lib/api/config';
-import { getBackendAuthToken } from '@/lib/api/auth';
 
 // Query keys
 export const diamondKeys = {
@@ -44,22 +41,8 @@ export function useCreateDiamond() {
 
   return useMutation({
     mutationFn: ({ data, userId }: { data: any; userId: number }) => {
-      // Check JWT token before making request
-      const token = getBackendAuthToken();
-      console.log('🔐 CREATE: JWT Status:', {
-        exists: !!token,
-        tokenPreview: token ? `${token.substring(0, 20)}...` : 'MISSING',
-        stockNumber: data.stockNumber || data.stock_number,
-        userId
-      });
-
-      if (!token) {
-        throw new Error('JWT token missing - authentication required for creating diamonds');
-      }
-
       console.log('💎 Creating diamond:', data.stockNumber || data.stock_number);
-      const transformedData = transformToFastAPICreate(data);
-      return diamondsApi.createDiamond(transformedData);
+      return diamondsApi.createDiamond(data);
     },
     onMutate: async ({ data, userId }) => {
       // Cancel outgoing refetches
@@ -110,93 +93,11 @@ export function useCreateDiamond() {
         queryClient.setQueryData(diamondKeys.list(variables.userId), context.previousDiamonds);
       }
       
-      // Show detailed error information including request details
-      const transformedData = transformToFastAPICreate(variables.data);
-      const requestUrl = `${API_BASE_URL}${apiEndpoints.addDiamond()}`;
-      
-      // Custom serializer to handle nested objects and circular references
-      const safeStringify = (obj: any, indent = 2): string => {
-        const seen = new WeakSet();
-        return JSON.stringify(obj, (key, value) => {
-          if (typeof value === 'object' && value !== null) {
-            if (seen.has(value)) {
-              return '[Circular]';
-            }
-            seen.add(value);
-          }
-          return value;
-        }, indent);
-      };
-
-      // Extract detailed error information
-      let errorMessage = 'Unknown error';
-      let statusCode = 'N/A';
-      let responseData = 'N/A';
-      
-      if (error instanceof Error) {
-        // Try to serialize the entire error object first
-        try {
-          const errorObj = {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-            ...error
-          };
-          errorMessage = safeStringify(errorObj);
-        } catch (e) {
-          errorMessage = error.message;
-        }
-        
-        // Check if it's an HTTP error with response data
-        const httpError = error as any;
-        if (httpError.status) {
-          statusCode = httpError.status;
-        }
-        if (httpError.response) {
-          try {
-            responseData = safeStringify(httpError.response);
-          } catch (e) {
-            responseData = String(httpError.response);
-          }
-        }
-        if (httpError.data) {
-          try {
-            responseData = safeStringify(httpError.data);
-          } catch (e) {
-            responseData = String(httpError.data);
-          }
-        }
-      } else if (typeof error === 'object' && error !== null) {
-        try {
-          errorMessage = safeStringify(error);
-        } catch (e) {
-          errorMessage = String(error);
-        }
-      } else {
-        errorMessage = String(error);
-      }
-      
-      const errorDetails = `
-URL: ${requestUrl}
-Status: ${statusCode}
-
-Error Message: ${errorMessage}
-
-Response Data: ${responseData}
-
-Request Body: 
-${JSON.stringify(transformedData, null, 2)}
-      `.trim();
-      
       toast({
         title: '❌ שגיאה בהוספת יהלום',
-        description: errorDetails,
+        description: error.message || 'אנא נסה שוב',
         variant: 'destructive',
-        duration: 10000,
       });
-      
-      // Also alert for visibility
-      alert(`❌ CREATE DIAMOND FAILED\n\n${errorDetails}`);
     },
   });
 }
@@ -218,23 +119,8 @@ export function useUpdateDiamond() {
       data: any;
       userId: number;
     }) => {
-      // Check JWT token before making request
-      const token = getBackendAuthToken();
-      console.log('🔐 UPDATE: JWT Status:', {
-        exists: !!token,
-        tokenPreview: token ? `${token.substring(0, 20)}...` : 'MISSING',
-        diamondId,
-        stockNumber: data.stockNumber || data.stock_number,
-        userId
-      });
-
-      if (!token) {
-        throw new Error('JWT token missing - authentication required for updating diamonds');
-      }
-
       console.log('✏️ Updating diamond:', diamondId);
-      const transformedData = transformToFastAPIUpdate(data);
-      return diamondsApi.updateDiamond(diamondId, transformedData);
+      return diamondsApi.updateDiamond(diamondId, data);
     },
     onMutate: async ({ diamondId, data, userId }) => {
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
@@ -280,46 +166,11 @@ export function useUpdateDiamond() {
         queryClient.setQueryData(diamondKeys.list(variables.userId), context.previousDiamonds);
       }
       
-      // Show detailed error information including authentication details
-      const transformedData = transformToFastAPIUpdate(variables.data);
-      const requestUrl = `${API_BASE_URL}${apiEndpoints.updateDiamond(variables.diamondId)}`;
-      const token = getBackendAuthToken();
-      
-      const errorMessage = typeof error === 'object' 
-        ? JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
-        : String(error);
-      
-      const errorDetails = `
-Diamond ID: ${variables.diamondId}
-Stock: ${variables.data.stockNumber || variables.data.stock_number || 'N/A'}
-User ID: ${variables.userId}
-
-🔐 Authentication:
-- JWT Token: ${token ? 'PRESENT' : '❌ MISSING'}
-- Token Preview: ${token ? token.substring(0, 20) + '...' : 'N/A'}
-
-Request URL: ${requestUrl}
-Method: PUT
-
-Body: 
-${JSON.stringify(transformedData, null, 2)}
-
-Error Details:
-${errorMessage}
-
-Original Data:
-${JSON.stringify(variables.data, null, 2).substring(0, 300)}
-      `.trim();
-      
       toast({
         title: '❌ שגיאה בעדכון יהלום',
-        description: errorDetails,
+        description: error.message || 'אנא נסה שוב',
         variant: 'destructive',
-        duration: 10000,
       });
-      
-      // Also alert for visibility
-      alert(`❌ UPDATE DIAMOND FAILED\n\n${errorDetails}`);
     },
   });
 }

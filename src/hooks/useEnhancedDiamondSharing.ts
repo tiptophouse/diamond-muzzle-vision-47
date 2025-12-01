@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
-import { useTelegramAdvanced } from '@/hooks/useTelegramAdvanced';
 
 export interface DiamondShareData {
   id: string;
@@ -38,7 +37,6 @@ export function useEnhancedDiamondSharing() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const { webApp } = useTelegramWebApp();
-  const { shareStory, features } = useTelegramAdvanced();
 
   const shareMessage = useCallback(async (options: ShareMessageOptions): Promise<ShareResult> => {
     if (!user?.id) {
@@ -250,80 +248,11 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
     });
   }, [shareMessage]);
 
-  // Share diamond to Telegram Story
-  const shareToStory = useCallback(async (diamond: DiamondShareData): Promise<ShareResult> => {
-    if (!features.hasStorySharing) {
-      toast({
-        title: "Not Available",
-        description: "Story sharing requires Telegram 7.2+",
-        variant: "destructive",
-      });
-      return { success: false, error: "Story sharing not available" };
-    }
-
-    if (!diamond.imageUrl) {
-      toast({
-        title: "No Image",
-        description: "This diamond doesn't have an image to share",
-        variant: "destructive",
-      });
-      return { success: false, error: "No image available" };
-    }
-
-    setIsSharing(true);
-    webApp?.HapticFeedback?.impactOccurred('medium');
-
-    try {
-      const botUsername = 'BrilliantBot_bot';
-      const deepLink = `https://t.me/${botUsername}?start=diamond_${diamond.stockNumber}_${user?.id || 'guest'}_story`;
-
-      const success = await shareStory(diamond.imageUrl, {
-        text: `💎 ${diamond.carat}ct ${diamond.shape} Diamond - $${diamond.price.toLocaleString()}`,
-        widgetLink: {
-          url: deepLink,
-          name: '💎 View Diamond'
-        }
-      });
-
-      if (success) {
-        // Track story share
-        await supabase.from('diamond_story_shares').insert({
-          diamond_stock_number: diamond.stockNumber,
-          shared_by_telegram_id: user?.id,
-          shared_by_name: user?.first_name || `User ${user?.id}`,
-          deep_link: deepLink,
-          share_type: 'telegram_story'
-        });
-
-        toast({
-          title: "Shared to Story! 🎉",
-          description: "Your diamond is now in your Telegram Story",
-        });
-
-        return { success: true };
-      }
-
-      return { success: false, error: "Story sharing failed" };
-    } catch (error) {
-      console.error('Story share error:', error);
-      toast({
-        title: "Share Failed",
-        description: "Could not share to story. Please try again.",
-        variant: "destructive",
-      });
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-    } finally {
-      setIsSharing(false);
-    }
-  }, [user, shareStory, features.hasStorySharing, toast, webApp]);
-
   return {
     shareMessage,
     shareMultipleDiamonds,
     quickShareToContact,
     quickShareToGroup,
-    shareToStory,
-    isSharing,
-    hasStorySharing: features.hasStorySharing
+    isSharing
   };
 }
