@@ -5,10 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// n8n webhook URLs - Update these after creating workflows
+// n8n webhook URLs - Using the diamond_ai webhook for all workflows until specific workflows are created
 const N8N_WEBHOOKS = {
-  auction_create: 'https://n8nlo.app.n8n.cloud/webhook/auction-create',
-  auction_bid: 'https://n8nlo.app.n8n.cloud/webhook/auction-bid',
+  auction_create: 'https://n8nlo.app.n8n.cloud/webhook/ae74c72e-bb87-4235-a5a8-392b0c3ea291', // Using main workflow
+  auction_bid: 'https://n8nlo.app.n8n.cloud/webhook/ae74c72e-bb87-4235-a5a8-392b0c3ea291', // Using main workflow
   diamond_ai: 'https://n8nlo.app.n8n.cloud/webhook/ae74c72e-bb87-4235-a5a8-392b0c3ea291', // existing
 };
 
