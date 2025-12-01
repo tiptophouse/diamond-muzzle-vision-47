@@ -23,7 +23,6 @@ import UploadSingleStonePage from './pages/UploadSingleStonePage';
 import InsightsPage from './pages/InsightsPage';
 import DiamondAgentsPage from './pages/DiamondAgentsPage';
 import ExecutiveAgentsPage from './pages/ExecutiveAgentsPage';
-import MCPToolsTestPage from './pages/MCPToolsTestPage';
 import NotificationsPage from './pages/NotificationsPage';
 import NotificationPageFeatureTesting from './pages/NotificationPageFeatureTesting';
 import ProfilePage from './pages/ProfilePage';
@@ -52,9 +51,6 @@ import Diagnostic from './pages/Diagnostic';
 import SubscriptionTestPage from './pages/SubscriptionTestPage';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
-
-// Test MCP connection on dev
-import './lib/test-mcp';
 
 // Register service worker for offline support in Telegram Mini App
 registerServiceWorker();
@@ -266,13 +262,6 @@ function App() {
 
                   {/* Diagnostic Page - Public route for debugging */}
                   <Route path="/diagnostic" element={<Diagnostic />} />
-
-                  {/* MCP Tools Test Page - Dev/Testing */}
-                  <Route path="/dev/mcp-tools" element={
-                    <AuthenticatedRoute>
-                      <MCPToolsTestPage />
-                    </AuthenticatedRoute>
-                  } />
 
                   <Route path="*" element={<NotFound />} />
               </Routes>

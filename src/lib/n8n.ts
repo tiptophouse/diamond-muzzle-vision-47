@@ -5,49 +5,6 @@ export interface N8NResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
-  details?: Record<string, any>;
-}
-
-export interface DiamondAIRequest {
-  searchText: string;
-  telegramId: number;
-}
-
-const N8N_WEBHOOK_URL = 'https://n8nlo.app.n8n.cloud/webhook/ae74c72e-bb87-4235-a5a8-392b0c3ea291';
-
-/**
- * Call n8n AI Diamond Concierge workflow directly via webhook
- */
-export async function callDiamondAI(request: DiamondAIRequest): Promise<N8NResponse> {
-  try {
-    console.log('🤖 Calling Diamond AI Concierge:', request);
-
-    const response = await fetch(N8N_WEBHOOK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ Diamond AI response:', data);
-    
-    return {
-      success: true,
-      data,
-    };
-  } catch (error) {
-    console.error('❌ Diamond AI error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to call Diamond AI',
-    };
-  }
 }
 
 /**
