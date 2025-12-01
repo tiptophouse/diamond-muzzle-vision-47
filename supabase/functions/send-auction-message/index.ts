@@ -18,6 +18,16 @@ interface AuctionMessagePayload {
   image_url?: string;
   seller_telegram_id: number;
   seller_username?: string;
+  diamond: {
+    shape: string;
+    weight: number;
+    color: string;
+    clarity: string;
+    cut: string;
+    stock_number: string;
+    price_per_carat?: number;
+    picture?: string;
+  };
 }
 
 serve(async (req) => {
@@ -39,6 +49,7 @@ serve(async (req) => {
       image_url,
       seller_telegram_id,
       seller_username,
+      diamond,
     } = payload;
 
     // Use test group as default if no chat_id provided
@@ -53,21 +64,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log('📤 Fetching diamond snapshot for auction:', auction_id);
-
-    // Fetch diamond snapshot from auction_diamonds
-    const { data: diamond, error: diamondError } = await supabase
-      .from('auction_diamonds')
-      .select('*')
-      .eq('auction_id', auction_id)
-      .single();
-
-    if (diamondError || !diamond) {
-      console.error('❌ Diamond snapshot not found:', diamondError);
-      throw new Error('Diamond snapshot not found for auction');
-    }
-
-    console.log('✅ Diamond snapshot fetched for auction');
+    console.log('📤 Generating AI auction message for diamond:', diamond.stock_number);
 
     // Calculate time remaining
     const endsAtDate = new Date(ends_at);
