@@ -11,8 +11,8 @@ export const apiEndpoints = {
     return url + (params.length ? `?${params.join('&')}` : '');
   },
   
-  // Create diamond - POST /api/v1/diamonds (user_id from JWT)
-  addDiamond: () => `/api/v1/diamonds`,
+  // Create diamond - POST /api/v1/add_stone (user_id from JWT)
+  addDiamond: () => `/api/v1/add_stone`,
   
   // Batch diamond upload - POST /api/v1/diamonds/batch (user_id from JWT)
   addDiamondsBatch: () => `/api/v1/diamonds/batch`,

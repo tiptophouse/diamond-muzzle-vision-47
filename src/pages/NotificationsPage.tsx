@@ -125,11 +125,6 @@ const NotificationsPage = () => {
         
         const group = groups.get(buyerId);
         
-        // Add notification ID to the group
-        if (notif.id) {
-          group.notificationIds.push(notif.id);
-        }
-        
         // Deduplicate diamonds by stock_number and enhance with inventory data
         (notif.data.matches || []).forEach(match => {
           if (!group.matchesMap.has(match.stock_number)) {

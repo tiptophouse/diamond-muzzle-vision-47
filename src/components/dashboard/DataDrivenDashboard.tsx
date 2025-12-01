@@ -284,7 +284,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           
           <div className="space-y-3 w-full max-w-xs">
             <Button 
-              onClick={() => handleButtonClick('/upload-single-stone')} 
+              onClick={() => handleButtonClick('/upload')} 
               className="w-full bg-[#0088cc] hover:bg-[#0088cc]/90 h-12 rounded-xl font-medium"
               size="lg"
             >
@@ -293,7 +293,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
             </Button>
             
             <Button 
-              onClick={() => handleButtonClick('/upload-single-stone')} 
+              onClick={() => handleButtonClick('/upload')} 
               variant="outline"
               className="w-full h-12 rounded-xl font-medium border-border/60"
               size="lg"

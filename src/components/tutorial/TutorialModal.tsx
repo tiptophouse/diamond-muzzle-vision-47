@@ -149,7 +149,7 @@ export function TutorialModal() {
             <div className="mb-4 sm:mb-6 text-center">
               <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📄</div>
               <Button
-                onClick={() => handleNavigateToPage('/upload-single-stone')}
+                onClick={() => handleNavigateToPage('/upload')}
                 size="lg"
                 className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-primary hover:bg-primary-dark text-primary-foreground flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all shadow-lg hover:shadow-xl"
               >

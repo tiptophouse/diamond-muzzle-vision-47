@@ -364,13 +364,13 @@ export function StartupDashboard() {
             <div className="grid grid-cols-2 gap-3">
               <Button 
                 variant="outline" 
-                onClick={() => handleQuickAction('upload', '/upload-single-stone')} 
+                onClick={() => handleQuickAction('upload', '/upload')} 
                 className="h-20 flex flex-col gap-2 hover:bg-primary/10 hover:border-primary/40 transition-all duration-200 bg-background/60 group"
               >
                 <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                   <Upload className="w-5 h-5 text-primary" />
                 </div>
-                <span className="text-sm font-medium">Add Diamond</span>
+                <span className="text-sm font-medium">Upload</span>
               </Button>
               <Button 
                 variant="outline" 

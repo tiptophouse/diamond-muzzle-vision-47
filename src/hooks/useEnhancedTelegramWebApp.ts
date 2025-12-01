@@ -1,7 +1,6 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { init, miniApp, themeParams, viewport, initData } from '@telegram-apps/sdk';
-import { TelegramWebApp } from '@/types/telegram';
+import WebApp from '@twa-dev/sdk';
 
 interface TelegramUser {
   id: number;
@@ -45,46 +44,25 @@ export function useEnhancedTelegramWebApp() {
     initRef.current = true;
 
     try {
-      console.log('🚀 Initializing Enhanced Telegram WebApp SDK v3.11...');
+      console.log('🚀 Initializing Enhanced Telegram WebApp SDK...');
       
-      // Initialize new SDK
-      init();
-      
-      // Mount components synchronously
-      if (miniApp.mount.isAvailable()) {
-        miniApp.mount();
-        miniApp.ready();
-      }
-      if (viewport.mount.isAvailable()) {
-        viewport.mount();
-        viewport.expand();
-      }
-      if (themeParams.mount.isAvailable()) {
-        themeParams.mount();
-      }
-      
-      // Fallback to window.Telegram.WebApp for direct access
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      if (!tg) {
-        console.error('❌ Telegram WebApp not available');
-        return;
-      }
+      // Initialize WebApp with latest features
+      WebApp.ready();
+      WebApp.expand();
       
       // Enable modern features for stable experience
-      if (tg.enableClosingConfirmation) {
-        tg.enableClosingConfirmation();
-      }
+      WebApp.enableClosingConfirmation();
       
       // iPhone scrolling fixes - Use ONLY disableVerticalSwipes to prevent app closing
       // This prevents the mini app from closing on vertical swipes while allowing native scrolling
-      if (typeof tg.disableVerticalSwipes === 'function') {
-        tg.disableVerticalSwipes();
+      if (typeof WebApp.disableVerticalSwipes === 'function') {
+        WebApp.disableVerticalSwipes();
         console.log('✅ Disabled vertical swipes to prevent app closing - native scrolling enabled');
       }
       
       // Set optimal theme for better UX
-      if (tg.setHeaderColor) tg.setHeaderColor('#1f2937');
-      if (tg.setBackgroundColor) tg.setBackgroundColor('#f8fafc');
+      WebApp.setHeaderColor('#1f2937');
+      WebApp.setBackgroundColor('#f8fafc');
       
       // iPhone-specific optimizations
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -92,11 +70,11 @@ export function useEnhancedTelegramWebApp() {
         console.log('📱 iOS detected - applying iPhone optimizations');
         
         // Handle safe area for iPhone
-        document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${tg.safeAreaInset?.top || 0}px`);
-        document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${tg.safeAreaInset?.bottom || 0}px`);
+        document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${WebApp.safeAreaInset?.top || 0}px`);
+        document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${WebApp.safeAreaInset?.bottom || 0}px`);
         
         // Optimize viewport for iPhone - Always use viewportStableHeight for iOS
-        const stableHeight = tg.viewportStableHeight || tg.viewportHeight;
+        const stableHeight = WebApp.viewportStableHeight || WebApp.viewportHeight;
         document.documentElement.style.setProperty('--tg-viewport-height', `${stableHeight}px`);
         document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
         
@@ -109,14 +87,14 @@ export function useEnhancedTelegramWebApp() {
         // Apply Telegram theme colors
         applyTelegramTheme();
       } else {
-        document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
+        document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportHeight}px`);
         // Apply Telegram theme colors for non-iOS too
         applyTelegramTheme();
       }
 
       // Function to apply Telegram's dynamic theme
       function applyTelegramTheme() {
-        const theme = tg.themeParams;
+        const theme = WebApp.themeParams;
         console.log('🎨 Applying Telegram theme:', theme);
         
         if (theme) {
@@ -173,33 +151,30 @@ export function useEnhancedTelegramWebApp() {
         return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
       }
 
-      // Get user from new SDK or fallback
-      const userData = initData.user() || tg.initDataUnsafe?.user;
-      
       // Set up enhanced WebApp state
       const enhancedWebApp: EnhancedTelegramWebApp = {
-        user: userData ? {
-          id: userData.id,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          username: userData.username,
-          language_code: userData.language_code,
-          is_premium: userData.is_premium,
-          photo_url: userData.photo_url
+        user: WebApp.initDataUnsafe?.user ? {
+          id: WebApp.initDataUnsafe.user.id,
+          first_name: WebApp.initDataUnsafe.user.first_name,
+          last_name: WebApp.initDataUnsafe.user.last_name,
+          username: WebApp.initDataUnsafe.user.username,
+          language_code: WebApp.initDataUnsafe.user.language_code,
+          is_premium: WebApp.initDataUnsafe.user.is_premium,
+          photo_url: WebApp.initDataUnsafe.user.photo_url
         } : null,
         isReady: true,
-        isExpanded: tg.isExpanded,
-        platform: tg.platform,
-        version: tg.version,
-        colorScheme: tg.colorScheme,
-        themeParams: tg.themeParams,
-        viewportHeight: tg.viewportHeight,
-        viewportStableHeight: tg.viewportStableHeight,
+        isExpanded: WebApp.isExpanded,
+        platform: WebApp.platform,
+        version: WebApp.version,
+        colorScheme: WebApp.colorScheme,
+        themeParams: WebApp.themeParams,
+        viewportHeight: WebApp.viewportHeight,
+        viewportStableHeight: WebApp.viewportStableHeight,
         safeAreaInset: {
-          top: tg.safeAreaInset?.top || 0,
-          bottom: tg.safeAreaInset?.bottom || 0,
-          left: tg.safeAreaInset?.left || 0,
-          right: tg.safeAreaInset?.right || 0
+          top: WebApp.safeAreaInset?.top || 0,
+          bottom: WebApp.safeAreaInset?.bottom || 0,
+          left: WebApp.safeAreaInset?.left || 0,
+          right: WebApp.safeAreaInset?.right || 0
         },
         isClosingConfirmationEnabled: true,
         headerColor: '#1f2937',
@@ -209,9 +184,9 @@ export function useEnhancedTelegramWebApp() {
       setWebApp(enhancedWebApp);
       setIsInitialized(true);
 
-      console.log('✅ Enhanced Telegram WebApp v3.11 initialized:', {
-        version: tg.version,
-        platform: tg.platform,
+      console.log('✅ Enhanced Telegram WebApp initialized:', {
+        version: WebApp.version,
+        platform: WebApp.platform,
         user: enhancedWebApp.user?.first_name,
         safeArea: enhancedWebApp.safeAreaInset
       });
@@ -228,27 +203,21 @@ export function useEnhancedTelegramWebApp() {
       
       // Listen for viewport changes to update CSS variables dynamically
       const handleViewportChanged = () => {
-        const tg = window.Telegram?.WebApp as TelegramWebApp;
-        if (!tg) return;
-        
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         if (isIOS && webApp) {
-          const stableHeight = tg.viewportStableHeight || tg.viewportHeight;
-          document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
+          const stableHeight = WebApp.viewportStableHeight || WebApp.viewportHeight;
+          document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportHeight}px`);
           document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
-          console.log('📱 iOS viewport updated:', { viewportHeight: tg.viewportHeight, stableHeight });
+          console.log('📱 iOS viewport updated:', { viewportHeight: WebApp.viewportHeight, stableHeight });
         }
       };
       
       // Set up viewport change listener
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      if (tg && tg.onEvent) {
-        tg.onEvent('viewportChanged', handleViewportChanged);
+      if (typeof WebApp !== 'undefined' && WebApp.onEvent) {
+        WebApp.onEvent('viewportChanged', handleViewportChanged);
         
         return () => {
-          if (tg.offEvent) {
-            tg.offEvent('viewportChanged', handleViewportChanged);
-          }
+          WebApp.offEvent('viewportChanged', handleViewportChanged);
         };
       }
     }
@@ -266,13 +235,10 @@ export function useEnhancedTelegramWebApp() {
   const navigation = {
     showBackButton: useCallback((onClick?: () => void) => {
       try {
-        const tg = window.Telegram?.WebApp as TelegramWebApp;
-        if (!tg) return;
-        
         if (onClick) {
-          tg.BackButton.onClick(onClick);
+          WebApp.BackButton.onClick(onClick);
         }
-        tg.BackButton.show();
+        WebApp.BackButton.show();
         console.log('📱 Back button shown');
       } catch (error) {
         console.error('❌ Failed to show back button:', error);
@@ -281,10 +247,7 @@ export function useEnhancedTelegramWebApp() {
 
     hideBackButton: useCallback(() => {
       try {
-        const tg = window.Telegram?.WebApp as TelegramWebApp;
-        if (!tg) return;
-        
-        tg.BackButton.hide();
+        WebApp.BackButton.hide();
         console.log('📱 Back button hidden');
       } catch (error) {
         console.error('❌ Failed to hide back button:', error);
@@ -293,15 +256,12 @@ export function useEnhancedTelegramWebApp() {
 
     showMainButton: useCallback((text: string, onClick?: () => void, color: string = '#007AFF') => {
       try {
-        const tg = window.Telegram?.WebApp as TelegramWebApp;
-        if (!tg) return;
-        
-        tg.MainButton.setText(text);
+        WebApp.MainButton.setText(text);
         // Ensure color is properly formatted as hex with type safety
         const validColor = formatColor(color);
-        tg.MainButton.color = validColor;
-        if (onClick) tg.MainButton.onClick(onClick);
-        tg.MainButton.show();
+        WebApp.MainButton.color = validColor;
+        if (onClick) WebApp.MainButton.onClick(onClick);
+        WebApp.MainButton.show();
         console.log('📱 Main button shown:', text);
       } catch (error) {
         console.error('❌ Failed to show main button:', error);
@@ -310,10 +270,7 @@ export function useEnhancedTelegramWebApp() {
 
     hideMainButton: useCallback(() => {
       try {
-        const tg = window.Telegram?.WebApp as TelegramWebApp;
-        if (!tg) return;
-        
-        tg.MainButton.hide();
+        WebApp.MainButton.hide();
         console.log('📱 Main button hidden');
       } catch (error) {
         console.error('❌ Failed to hide main button:', error);
@@ -323,72 +280,36 @@ export function useEnhancedTelegramWebApp() {
 
   // Enhanced haptic feedback
   const haptics = {
-    light: useCallback(() => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      tg?.HapticFeedback?.impactOccurred('light');
-    }, []),
-    medium: useCallback(() => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      tg?.HapticFeedback?.impactOccurred('medium');
-    }, []),
-    heavy: useCallback(() => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      tg?.HapticFeedback?.impactOccurred('heavy');
-    }, []),
-    success: useCallback(() => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      tg?.HapticFeedback?.notificationOccurred('success');
-    }, []),
-    error: useCallback(() => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      tg?.HapticFeedback?.notificationOccurred('error');
-    }, []),
-    warning: useCallback(() => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      tg?.HapticFeedback?.notificationOccurred('warning');
-    }, []),
-    selection: useCallback(() => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      tg?.HapticFeedback?.selectionChanged();
-    }, [])
+    light: useCallback(() => WebApp.HapticFeedback?.impactOccurred('light'), []),
+    medium: useCallback(() => WebApp.HapticFeedback?.impactOccurred('medium'), []),
+    heavy: useCallback(() => WebApp.HapticFeedback?.impactOccurred('heavy'), []),
+    success: useCallback(() => WebApp.HapticFeedback?.notificationOccurred('success'), []),
+    error: useCallback(() => WebApp.HapticFeedback?.notificationOccurred('error'), []),
+    warning: useCallback(() => WebApp.HapticFeedback?.notificationOccurred('warning'), []),
+    selection: useCallback(() => WebApp.HapticFeedback?.selectionChanged(), [])
   };
 
   // Enhanced utilities
   const utils = {
     showAlert: useCallback((message: string) => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      if (tg?.showAlert) {
-        tg.showAlert(message);
-      }
+      WebApp.showAlert(message);
     }, []),
 
     showConfirm: useCallback((message: string, callback?: (confirmed: boolean) => void) => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      if (tg?.showConfirm) {
-        tg.showConfirm(message, callback);
-      }
+      WebApp.showConfirm(message, callback);
     }, []),
 
     openLink: useCallback((url: string, tryInstantView = true) => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      if (tg?.openLink) {
-        tg.openLink(url, { try_instant_view: tryInstantView });
-      }
+      WebApp.openLink(url, { try_instant_view: tryInstantView });
     }, []),
 
     share: useCallback((text: string, url?: string) => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
       const shareText = url ? `${text}\n${url}` : text;
-      if (tg?.switchInlineQuery) {
-        tg.switchInlineQuery(shareText);
-      }
+      WebApp.switchInlineQuery(shareText);
     }, []),
 
     close: useCallback(() => {
-      const tg = window.Telegram?.WebApp as TelegramWebApp;
-      if (tg?.close) {
-        tg.close();
-      }
+      WebApp.close();
     }, [])
   };
 
@@ -399,6 +320,6 @@ export function useEnhancedTelegramWebApp() {
     haptics,
     utils,
     // Raw WebApp access for advanced usage
-    rawWebApp: (window.Telegram?.WebApp as TelegramWebApp) || null
+    rawWebApp: WebApp
   };
 }

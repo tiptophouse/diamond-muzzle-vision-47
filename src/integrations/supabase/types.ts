@@ -115,45 +115,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ai_concierge_analytics: {
-        Row: {
-          conversion_occurred: boolean | null
-          created_at: string | null
-          diamonds_matched: number | null
-          id: string
-          metadata: Json | null
-          query_text: string | null
-          response_time_ms: number | null
-          telegram_group_id: number | null
-          telegram_id: number | null
-          user_clicked: boolean | null
-        }
-        Insert: {
-          conversion_occurred?: boolean | null
-          created_at?: string | null
-          diamonds_matched?: number | null
-          id?: string
-          metadata?: Json | null
-          query_text?: string | null
-          response_time_ms?: number | null
-          telegram_group_id?: number | null
-          telegram_id?: number | null
-          user_clicked?: boolean | null
-        }
-        Update: {
-          conversion_occurred?: boolean | null
-          created_at?: string | null
-          diamonds_matched?: number | null
-          id?: string
-          metadata?: Json | null
-          query_text?: string | null
-          response_time_ms?: number | null
-          telegram_group_id?: number | null
-          telegram_id?: number | null
-          user_clicked?: boolean | null
-        }
-        Relationships: []
-      }
       ai_learning_patterns: {
         Row: {
           created_at: string | null
@@ -516,111 +477,6 @@ export type Database = {
           },
         ]
       }
-      auction_interest: {
-        Row: {
-          auction_id: string
-          converted_to_bid: boolean | null
-          created_at: string
-          id: string
-          telegram_id: number
-          user_name: string | null
-        }
-        Insert: {
-          auction_id: string
-          converted_to_bid?: boolean | null
-          created_at?: string
-          id?: string
-          telegram_id: number
-          user_name?: string | null
-        }
-        Update: {
-          auction_id?: string
-          converted_to_bid?: boolean | null
-          created_at?: string
-          id?: string
-          telegram_id?: number
-          user_name?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "auction_interest_auction_id_fkey"
-            columns: ["auction_id"]
-            isOneToOne: false
-            referencedRelation: "auctions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      auction_presence: {
-        Row: {
-          auction_id: string
-          id: string
-          joined_at: string
-          last_heartbeat: string
-          telegram_id: number
-          user_name: string | null
-        }
-        Insert: {
-          auction_id: string
-          id?: string
-          joined_at?: string
-          last_heartbeat?: string
-          telegram_id: number
-          user_name?: string | null
-        }
-        Update: {
-          auction_id?: string
-          id?: string
-          joined_at?: string
-          last_heartbeat?: string
-          telegram_id?: number
-          user_name?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "auction_presence_auction_id_fkey"
-            columns: ["auction_id"]
-            isOneToOne: false
-            referencedRelation: "auctions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      auction_reactions: {
-        Row: {
-          auction_id: string
-          created_at: string
-          expires_at: string
-          id: string
-          reaction_type: string
-          telegram_id: number
-        }
-        Insert: {
-          auction_id: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          reaction_type: string
-          telegram_id: number
-        }
-        Update: {
-          auction_id?: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          reaction_type?: string
-          telegram_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "auction_reactions_auction_id_fkey"
-            columns: ["auction_id"]
-            isOneToOne: false
-            referencedRelation: "auctions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       auction_watchers: {
         Row: {
           auction_id: string
@@ -662,8 +518,6 @@ export type Database = {
           current_price: number
           diamond_data: Json | null
           ends_at: string
-          extension_count: number | null
-          heat_level: string | null
           id: string
           message_ids: Json | null
           min_increment: number
@@ -688,8 +542,6 @@ export type Database = {
           current_price: number
           diamond_data?: Json | null
           ends_at: string
-          extension_count?: number | null
-          heat_level?: string | null
           id?: string
           message_ids?: Json | null
           min_increment?: number
@@ -714,8 +566,6 @@ export type Database = {
           current_price?: number
           diamond_data?: Json | null
           ends_at?: string
-          extension_count?: number | null
-          heat_level?: string | null
           id?: string
           message_ids?: Json | null
           min_increment?: number
@@ -732,7 +582,15 @@ export type Database = {
           updated_at?: string
           winner_telegram_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_auction_diamond"
+            columns: ["stock_number"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["stock_number"]
+          },
+        ]
       }
       auth_debug_logs: {
         Row: {
@@ -1246,39 +1104,6 @@ export type Database = {
           user_telegram_id?: number | null
           viewed_360?: boolean | null
           viewed_certificate?: boolean | null
-        }
-        Relationships: []
-      }
-      diamond_embeddings: {
-        Row: {
-          content: string
-          created_at: string | null
-          diamond_id: number
-          embedding: string | null
-          id: string
-          metadata: Json | null
-          stock_number: string
-          updated_at: string | null
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          diamond_id: number
-          embedding?: string | null
-          id?: string
-          metadata?: Json | null
-          stock_number: string
-          updated_at?: string | null
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          diamond_id?: number
-          embedding?: string | null
-          id?: string
-          metadata?: Json | null
-          stock_number?: string
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -3288,36 +3113,6 @@ export type Database = {
         Returns: boolean
       }
       clean_expired_cache: { Args: never; Returns: undefined }
-      clean_expired_reactions: { Args: never; Returns: undefined }
-      create_auction_with_context: {
-        Args: {
-          p_currency: string
-          p_diamond_certificate_number?: number
-          p_diamond_certificate_url?: string
-          p_diamond_clarity: string
-          p_diamond_color: string
-          p_diamond_cut: string
-          p_diamond_depth_percentage?: number
-          p_diamond_fluorescence?: string
-          p_diamond_lab?: string
-          p_diamond_measurements?: string
-          p_diamond_picture?: string
-          p_diamond_polish?: string
-          p_diamond_price_per_carat?: number
-          p_diamond_shape: string
-          p_diamond_symmetry?: string
-          p_diamond_table_percentage?: number
-          p_diamond_total_price?: number
-          p_diamond_video_url?: string
-          p_diamond_weight: number
-          p_ends_at: string
-          p_min_increment: number
-          p_seller_telegram_id: number
-          p_starting_price: number
-          p_stock_number: string
-        }
-        Returns: Json
-      }
       delete_diamond: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean

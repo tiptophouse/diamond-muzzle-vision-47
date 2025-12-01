@@ -121,7 +121,7 @@ export function UploadForm() {
                 variant="outline" 
                 size="sm"
                 className="w-full sm:w-auto"
-                onClick={() => navigate('/upload-single-stone?action=scan')}
+                onClick={() => navigate('/upload?action=scan')}
               >
                 Add Single Diamond
               </Button>

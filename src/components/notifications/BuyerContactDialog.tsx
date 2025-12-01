@@ -59,18 +59,12 @@ export function BuyerContactDialog({
   const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
 
   useEffect(() => {
-    console.log('🔵 Dialog useEffect triggered:', { open, diamondsCount: diamonds.length, buyerId, buyerName });
     if (open && diamonds.length > 0) {
-      console.log('🟢 Calling fetchDiamondsAndGenerate...');
       fetchDiamondsAndGenerate();
-    } else {
-      console.log('🔴 Dialog NOT calling fetchDiamondsAndGenerate:', { open, diamondsEmpty: diamonds.length === 0 });
     }
   }, [open, diamonds]);
 
   const fetchDiamondsAndGenerate = async () => {
-    console.log('🟢 fetchDiamondsAndGenerate STARTED');
-    console.log('🔵 Input data:', { buyerId, buyerName, diamondsCount: diamonds.length, sellerTelegramId });
     setLoading(true);
     try {
       console.log('🔍 Fetching full diamond data from FastAPI...');
@@ -126,11 +120,6 @@ export function BuyerContactDialog({
       }
 
       console.log('✅ AI message generated successfully');
-      console.log('📊 Generated data:', { 
-        messageLength: data.message?.length, 
-        diamondsCount: data.diamonds?.length,
-        totalValue: data.totalValue 
-      });
       setGeneratedMessage(data.message);
       setDiamondData(data.diamonds);
       setTotalValue(data.totalValue);
@@ -138,15 +127,9 @@ export function BuyerContactDialog({
       toast.success('הודעה נוצרה בהצלחה!', {
         description: `עם ${images.length} תמונות יהלומים`,
       });
-      console.log('🟢 fetchDiamondsAndGenerate COMPLETED successfully');
       
     } catch (error: any) {
-      console.error('❌ fetchDiamondsAndGenerate FAILED:', error);
-      console.error('❌ Error details:', {
-        message: error?.message,
-        status: error?.status,
-        stack: error?.stack
-      });
+      console.error('❌ Failed to generate message:', error);
       
       if (error?.message?.includes('LOVABLE_API_KEY')) {
         toast.error('שירות ה-AI לא מוגדר. צור קשר עם התמיכה.');
@@ -156,11 +139,10 @@ export function BuyerContactDialog({
         toast.error('נגמר הקרדיט של ה-AI. הוסף עוד קרדיט.');
       } else {
         toast.error('שגיאה ביצירת ההודעה', {
-          description: error?.message || 'נסה שוב מאוחר יותר',
+          description: 'נסה שוב מאוחר יותר',
         });
       }
     } finally {
-      console.log('🔵 fetchDiamondsAndGenerate FINALLY block, setting loading=false');
       setLoading(false);
     }
   };
@@ -176,55 +158,17 @@ export function BuyerContactDialog({
   };
 
   const handleSendMessage = async () => {
-    console.log('🔵 handleSendMessage called');
-    console.log('🔵 State check:', { 
-      generatedMessage: !!generatedMessage, 
-      buyerId, 
-      buyerName,
-      diamondDataLength: diamondData.length,
-      loading
-    });
-
     if (!generatedMessage) {
-      console.error('❌ No generated message');
-      toast.error('אין הודעה', {
-        description: 'נא לנסות לסגור ולפתוח מחדש את החלון'
-      });
-      return;
-    }
-
-    if (!buyerId) {
-      console.error('❌ No buyer ID');
-      toast.error('מזהה קונה חסר', {
-        description: 'אנא נסה שנית'
-      });
-      return;
-    }
-
-    if (diamondData.length === 0) {
-      console.error('❌ No diamond data');
-      toast.error('אין נתוני יהלומים', {
-        description: 'אנא נסה שנית'
-      });
+      toast.error('אין הודעה');
       return;
     }
 
     setLoading(true);
-    console.log('🔵 Loading state set to true');
-    
-    // Show immediate feedback to user
-    toast.info('שולח הודעה...', {
-      description: `שולח ${diamondData.length} יהלומים לקונה`
-    });
-    
     try {
       impactOccurred('medium');
       
-      console.log('📤 Starting message send process...');
-      console.log('📤 Buyer ID:', buyerId);
-      console.log('📤 Buyer Name:', buyerName);
-      console.log(`📤 Sending ${diamondData.length} diamonds with AI message`);
-      console.log('📤 Generated message:', generatedMessage.substring(0, 100) + '...');
+      console.log('📤 Sending message to buyer personal chat:', buyerId);
+      console.log(`💎 Sending ${diamondData.length} diamonds with AI message`);
 
       // Map diamonds to the format expected by send-rich-diamond-message
       const diamondsToSend = diamondData.map(d => ({
@@ -239,22 +183,17 @@ export function BuyerContactDialog({
         certificate_url: d.certificate_url,
       }));
 
-      console.log('📤 Diamonds to send:', diamondsToSend.map(d => d.stock_number));
-
       // Send AI message + all diamonds in one call to buyer's personal chat
-      console.log('📤 Invoking send-rich-diamond-message edge function...');
-      const { data, error } = await supabase.functions.invoke('send-rich-diamond-message', {
+      const { error } = await supabase.functions.invoke('send-rich-diamond-message', {
         body: {
-          telegram_id: buyerId,
-          message: generatedMessage,
-          diamonds: diamondsToSend,
+          telegram_id: buyerId, // ✅ Direct to buyer's personal chat
+          message: generatedMessage, // AI-generated message
+          diamonds: diamondsToSend, // All diamonds at once
         },
       });
 
-      console.log('📤 Edge function response:', { data, error });
-
       if (error) {
-        console.error('❌ Edge function returned error:', error);
+        console.error('❌ Failed to send message to buyer:', error);
         throw error;
       }
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import WebApp from '@twa-dev/sdk';
 import { Gem, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -66,10 +67,8 @@ export function SegomaViewer({
 
   const openInNewTab = () => {
     try {
-      // Use the Telegram WebApp API directly (available via window.Telegram)
-      const tg = window.Telegram?.WebApp;
-      if (tg && 'openLink' in tg && typeof tg.openLink === 'function') {
-        tg.openLink(segomaUrl, { try_instant_view: false });
+      if (WebApp?.openLink) {
+        WebApp.openLink(segomaUrl, { try_instant_view: false });
       } else {
         window.open(segomaUrl, '_blank', 'noopener,noreferrer');
       }

@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { initData } from '@telegram-apps/sdk';
 import { TelegramUser } from '@/types/telegram';
 import { signInToBackend, clearBackendAuthToken } from '@/lib/api/auth';
 import { setCurrentUserId } from '@/lib/api/config';
@@ -87,10 +86,8 @@ export function useStrictTelegramAuth(): AuthState {
         console.warn('⚠️ JWT-ONLY AUTH: WebApp initialization warning:', error);
       }
 
-      // Step 3: STRICT - Check for initData using new SDK (NO FALLBACKS)
-      const rawInitData = initData.raw() || tg.initData;
-      
-      if (!rawInitData || !rawInitData.length) {
+      // Step 3: STRICT - Check for initData (NO FALLBACKS)
+      if (!tg.initData || !tg.initData.length) {
         console.error('❌ JWT-ONLY AUTH: Missing Telegram initData - NO FALLBACKS, JWT REQUIRED');
         
         toast.error('Authentication data missing. Please restart the app from Telegram.', {
@@ -108,11 +105,11 @@ export function useStrictTelegramAuth(): AuthState {
         return;
       }
 
-      console.log('🔍 JWT-ONLY AUTH: Found initData, length:', rawInitData.length);
+      console.log('🔍 JWT-ONLY AUTH: Found initData, length:', tg.initData.length);
 
       // Step 4: CRITICAL - Authenticate with FastAPI backend using initData (JWT IS ONLY SOURCE OF TRUTH)
       console.log('🔐 JWT-ONLY AUTH: Authenticating with FastAPI backend - JWT token required...');
-      const jwtToken = await signInToBackend(rawInitData);
+      const jwtToken = await signInToBackend(tg.initData);
       
       if (!jwtToken) {
         console.error('❌ JWT-ONLY AUTH: FastAPI JWT authentication failed - NO ACCESS GRANTED');
@@ -138,7 +135,7 @@ export function useStrictTelegramAuth(): AuthState {
       let authenticatedUser: TelegramUser | null = null;
 
       try {
-        const urlParams = new URLSearchParams(rawInitData);
+        const urlParams = new URLSearchParams(tg.initData);
         const userParam = urlParams.get('user');
         
         if (!userParam) {

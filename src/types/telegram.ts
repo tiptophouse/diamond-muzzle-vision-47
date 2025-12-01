@@ -37,25 +37,16 @@ export interface TelegramWebApp {
     link_color: string;
     button_color: string;
     button_text_color: string;
-    secondary_bg_color?: string;
   };
   isExpanded: boolean;
   viewportHeight: number;
   viewportStableHeight: number;
-  safeAreaInset?: {
-    top: number;
-    bottom: number;
-    left: number;
-    right: number;
-  };
   headerColor?: string;
   backgroundColor?: string;
   setHeaderColor?: (color: string) => void;
   setBackgroundColor?: (color: string) => void;
   enableClosingConfirmation?: () => void;
   disableClosingConfirmation?: () => void;
-  disableVerticalSwipes?: () => void;
-  enableVerticalSwipes?: () => void;
   BackButton: {
     show: () => void;
     hide: () => void;
