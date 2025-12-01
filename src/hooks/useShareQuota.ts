@@ -19,9 +19,16 @@ export function useShareQuota() {
   const { isAdmin } = useIsAdmin();
 
   const fetchQuotaData = async () => {
-    if (!user?.id) return;
+    console.log('🔄 useShareQuota: Fetching quota data', { userId: user?.id, isAdmin });
+    
+    if (!user?.id) {
+      console.warn('⚠️ useShareQuota: No user ID available');
+      setLoading(false);
+      return;
+    }
 
     try {
+      console.log('📊 useShareQuota: Fetching from Supabase...');
       // First get shares_remaining from user_profiles
       const { data: userProfile, error: profileError } = await supabase
         .from('user_profiles')
@@ -30,9 +37,12 @@ export function useShareQuota() {
         .single();
 
       if (profileError) {
-        console.error('Error fetching user profile:', profileError);
+        console.error('❌ useShareQuota: Error fetching user profile:', profileError);
+        setLoading(false);
         return;
       }
+
+      console.log('✅ useShareQuota: User profile fetched', userProfile);
 
       // Get quota details from user_share_quotas if exists
       const { data: quotaDetails } = await supabase
@@ -41,14 +51,17 @@ export function useShareQuota() {
         .eq('user_telegram_id', user.id)
         .single();
 
-      setQuotaData({
+      const finalQuota = {
         sharesRemaining: isAdmin ? 999 : (userProfile?.shares_remaining || 5),
         sharesUsed: quotaDetails?.shares_used || 0,
         sharesGranted: isAdmin ? 999 : (quotaDetails?.shares_granted || 5),
         quotaResetAt: quotaDetails?.quota_reset_at || null
-      });
+      };
+
+      console.log('✅ useShareQuota: Final quota data', finalQuota);
+      setQuotaData(finalQuota);
     } catch (error) {
-      console.error('Error fetching quota data:', error);
+      console.error('❌ useShareQuota: Error fetching quota data:', error);
     } finally {
       setLoading(false);
     }
