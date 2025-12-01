@@ -1,11 +1,14 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash } from "lucide-react";
+import { Edit, Trash, Share2 } from "lucide-react";
 import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
 import { formatPrice } from "@/utils/numberUtils";
+import { useTelegramAdvanced } from "@/hooks/useTelegramAdvanced";
+import { useToast } from "@/hooks/use-toast";
+import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 
 interface InventoryMobileCardProps {
   diamond: Diamond;
@@ -14,6 +17,61 @@ interface InventoryMobileCardProps {
 }
 
 export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobileCardProps) {
+  const [isSharing, setIsSharing] = useState(false);
+  const { shareStory, features } = useTelegramAdvanced();
+  const { hapticFeedback } = useTelegramWebApp();
+  const { toast } = useToast();
+
+  const handleShareToStory = async () => {
+    if (!features.hasStorySharing) {
+      toast({
+        title: "❌ לא נתמך",
+        description: "Story sharing requires Telegram 7.2+. Please update your Telegram app.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSharing(true);
+    hapticFeedback.impact('light');
+
+    try {
+      // Use the diamond image or a placeholder
+      const imageUrl = diamond.imageUrl || diamond.picture || diamond.gem360Url || 'https://via.placeholder.com/400?text=Diamond';
+      
+      // Create the widget button that links back to diamond detail
+      const widgetUrl = `https://mazalbot.app/public/diamond/${diamond.diamondId || diamond.id}?shared=true`;
+      
+      const success = await shareStory(imageUrl, {
+        text: `💎 ${diamond.carat}ct ${diamond.shape} | ${diamond.color} • ${diamond.clarity}\n${formatPrice(diamond.price)}`,
+        widgetLink: {
+          url: widgetUrl,
+          name: '💎 פרטים מלאים'
+        }
+      });
+
+      if (success) {
+        hapticFeedback.notification('success');
+        toast({
+          title: "✅ סטורי שותף!",
+          description: "היהלום שותף לסטורי שלך בהצלחה",
+        });
+      } else {
+        throw new Error('Share failed');
+      }
+    } catch (error) {
+      console.error('Story share error:', error);
+      hapticFeedback.notification('error');
+      toast({
+        title: "❌ שגיאה",
+        description: "לא ניתן לשתף לסטורי כרגע",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   return (
     <Card className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
       <CardContent className="p-3 sm:p-4 w-full">
@@ -89,29 +147,41 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
         </div>
 
         {(onEdit || onDelete) && (
-          <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-700 w-full">
-            {onEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(diamond)}
-                className="flex-1 h-9 text-sm dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onDelete(diamond.diamondId?.toString() || diamond.id)}
-                className="flex-1 h-9 text-sm text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
-              >
-                <Trash className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            )}
+          <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700 w-full">
+            <div className="flex gap-2 w-full">
+              {onEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(diamond)}
+                  className="flex-1 h-9 text-sm dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDelete(diamond.diamondId?.toString() || diamond.id)}
+                  className="flex-1 h-9 text-sm text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShareToStory}
+              disabled={isSharing || !features.hasStorySharing}
+              className="w-full h-9 text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              {isSharing ? 'שולח...' : '📱 שתף לסטורי'}
+            </Button>
           </div>
         )}
       </CardContent>
