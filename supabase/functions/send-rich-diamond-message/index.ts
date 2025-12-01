@@ -39,7 +39,8 @@ serve(async (req) => {
     });
 
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-    const MINI_APP_URL = Deno.env.get('MINI_APP_URL') || 'https://brillianttg.lovable.app';
+    const TELEGRAM_BOT_USERNAME = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot';
+    const MINI_APP_URL = Deno.env.get('MINI_APP_URL') || 'https://mazalbot.app';
 
     if (!TELEGRAM_BOT_TOKEN) {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
@@ -50,7 +51,7 @@ serve(async (req) => {
     }
 
     const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
-    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
+    const telegramBotUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
 
     // Step 1: Send the AI-generated message first
     if (message && message.trim()) {
@@ -105,14 +106,12 @@ serve(async (req) => {
         // Format diamond message with emojis and structure
         const diamondMessage = formatDiamondMessage(diamond);
         
-        // Create inline keyboard with web_app format for Mini App routes
+        // Create inline keyboard - use startapp for diamond link to open in Mini App context
         const inlineKeyboard: any[][] = [
           [
             {
               text: '💎 פרטים מלאים + תמונות HD',
-              web_app: {
-                url: `${MINI_APP_URL}/public/diamond/${diamond.stock_number}?shared=true`
-              }
+              url: `${telegramBotUrl}?startapp=diamond_${diamond.stock_number}`
             }
           ]
         ];
