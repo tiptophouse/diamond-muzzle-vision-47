@@ -348,7 +348,7 @@ export function StartupDashboard() {
 
         {/* Recent Diamonds */}
         <RecentDiamondsSection 
-          diamonds={recentDiamonds.map(d => ({ ...d, stock: d.certificate_number?.toString() || d.id }))} 
+          diamonds={recentDiamonds.map(d => ({ ...d, stock: (d as any).stock_number || d.id }))} 
           isLoading={isLoading} 
         />
 
