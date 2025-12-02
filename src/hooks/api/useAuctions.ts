@@ -3,9 +3,11 @@ import {
   createAuction, 
   listAuctions, 
   getAuction, 
+  updateAuction,
   placeBid,
   closeAuction,
   CreateAuctionRequest,
+  AuctionUpdateRequest,
   PlaceBidRequest,
   Auction
 } from '@/lib/api/auctions';
@@ -63,6 +65,36 @@ export function useCreateAuction() {
       toast({
         title: '❌ שגיאה ביצירת מכרז',
         description: error?.response?.data?.detail || 'לא ניתן ליצור מכרז כרגע',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+/**
+ * Hook to update an auction
+ */
+export function useUpdateAuction(auctionId: number) {
+  const queryClient = useQueryClient();
+  const { hapticFeedback } = useTelegramWebApp();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (request: AuctionUpdateRequest) => updateAuction(auctionId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.auction(auctionId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.auctions });
+      hapticFeedback.notification('success');
+      toast({
+        title: '✅ המכרז עודכן',
+        description: 'המכרז עודכן בהצלחה',
+      });
+    },
+    onError: (error: any) => {
+      hapticFeedback.notification('error');
+      toast({
+        title: '❌ שגיאה בעדכון מכרז',
+        description: error?.response?.data?.detail || 'לא ניתן לעדכן מכרז כרגע',
         variant: 'destructive',
       });
     },

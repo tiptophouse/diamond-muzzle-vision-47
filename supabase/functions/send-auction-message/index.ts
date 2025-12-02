@@ -145,26 +145,6 @@ serve(async (req) => {
     const message_id = telegramData.result.message_id;
     console.log('✅ Auction message sent successfully, message_id:', message_id);
 
-    // Store message ID in auction for multi-message updates
-    const { data: existingAuction } = await supabase
-      .from('auctions')
-      .select('message_ids')
-      .eq('id', auction_id)
-      .single();
-
-    const existingMessageIds = existingAuction?.message_ids || {};
-    const updatedMessageIds = {
-      ...existingMessageIds,
-      [chat_id]: message_id,
-    };
-
-    await supabase
-      .from('auctions')
-      .update({ message_ids: updatedMessageIds })
-      .eq('id', auction_id);
-
-    console.log('✅ Message ID stored for multi-message updates');
-
     return new Response(
       JSON.stringify({
         success: true,
