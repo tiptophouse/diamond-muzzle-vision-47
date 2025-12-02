@@ -95,3 +95,7 @@ verify_jwt = false
 
 [functions.test-group-message]
 verify_jwt = false
+
+[functions.fastapi-mcp-bridge]
+verify_jwt = false
+
