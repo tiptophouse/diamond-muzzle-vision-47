@@ -21,10 +21,25 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const startTime = useRef(Date.now());
   
   const [state, setState] = useState<OptimizedAuthState>(() => {
-    // Try to restore from cache for instant load - LENIENT validation to prevent race conditions
+    // Try to restore from cache for instant load - but verify Telegram environment
     const cachedAuth = tokenManager.getCachedAuthState();
     if (cachedAuth && tokenManager.isValid()) {
-      console.log('⚡ AUTH: Instant load from cache - trusting valid token');
+      // Verify we still have valid Telegram environment with initData
+      if (!window.Telegram?.WebApp?.initData) {
+        console.warn('⚠️ AUTH: Cached auth exists but no initData - clearing cache');
+        tokenManager.clear();
+        return {
+          user: null,
+          isLoading: true,
+          error: null,
+          isTelegramEnvironment: false,
+          isAuthenticated: false,
+          accessDeniedReason: null,
+          loadTime: 0
+        };
+      }
+      
+      console.log('⚡ AUTH: Instant load from cache with valid initData');
       setCurrentUserId(cachedAuth.userId);
       
       // Set session context for RLS (non-blocking, fire-and-forget)

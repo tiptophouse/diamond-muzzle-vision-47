@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { fetchInventoryData } from '@/services/inventoryDataService';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -11,7 +11,6 @@ export function useInventoryData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { subscribeToInventoryChanges } = useInventoryDataSync();
-  const hasDataRef = useRef(false);
 
   // Memoize shape normalization to prevent recalculation
   const normalizeShape = useMemo(() => {
@@ -238,7 +237,6 @@ export function useInventoryData() {
         
         setDiamonds(transformedDiamonds);
         setAllDiamonds(transformedDiamonds);
-        hasDataRef.current = true; // Mark that we have data
       } else {
         console.log('📥 INVENTORY HOOK: No diamonds found');
         setDiamonds([]);
@@ -260,7 +258,7 @@ export function useInventoryData() {
     fetchData();
   }, [fetchData]);
 
-  // Initial load when user is available - PREVENT clearing data during auth refresh
+  // Initial load when user is available
   useEffect(() => {
     if (authLoading) {
       console.log('⏳ INVENTORY HOOK: Waiting for auth...');
@@ -271,16 +269,11 @@ export function useInventoryData() {
       console.log('👤 INVENTORY HOOK: User available, fetching data for:', user.id);
       fetchData();
     } else {
-      // CRITICAL: Only clear data if we've never loaded data before
-      // This prevents race condition where auth temporarily returns null during refresh
-      if (!hasDataRef.current) {
-        console.log('🚫 INVENTORY HOOK: No user and no previous data, showing error');
-        setLoading(false);
-        setError("Please log in to view your inventory.");
-      } else {
-        console.log('⚠️ INVENTORY HOOK: No user but keeping cached data to prevent flicker');
-        setLoading(false);
-      }
+      console.log('🚫 INVENTORY HOOK: No user, clearing data');
+      setLoading(false);
+      setDiamonds([]);
+      setAllDiamonds([]);
+      setError("Please log in to view your inventory.");
     }
   }, [user, authLoading, fetchData]);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { http } from '@/api/http';
 import { INVENTORY_CHANGE_EVENT } from './inventory/useInventoryDataSync';
@@ -46,7 +46,6 @@ export function useDiamondDistribution() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user, isAuthenticated } = useTelegramAuth();
-  const hasDataRef = useRef(false);
 
   const fetchDistributionData = async () => {
     setLoading(true);
@@ -164,8 +163,6 @@ export function useDiamondDistribution() {
         totalDiamonds: diamonds.length,
         recentDiamonds
       });
-      
-      hasDataRef.current = true; // Mark that we have loaded data
 
       console.log('📊 Distribution calculated:', {
         colors: colorDistribution.length,
@@ -183,16 +180,8 @@ export function useDiamondDistribution() {
   };
 
   useEffect(() => {
-    // CRITICAL: Preserve data during auth transitions to prevent count from disappearing
-    if (user?.id || isAuthenticated) {
-      fetchDistributionData();
-    } else if (!hasDataRef.current) {
-      // Only fetch demo data if we've never had real data before
-      console.log('📊 No previous data, loading initial state');
-      fetchDistributionData();
-    } else {
-      console.log('📊 Auth temporarily unavailable, keeping cached distribution data');
-    }
+    // Always fetch data, regardless of authentication status for better UX
+    fetchDistributionData();
   }, [user?.id, isAuthenticated]);
 
   // Listen for inventory changes and refresh
