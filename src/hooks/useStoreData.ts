@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { fetchInventoryData } from "@/services/inventoryDataService";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
@@ -17,6 +17,7 @@ export function useStoreData() {
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasDataRef = useRef(false);
 
   // Helper function to parse numbers from various formats
   const parseNumber = useCallback((value: any): number => {
@@ -147,6 +148,7 @@ export function useStoreData() {
           const transformedDiamonds = transformData(result.data);
           dataCache = { data: transformedDiamonds, timestamp: Date.now() };
           setDiamonds(transformedDiamonds);
+          hasDataRef.current = true; // Mark that we have data
       } else {
         setDiamonds([]);
       }
@@ -184,10 +186,16 @@ export function useStoreData() {
       console.log('✅ STORE DATA: User authenticated, fetching data');
       fetchStoreData();
     } else {
-      console.log('❌ STORE DATA: No user, clearing data');
-      setLoading(false);
-      setDiamonds([]);
-      setError("Please log in to view your diamonds");
+      // CRITICAL: Only clear data if we've never loaded data before
+      // This prevents race condition where auth temporarily returns null during refresh
+      if (!hasDataRef.current) {
+        console.log('❌ STORE DATA: No user and no previous data, showing error');
+        setLoading(false);
+        setError("Please log in to view your diamonds");
+      } else {
+        console.log('⚠️ STORE DATA: No user but keeping cached data to prevent flicker');
+        setLoading(false);
+      }
     }
   }, [user, authLoading, fetchStoreData]);
 
