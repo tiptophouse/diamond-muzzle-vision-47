@@ -267,8 +267,12 @@ export function useStoreData() {
         // Determine color type based on the color value
         const colorType = item.color_type || (detectFancyColor(item.color).isFancyColor ? 'Fancy' : 'Standard');
 
+        // Preserve numeric FastAPI diamond ID for CRUD operations
+        const numericId = typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10);
+        
         const result = {
           id: String(item.id || `diamond_${index}`),
+          diamondId: isNaN(numericId) ? undefined : numericId, // Numeric FastAPI ID for CRUD
           stockNumber: String(item.stock_number || item.stock || item.stockNumber || `STOCK_${index}`),
           shape: item.shape || item.Shape || 'Round',
           carat: weight,

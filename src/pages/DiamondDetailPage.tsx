@@ -571,7 +571,7 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
             stockNumber={diamond.stockNumber}
             diamondName={`${diamond.carat}ct ${diamond.shape}`}
             diamond={{
-              id: Number(diamond.id) || 0,
+              id: (diamond as any).diamondId || parseInt(diamond.id, 10) || 0,
               stockNumber: diamond.stockNumber,
               carat: diamond.carat,
               shape: diamond.shape,
@@ -584,7 +584,11 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
             sellerTelegramId={user.id}
             sellerUsername={user.username}
             onSuccess={(auctionId) => {
-              console.log('Auction created:', auctionId);
+              console.log('✅ Auction created:', auctionId);
+              toast({
+                title: '✅ מכרז נוצר!',
+                description: `מכרז #${auctionId} נוצר בהצלחה`,
+              });
             }}
           />
         )}

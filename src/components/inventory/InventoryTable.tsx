@@ -13,7 +13,7 @@ import { memo } from 'react';
 
 export interface Diamond {
   id: string;
-  diamondId?: string;
+  diamondId?: number; // Numeric FastAPI diamond ID for CRUD operations
   stockNumber: string;
   shape: string;
   carat: number;
