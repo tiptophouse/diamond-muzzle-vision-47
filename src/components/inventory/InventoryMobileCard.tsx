@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash, Share2 } from "lucide-react";
+import { Edit, Trash, Share2, Loader2 } from "lucide-react";
 import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
 import { formatPrice } from "@/utils/numberUtils";
 import { useTelegramAdvanced } from "@/hooks/useTelegramAdvanced";
@@ -23,29 +23,66 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
   const { toast } = useToast();
 
   const handleShareToStory = async () => {
-    if (!features.hasStorySharing) {
+    // Check if mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) {
       toast({
-        title: "❌ לא נתמך",
-        description: "Story sharing requires Telegram 7.8+ (mobile only). Please update your Telegram app.",
+        title: "📱 נדרש מכשיר נייד",
+        description: "שיתוף לסטורי זמין רק באפליקציית טלגרם במכשיר נייד",
         variant: "destructive",
       });
+      hapticFeedback.notification('error');
+      return;
+    }
+
+    // Check Telegram version
+    if (!features.hasStorySharing) {
+      toast({
+        title: "❌ עדכון נדרש",
+        description: "שיתוף לסטורי דורש טלגרם גרסה 7.8 ומעלה. אנא עדכן את האפליקציה.",
+        variant: "destructive",
+      });
+      hapticFeedback.notification('error');
+      return;
+    }
+
+    // Get image URL - must be public HTTPS
+    const imageUrl = diamond.picture || diamond.imageUrl || diamond.gem360Url;
+    
+    if (!imageUrl) {
+      toast({
+        title: "❌ אין תמונה",
+        description: "לא ניתן לשתף יהלום ללא תמונה",
+        variant: "destructive",
+      });
+      hapticFeedback.notification('error');
+      return;
+    }
+
+    // Validate HTTPS URL
+    if (!imageUrl.startsWith('https://')) {
+      toast({
+        title: "❌ תמונה לא תקינה",
+        description: "נדרשת תמונה עם כתובת HTTPS",
+        variant: "destructive",
+      });
+      hapticFeedback.notification('error');
       return;
     }
 
     setIsSharing(true);
     hapticFeedback.impact('light');
+    
+    toast({
+      title: "⏳ משתף לסטורי...",
+      description: "אנא המתן",
+    });
 
     try {
-      // Use diamond image - must be public HTTPS URL
-      const imageUrl = diamond.imageUrl || diamond.picture || diamond.gem360Url;
-      
-      if (!imageUrl) {
-        throw new Error('No image URL available');
-      }
-      
-      // Use t.me deep link format for best compatibility
-      const botUsername = 'MazalBotApp'; // Replace with actual bot username
-      const widgetUrl = `https://t.me/${botUsername}?startapp=diamond_${diamond.diamondId || diamond.id}`;
+      // Use correct deep link format
+      const botUsername = 'MazalBotApp';
+      const diamondId = diamond.diamondId || diamond.id;
+      const widgetUrl = `https://t.me/${botUsername}?startapp=diamond_${diamondId}`;
       
       const success = await shareStory(imageUrl, {
         text: `💎 ${diamond.carat}ct ${diamond.shape} | ${diamond.color} • ${diamond.clarity}\n${formatPrice(diamond.price)}`,
@@ -58,18 +95,18 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
       if (success) {
         hapticFeedback.notification('success');
         toast({
-          title: "✅ סטורי שותף!",
-          description: "היהלום שותף לסטורי שלך בהצלחה",
+          title: "✅ סטורי שותף בהצלחה!",
+          description: "היהלום שותף לסטורי שלך",
         });
       } else {
-        throw new Error('Share failed');
+        throw new Error('Share operation returned false');
       }
     } catch (error) {
       console.error('Story share error:', error);
       hapticFeedback.notification('error');
       toast({
-        title: "❌ שגיאה",
-        description: "לא ניתן לשתף לסטורי כרגע. ודא שיש תמונה ושאתה במכשיר נייד.",
+        title: "❌ שגיאה בשיתוף",
+        description: "לא ניתן לשתף לסטורי כרגע. ודא שאתה במכשיר נייד עם טלגרם עדכני.",
         variant: "destructive",
       });
     } finally {
@@ -181,11 +218,20 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
               variant="outline"
               size="sm"
               onClick={handleShareToStory}
-              disabled={isSharing || !features.hasStorySharing}
+              disabled={isSharing}
               className="w-full h-9 text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50"
             >
-              <Share2 className="h-4 w-4 mr-2" />
-              {isSharing ? 'שולח...' : '📱 שתף לסטורי'}
+              {isSharing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  משתף...
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-4 w-4 mr-2" />
+                  📱 שתף לסטורי
+                </>
+              )}
             </Button>
           </div>
         )}
