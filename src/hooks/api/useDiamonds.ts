@@ -1,13 +1,15 @@
 /**
  * React Query hooks for diamond management
+ * Uses FastAPI endpoints with proper data transformation
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import type { DiamondCreateRequest, DiamondUpdateRequest } from '@/types/fastapi-models';
 import * as diamondsApi from '@/api/diamonds';
+import { transformToFastAPICreate, transformToFastAPIUpdate } from '@/api/diamondTransformers';
 import { apiEndpoints } from '@/lib/api/endpoints';
 import { http } from '@/api/http';
+import type { DiamondFormData } from '@/components/inventory/form/types';
 
 // Query keys
 export const diamondKeys = {
@@ -34,17 +36,29 @@ export function useGetAllStones(userId: number) {
 
 /**
  * Create a single diamond with optimistic updates and haptic feedback
+ * Transforms frontend camelCase to FastAPI snake_case format
  */
 export function useCreateDiamond() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ data, userId }: { data: any; userId: number }) => {
-      console.log('💎 Creating diamond:', data.stockNumber || data.stock_number);
-      return diamondsApi.createDiamond(data);
+    mutationFn: ({ data, userId }: { data: DiamondFormData; userId: number }) => {
+      console.log('💎 Creating diamond:', data.stockNumber);
+      
+      // Transform frontend form data to FastAPI format
+      const transformedData = transformToFastAPICreate(data);
+      console.log('📤 Transformed payload:', transformedData);
+      
+      return diamondsApi.createDiamond(transformedData);
     },
     onMutate: async ({ data, userId }) => {
+      // Show loading toast
+      toast({
+        title: '⏳ מוסיף יהלום...',
+        description: `מוסיף ${data.stockNumber} למלאי`,
+      });
+      
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
 
@@ -55,7 +69,13 @@ export function useCreateDiamond() {
       queryClient.setQueryData(diamondKeys.list(userId), (old: any[] = []) => {
         const newDiamond = {
           id: `temp-${Date.now()}`,
-          ...data,
+          stock_number: data.stockNumber,
+          shape: data.shape,
+          weight: data.carat,
+          color: data.color,
+          clarity: data.clarity,
+          cut: data.cut,
+          price: data.price,
           created_at: new Date().toISOString(),
         };
         return [newDiamond, ...old];
@@ -63,8 +83,8 @@ export function useCreateDiamond() {
 
       return { previousDiamonds };
     },
-    onSuccess: (data, variables) => {
-      console.log('✅ Diamond created successfully:', data);
+    onSuccess: (response, variables) => {
+      console.log('✅ Diamond created successfully:', response);
       
       // Haptic success feedback
       try {
@@ -75,8 +95,8 @@ export function useCreateDiamond() {
       queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
       
       toast({
-        title: '✅ יהלום נוסף בהצלחה',
-        description: 'היהלום נוסף למלאי שלך',
+        title: '✅ יהלום נוסף בהצלחה!',
+        description: `${variables.data.stockNumber} נוסף למלאי שלך`,
       });
     },
     onError: (error: Error, variables, context) => {
@@ -95,7 +115,7 @@ export function useCreateDiamond() {
       
       toast({
         title: '❌ שגיאה בהוספת יהלום',
-        description: error.message || 'אנא נסה שוב',
+        description: `${error.message || 'אנא נסה שוב'}`,
         variant: 'destructive',
       });
     },
@@ -104,6 +124,7 @@ export function useCreateDiamond() {
 
 /**
  * Update a diamond with optimistic updates and haptic feedback
+ * Transforms frontend camelCase to FastAPI snake_case format
  */
 export function useUpdateDiamond() {
   const queryClient = useQueryClient();
@@ -116,13 +137,24 @@ export function useUpdateDiamond() {
       userId,
     }: {
       diamondId: number;
-      data: any;
+      data: Partial<DiamondFormData>;
       userId: number;
     }) => {
       console.log('✏️ Updating diamond:', diamondId);
-      return diamondsApi.updateDiamond(diamondId, data);
+      
+      // Transform frontend form data to FastAPI format
+      const transformedData = transformToFastAPIUpdate(data);
+      console.log('📤 Transformed update payload:', transformedData);
+      
+      return diamondsApi.updateDiamond(diamondId, transformedData);
     },
     onMutate: async ({ diamondId, data, userId }) => {
+      // Show loading toast
+      toast({
+        title: '⏳ מעדכן יהלום...',
+        description: 'שומר שינויים',
+      });
+      
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
       
       const previousDiamonds = queryClient.getQueryData(diamondKeys.list(userId));
@@ -130,7 +162,7 @@ export function useUpdateDiamond() {
       // Optimistic update
       queryClient.setQueryData(diamondKeys.list(userId), (old: any[] = []) =>
         old.map(diamond => 
-          diamond.id === diamondId || diamond.stock_number === diamondId
+          diamond.id === diamondId || diamond.diamond_id === diamondId
             ? { ...diamond, ...data, updated_at: new Date().toISOString() }
             : diamond
         )
@@ -138,8 +170,8 @@ export function useUpdateDiamond() {
       
       return { previousDiamonds };
     },
-    onSuccess: (data, variables) => {
-      console.log('✅ Diamond updated successfully');
+    onSuccess: (response, variables) => {
+      console.log('✅ Diamond updated successfully:', response);
       
       try {
         const tg = window.Telegram?.WebApp as any;
@@ -150,8 +182,8 @@ export function useUpdateDiamond() {
       queryClient.invalidateQueries({ queryKey: diamondKeys.detail(variables.diamondId.toString()) });
       
       toast({
-        title: '✅ יהלום עודכן בהצלחה',
-        description: 'הפרטים של היהלום עודכנו',
+        title: '✅ יהלום עודכן בהצלחה!',
+        description: 'הפרטים של היהלום נשמרו',
       });
     },
     onError: (error: Error, variables, context) => {
@@ -168,7 +200,7 @@ export function useUpdateDiamond() {
       
       toast({
         title: '❌ שגיאה בעדכון יהלום',
-        description: error.message || 'אנא נסה שוב',
+        description: `${error.message || 'אנא נסה שוב'}`,
         variant: 'destructive',
       });
     },
@@ -188,6 +220,12 @@ export function useDeleteDiamond() {
       return diamondsApi.deleteDiamond(diamondId);
     },
     onMutate: async ({ diamondId, userId }) => {
+      // Show loading toast
+      toast({
+        title: '⏳ מוחק יהלום...',
+        description: 'מסיר מהמלאי',
+      });
+      
       await queryClient.cancelQueries({ queryKey: diamondKeys.list(userId) });
       
       const previousDiamonds = queryClient.getQueryData(diamondKeys.list(userId));
@@ -202,8 +240,8 @@ export function useDeleteDiamond() {
       
       return { previousDiamonds };
     },
-    onSuccess: (data, variables) => {
-      console.log('✅ Diamond deleted successfully');
+    onSuccess: (response, variables) => {
+      console.log('✅ Diamond deleted successfully:', response);
       
       try {
         const tg = window.Telegram?.WebApp as any;
@@ -213,8 +251,8 @@ export function useDeleteDiamond() {
       queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
       
       toast({
-        title: '✅ יהלום נמחק בהצלחה',
-        description: data.message || 'היהלום הוסר מהמלאי',
+        title: '✅ יהלום נמחק בהצלחה!',
+        description: response.message || 'היהלום הוסר מהמלאי',
       });
     },
     onError: (error: Error, variables, context) => {
@@ -231,7 +269,7 @@ export function useDeleteDiamond() {
       
       toast({
         title: '❌ שגיאה במחיקת יהלום',
-        description: error.message || 'אנא נסה שוב',
+        description: `${error.message || 'אנא נסה שוב'}`,
         variant: 'destructive',
       });
     },
@@ -240,26 +278,54 @@ export function useDeleteDiamond() {
 
 /**
  * Create multiple diamonds in batch
+ * Transforms each diamond to FastAPI format
  */
 export function useCreateDiamondsBatch() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ diamonds, userId }: { diamonds: any[]; userId: number }) =>
-      diamondsApi.createDiamondsBatch(diamonds),
-    onSuccess: (data, variables) => {
+    mutationFn: ({ diamonds, userId }: { diamonds: DiamondFormData[]; userId: number }) => {
+      console.log('📦 Batch creating diamonds:', diamonds.length);
+      
+      // Transform each diamond to FastAPI format
+      const transformedDiamonds = diamonds.map(d => transformToFastAPICreate(d));
+      console.log('📤 Transformed batch payload:', transformedDiamonds.length, 'diamonds');
+      
+      return diamondsApi.createDiamondsBatch(transformedDiamonds);
+    },
+    onMutate: () => {
+      toast({
+        title: '⏳ מעלה יהלומים...',
+        description: 'מעבד את הקובץ',
+      });
+    },
+    onSuccess: (response, variables) => {
+      console.log('✅ Batch diamonds created:', response);
+      
+      try {
+        const tg = window.Telegram?.WebApp as any;
+        tg?.HapticFeedback?.notificationOccurred('success');
+      } catch (e) {}
+      
       queryClient.invalidateQueries({ queryKey: diamondKeys.list(variables.userId) });
       
       toast({
-        title: 'יהלומים נוספו בהצלחה',
+        title: '✅ יהלומים נוספו בהצלחה!',
         description: `${variables.diamonds.length} יהלומים נוספו למלאי`,
       });
     },
     onError: (error: Error) => {
+      console.error('❌ Batch creation failed:', error);
+      
+      try {
+        const tg = window.Telegram?.WebApp as any;
+        tg?.HapticFeedback?.notificationOccurred('error');
+      } catch (e) {}
+      
       toast({
-        title: 'שגיאה בהוספת יהלומים',
-        description: error.message,
+        title: '❌ שגיאה בהעלאת יהלומים',
+        description: `${error.message || 'אנא נסה שוב'}`,
         variant: 'destructive',
       });
     },

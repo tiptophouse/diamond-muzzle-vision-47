@@ -165,11 +165,26 @@ export function useTelegramAdvanced() {
     // Check version - shareToStory requires 7.8+
     const version = parseFloat(webApp?.version || '0');
     if (version < 7.8 || !webApp?.shareToStory) {
-      console.warn(`Story sharing requires Telegram 7.8+. Current: ${webApp?.version}`);
+      console.warn(`❌ Story sharing requires Telegram 7.8+. Current: ${webApp?.version}`);
+      return false;
+    }
+
+    // Validate media URL - must be HTTPS
+    if (!mediaUrl || !mediaUrl.startsWith('https://')) {
+      console.error('❌ Story sharing requires HTTPS media URL. Received:', mediaUrl);
+      return false;
+    }
+
+    // Check if mobile (story sharing only works on mobile)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) {
+      console.warn('❌ Story sharing only available on mobile devices');
       return false;
     }
 
     try {
+      console.log('📱 Sharing to story:', { mediaUrl, text: options?.text, widgetLink: options?.widgetLink });
+      
       webApp.shareToStory(mediaUrl, {
         text: options?.text,
         widget_link: options?.widgetLink ? {
@@ -177,9 +192,11 @@ export function useTelegramAdvanced() {
           name: options.widgetLink.name
         } : undefined
       });
+      
+      console.log('✅ shareToStory called successfully');
       return true;
     } catch (error) {
-      console.error('Share to story failed:', error);
+      console.error('❌ Share to story failed:', error);
       return false;
     }
   }, []);
