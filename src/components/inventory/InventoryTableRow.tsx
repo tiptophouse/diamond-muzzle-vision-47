@@ -84,7 +84,7 @@ export const InventoryTableRow = memo(function InventoryTableRow({ diamond, onEd
           {onStoreToggle && (
             <StoreVisibilityToggle 
               stockNumber={diamond.stockNumber}
-              diamondId={diamond.diamondId || diamond.id}
+              diamondId={String(diamond.diamondId || diamond.id)}
               isVisible={diamond.store_visible || false}
               onToggle={onStoreToggle}
             />
