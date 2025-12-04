@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { API_BASE_URL } from '@/lib/api/config';
-import { getBackendAuthToken } from '@/lib/api/auth';
 
 interface UserDiamondCount {
   telegram_id: number;
@@ -139,51 +137,36 @@ class BulkDiamondCountsCache {
 
 const cache = BulkDiamondCountsCache.getInstance();
 
-// Direct FastAPI call with proper auth
-async function fetchDiamondsForUser(telegramId: number): Promise<{ count: number; status: 'connected' | 'no_data' | 'error'; timeMs: number }> {
+// Query diamond counts from Supabase inventory table (FastAPI syncs to this)
+// NOTE: GET /api/v1/get_all_stones uses JWT auth - cannot query per-user without their token
+async function fetchDiamondCountForUser(telegramId: number): Promise<{ count: number; status: 'connected' | 'no_data' | 'error'; timeMs: number }> {
   const startTime = Date.now();
-  const token = getBackendAuthToken();
   
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    // Query Supabase inventory table which has user_id column
+    const { data, error, count } = await supabase
+      .from('inventory')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', telegramId)
+      .is('deleted_at', null);
     
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/get_all_stones?user_id=${telegramId}`,
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        signal: controller.signal
-      }
-    );
-    
-    clearTimeout(timeoutId);
     const timeMs = Date.now() - startTime;
     
-    if (!response.ok) {
-      console.error(`❌ FastAPI error for user ${telegramId}: ${response.status}`);
+    if (error) {
+      console.error(`❌ Supabase error for user ${telegramId}:`, error.message);
       return { count: 0, status: 'error', timeMs };
     }
     
-    const data = await response.json();
-    const count = Array.isArray(data) ? data.length : 0;
+    const diamondCount = count ?? 0;
     
     return { 
-      count, 
-      status: count > 0 ? 'connected' : 'no_data',
+      count: diamondCount, 
+      status: diamondCount > 0 ? 'connected' : 'no_data',
       timeMs
     };
   } catch (error) {
     const timeMs = Date.now() - startTime;
-    if ((error as Error).name === 'AbortError') {
-      console.warn(`⏱️ Timeout for user ${telegramId}`);
-    } else {
-      console.error(`❌ Error fetching diamonds for user ${telegramId}:`, error);
-    }
+    console.error(`❌ Error fetching diamonds for user ${telegramId}:`, error);
     return { count: 0, status: 'error', timeMs };
   }
 }
@@ -272,7 +255,7 @@ export function useBulkUserDiamondCounts() {
         
         // Process batch concurrently
         const batchPromises = batch.map(async (user) => {
-          const { count, status, timeMs } = await fetchDiamondsForUser(user.telegram_id);
+          const { count, status, timeMs } = await fetchDiamondCountForUser(user.telegram_id);
           totalFetchTime += timeMs;
           
           return {
