@@ -256,18 +256,47 @@ Can we discuss this further?`;
   const handleShareToStory = async () => {
     haptic?.impact?.('medium');
 
-    if (!webApp?.shareToStory) {
-      toast.error('Story sharing not available on this device');
+    // Check Telegram version support (7.8+ required for stories)
+    const version = parseFloat(webApp?.version || '0');
+    if (version < 7.8 || !webApp?.shareToStory) {
+      toast.error(`Story sharing requires Telegram 7.8+ (current: ${webApp?.version || 'unknown'})`);
+      return;
+    }
+
+    // Get the best available image URL
+    const imageUrl = diamond.picture || diamond.certificateUrl || diamond.imageUrl;
+    
+    if (!imageUrl) {
+      toast.error('No image available for this diamond');
+      return;
+    }
+
+    // Ensure HTTPS for Telegram compatibility
+    let processedImageUrl = imageUrl;
+    if (processedImageUrl.startsWith('http://')) {
+      processedImageUrl = processedImageUrl.replace('http://', 'https://');
+    }
+
+    // Validate image URL format
+    if (!processedImageUrl.startsWith('https://')) {
+      toast.error('Image URL must be HTTPS for story sharing');
       return;
     }
 
     try {
       // Create deep link with stock number for tracking
-      const botUsername = 'BrilliantBot_bot'; // Your bot username
-      const deepLink = `https://t.me/${botUsername}?start=diamond_${diamond.stockNumber}_${user?.id || 'guest'}_story`;
+      const botUsername = 'Brilliantteatbot'; // Your bot username
+      const trackingId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const deepLink = `https://t.me/${botUsername}?startapp=diamond_${diamond.stockNumber}_sharer${user?.id || 'guest'}_track${trackingId}`;
+      
+      console.log('📱 Attempting to share to story:', { 
+        imageUrl: processedImageUrl,
+        text: `💎 ${diamond.carat}ct ${diamond.shape} Diamond - $${diamond.price.toLocaleString()}`,
+        deepLink 
+      });
       
       // Share to Telegram Story with widget link
-      await webApp.shareToStory(diamond.imageUrl, {
+      webApp.shareToStory(processedImageUrl, {
         text: `💎 ${diamond.carat}ct ${diamond.shape} Diamond - $${diamond.price.toLocaleString()}`,
         widget_link: {
           url: deepLink,
@@ -275,20 +304,23 @@ Can we discuss this further?`;
         }
       });
 
-      // Track story share in database
-      await supabase.from('diamond_story_shares').insert({
+      // Track story share in database (non-blocking)
+      supabase.from('diamond_story_shares').insert({
         diamond_stock_number: diamond.stockNumber,
         shared_by_telegram_id: user?.id,
         shared_by_name: `${user?.first_name || ''} ${user?.last_name || ''}`.trim(),
         deep_link: deepLink,
-        share_type: 'telegram_story'
+        share_type: 'telegram_story',
+        image_url: processedImageUrl
+      }).then(({ error }) => {
+        if (error) console.warn('Failed to track story share:', error);
       });
 
       toast.success('🎉 Shared to your story! Watch the engagement roll in!');
-      console.log('📱 Shared to Telegram Story:', deepLink);
+      console.log('✅ Shared to Telegram Story:', deepLink);
     } catch (error) {
-      console.error('Failed to share to story:', error);
-      toast.error('Failed to share to story');
+      console.error('❌ Failed to share to story:', error);
+      toast.error('Failed to share to story. Please try again.');
     }
   };
 
@@ -423,7 +455,7 @@ Can we discuss this further?`;
           }}
         >
           <img
-            src={diamond.imageUrl}
+            src={diamond.picture || diamond.certificateUrl || diamond.imageUrl}
             alt={`${diamond.carat}ct ${diamond.shape} diamond`}
             className="max-w-[85%] max-h-[85%] object-contain drop-shadow-2xl"
             style={{

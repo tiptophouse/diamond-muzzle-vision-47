@@ -167,17 +167,23 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
     }
   };
 
-  const showAlert = (message: string) => {
-    webApp?.showAlert(message);
+  const showAlert = (message: string, callback?: () => void) => {
+    if (webApp?.showAlert) {
+      webApp.showAlert(message, callback);
+    } else {
+      window.alert(message);
+      if (callback) callback();
+    }
   };
 
-  const showConfirm = (message: string) => {
+  const showConfirm = (message: string): Promise<boolean> => {
     return new Promise<boolean>((resolve) => {
       if (webApp?.showConfirm) {
-        webApp.showConfirm(message);
-        // Note: Telegram doesn't provide promise-based confirm, this is simplified
-        resolve(true);
+        webApp.showConfirm(message, (confirmed: boolean) => {
+          resolve(confirmed);
+        });
       } else {
+        // Fallback for browser
         resolve(window.confirm(message));
       }
     });

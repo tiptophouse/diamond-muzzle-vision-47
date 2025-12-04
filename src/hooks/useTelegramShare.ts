@@ -75,11 +75,66 @@ export function useTelegramShare(): UseShareReturn {
 
   const shareToStory = useCallback(
     async (options: StoryOptions): Promise<boolean> => {
-      if (!webApp?.shareToStory) {
-        console.warn('shareToStory not available');
+      // Helper to compare versions
+      const isVersionSupported = (current: string, required: string) => {
+        const p1 = current.split('.').map(Number);
+        const p2 = required.split('.').map(Number);
+        for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+          const v1 = p1[i] || 0;
+          const v2 = p2[i] || 0;
+          if (v1 > v2) return true;
+          if (v1 < v2) return false;
+        }
+        return true; // Equal
+      };
+
+      // Check Telegram version - 7.8+ required for story sharing
+      const currentVersion = webApp?.version || '0';
+      
+      if (!isVersionSupported(currentVersion, '7.8') || !webApp?.shareToStory) {
+        console.warn(`shareToStory not available. Version: ${currentVersion}, Required: 7.8+`);
         toast({
           title: 'Not Available',
-          description: 'Story sharing requires Telegram v8.0+',
+          description: `Story sharing requires Telegram v7.8+ (current: ${currentVersion})`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      // Validate media URL
+      if (!options.mediaUrl) {
+        console.error('shareToStory: No media URL provided');
+        toast({
+          title: 'Error',
+          description: 'No image available to share',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      // Ensure HTTPS
+      let processedUrl = options.mediaUrl;
+      if (processedUrl.startsWith('http://')) {
+        processedUrl = processedUrl.replace('http://', 'https://');
+      }
+
+      if (!processedUrl.startsWith('https://')) {
+        console.error('shareToStory: URL must be HTTPS:', options.mediaUrl);
+        toast({
+          title: 'Error',
+          description: 'Image URL must be secure (HTTPS)',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      // Check if on mobile (story sharing only works on mobile)
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (!isMobile) {
+        console.warn('Story sharing only available on mobile devices');
+        toast({
+          title: 'Mobile Only',
+          description: 'Story sharing is only available on mobile devices',
           variant: 'destructive',
         });
         return false;
@@ -87,7 +142,14 @@ export function useTelegramShare(): UseShareReturn {
 
       try {
         impactOccurred('medium');
-        webApp.shareToStory(options.mediaUrl, {
+        
+        console.log('📱 Sharing to story:', { 
+          mediaUrl: processedUrl, 
+          text: options.text,
+          widgetLink: options.widgetLink 
+        });
+        
+        webApp.shareToStory(processedUrl, {
           text: options.text,
           widget_link: options.widgetLink,
         });
@@ -102,12 +164,12 @@ export function useTelegramShare(): UseShareReturn {
         
         return true;
       } catch (error) {
-        console.error('Story share failed:', error);
+        console.error('❌ Story share failed:', error);
         notificationOccurred('error');
         
         toast({
           title: 'Share Failed',
-          description: 'Could not share to story',
+          description: error instanceof Error ? error.message : 'Could not share to story',
           variant: 'destructive',
         });
         
