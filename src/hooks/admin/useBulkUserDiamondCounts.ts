@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { api } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import { API_BASE_URL } from '@/lib/api/config';
+import { getBackendAuthToken } from '@/lib/api/auth';
 
 interface UserDiamondCount {
   telegram_id: number;
@@ -15,6 +16,7 @@ interface UserDiamondCount {
   is_premium: boolean;
   subscription_plan: string;
   fastapi_status: 'connected' | 'no_data' | 'error';
+  fetch_time_ms?: number;
 }
 
 interface DiamondCountStats {
@@ -27,9 +29,16 @@ interface DiamondCountStats {
   fastapiConnectedUsers: number;
 }
 
-// Improved caching with compression and expiry
-const CACHE_KEY = 'bulk_user_diamond_counts';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+interface FetchProgress {
+  current: number;
+  total: number;
+  percentage: number;
+  currentUser?: string;
+}
+
+// Separate cache class with validation
+const CACHE_KEY = 'bulk_user_diamond_counts_v2';
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 class BulkDiamondCountsCache {
   private static instance: BulkDiamondCountsCache;
@@ -47,8 +56,27 @@ class BulkDiamondCountsCache {
   }
 
   isValid(): boolean {
-    return this.cacheData !== null && 
-           (Date.now() - this.cacheData.timestamp) < CACHE_DURATION;
+    if (!this.cacheData) return false;
+    
+    const isRecent = (Date.now() - this.cacheData.timestamp) < CACHE_DURATION;
+    
+    // Validate cache data - check for obviously bad data (all same count)
+    if (this.cacheData.userCounts.length > 5) {
+      const counts = this.cacheData.userCounts
+        .filter(u => u.diamond_count > 0)
+        .map(u => u.diamond_count);
+      
+      // If all counts are exactly the same (like 737), it's likely bad cache
+      if (counts.length > 3) {
+        const allSame = counts.every(c => c === counts[0]);
+        if (allSame) {
+          console.warn('📊 CACHE: Detected potentially corrupted cache (all counts identical)');
+          return false;
+        }
+      }
+    }
+    
+    return isRecent;
   }
 
   get(): { userCounts: UserDiamondCount[], stats: DiamondCountStats } | null {
@@ -68,10 +96,9 @@ class BulkDiamondCountsCache {
       timestamp: Date.now()
     };
     
-    // Store in localStorage with compression
     try {
       const dataToStore = JSON.stringify({
-        userCounts: userCounts.slice(0, 1000), // Limit to prevent localStorage overflow
+        userCounts: userCounts.slice(0, 1000),
         stats,
         timestamp: Date.now()
       });
@@ -88,7 +115,7 @@ class BulkDiamondCountsCache {
         const parsed = JSON.parse(stored);
         if ((Date.now() - parsed.timestamp) < CACHE_DURATION) {
           this.cacheData = parsed;
-          return true;
+          return this.isValid(); // Double-check validity
         } else {
           localStorage.removeItem(CACHE_KEY);
         }
@@ -103,15 +130,69 @@ class BulkDiamondCountsCache {
   clear() {
     this.cacheData = null;
     localStorage.removeItem(CACHE_KEY);
+    // Also clear old cache keys
+    localStorage.removeItem('bulk_user_diamond_counts');
+    localStorage.removeItem('user_diamond_counts_cache');
+    console.log('📊 CACHE: All caches cleared');
   }
 }
 
 const cache = BulkDiamondCountsCache.getInstance();
 
+// Direct FastAPI call with proper auth
+async function fetchDiamondsForUser(telegramId: number): Promise<{ count: number; status: 'connected' | 'no_data' | 'error'; timeMs: number }> {
+  const startTime = Date.now();
+  const token = getBackendAuthToken();
+  
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/get_all_stones?user_id=${telegramId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        signal: controller.signal
+      }
+    );
+    
+    clearTimeout(timeoutId);
+    const timeMs = Date.now() - startTime;
+    
+    if (!response.ok) {
+      console.error(`❌ FastAPI error for user ${telegramId}: ${response.status}`);
+      return { count: 0, status: 'error', timeMs };
+    }
+    
+    const data = await response.json();
+    const count = Array.isArray(data) ? data.length : 0;
+    
+    return { 
+      count, 
+      status: count > 0 ? 'connected' : 'no_data',
+      timeMs
+    };
+  } catch (error) {
+    const timeMs = Date.now() - startTime;
+    if ((error as Error).name === 'AbortError') {
+      console.warn(`⏱️ Timeout for user ${telegramId}`);
+    } else {
+      console.error(`❌ Error fetching diamonds for user ${telegramId}:`, error);
+    }
+    return { count: 0, status: 'error', timeMs };
+  }
+}
+
 export function useBulkUserDiamondCounts() {
   const [userCounts, setUserCounts] = useState<UserDiamondCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [progress, setProgress] = useState<FetchProgress | null>(null);
 
   const stats = useMemo(() => {
     const totalUsers = userCounts.length;
@@ -133,29 +214,32 @@ export function useBulkUserDiamondCounts() {
     };
   }, [userCounts]);
 
-  const fetchBulkDiamondCounts = async () => {
+  const fetchBulkDiamondCounts = useCallback(async (skipCache = false) => {
     try {
       setLoading(true);
-      console.log('📊 BULK: Checking cache first...');
+      setProgress(null);
+      console.log('📊 BULK: Starting diamond counts fetch...', { skipCache });
 
-      // Check cache first
-      const cachedData = cache.get();
-      if (cachedData) {
-        console.log('📊 BULK: Using cached data');
-        setUserCounts(cachedData.userCounts);
-        setLastUpdated(new Date());
-        setLoading(false);
-        return;
+      // Check cache first (unless skipping)
+      if (!skipCache) {
+        const cachedData = cache.get();
+        if (cachedData) {
+          console.log('📊 BULK: Using cached data', cachedData.userCounts.length, 'users');
+          setUserCounts(cachedData.userCounts);
+          setLastUpdated(new Date());
+          setLoading(false);
+          return;
+        }
       }
 
-      console.log('📊 BULK: Fetching fresh data...');
+      console.log('📊 BULK: Fetching fresh data from Supabase and FastAPI...');
 
-      // Get all users from Supabase first
+      // Get all users from Supabase
       const { data: allUsers, error: usersError } = await supabase
         .from('user_profiles')
         .select('telegram_id, first_name, last_name, username, created_at, status, is_premium, subscription_plan')
         .order('created_at', { ascending: false })
-        .limit(2000); // Reasonable limit
+        .limit(2000);
 
       if (usersError) {
         console.error('Error fetching users:', usersError);
@@ -169,108 +253,90 @@ export function useBulkUserDiamondCounts() {
         return;
       }
 
-      console.log(`📊 BULK: Found ${allUsers.length} users, fetching bulk diamond counts...`);
-
-      // Try bulk endpoint first (if available)
-      try {
-        const telegramIds = allUsers.map(u => u.telegram_id).join(',');
-        const bulkResponse = await api.get(`/api/v1/bulk_diamond_counts?user_ids=${telegramIds}`);
-        
-        if (bulkResponse.data && typeof bulkResponse.data === 'object') {
-          console.log('📊 BULK: Successfully got bulk diamond counts');
-          
-          const userDiamondData: UserDiamondCount[] = allUsers.map(user => {
-            const diamondCount = bulkResponse.data[user.telegram_id] || 0;
-            return {
-              telegram_id: user.telegram_id,
-              first_name: user.first_name || 'Unknown',
-              last_name: user.last_name || '',
-              username: user.username || '',
-              created_at: user.created_at,
-              diamond_count: diamondCount,
-              status: user.status === 'active' ? 'active' : 'inactive',
-              is_premium: user.is_premium || false,
-              subscription_plan: user.subscription_plan || 'free',
-              fastapi_status: diamondCount > 0 ? 'connected' as const : 'no_data' as const
-            };
-          });
-
-          setUserCounts(userDiamondData);
-          setLastUpdated(new Date());
-          
-          // Cache the results
-          cache.set(userDiamondData, stats);
-          
-          toast({
-            title: "✅ Bulk Data Loaded",
-            description: `Loaded ${userDiamondData.length} users with diamond counts in bulk`
-          });
-          
-          return;
-        }
-      } catch (bulkError) {
-        console.warn('📊 BULK: Bulk endpoint failed, falling back to individual calls:', bulkError);
-      }
-
-      // Fallback to optimized individual calls with better batching
-      console.log('📊 BULK: Using optimized individual calls...');
-      const BATCH_SIZE = 20; // Increased batch size
-      const userDiamondData: UserDiamondCount[] = [];
+      console.log(`📊 BULK: Found ${allUsers.length} users, fetching diamond counts one-by-one...`);
       
-      // Process in concurrent batches for better performance
+      const totalUsers = allUsers.length;
+      setProgress({ current: 0, total: totalUsers, percentage: 0 });
+
+      // Process users in small batches for better progress feedback
+      const BATCH_SIZE = 10;
+      const userDiamondData: UserDiamondCount[] = [];
+      let totalFetchTime = 0;
+      
       for (let i = 0; i < allUsers.length; i += BATCH_SIZE) {
         const batch = allUsers.slice(i, i + BATCH_SIZE);
-        console.log(`📊 BULK: Processing batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(allUsers.length / BATCH_SIZE)}`);
+        const batchNumber = Math.floor(i/BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(allUsers.length / BATCH_SIZE);
         
+        console.log(`📊 BULK: Processing batch ${batchNumber}/${totalBatches}`);
+        
+        // Process batch concurrently
         const batchPromises = batch.map(async (user) => {
-          try {
-            const response = await Promise.race([
-              api.get(`/api/v1/get_all_stones?user_id=${user.telegram_id}`),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
-            ]) as any;
-            
-            const diamondCount = response?.data?.length || 0;
-            return {
-              telegram_id: user.telegram_id,
-              first_name: user.first_name || 'Unknown',
-              last_name: user.last_name || '',
-              username: user.username || '',
-              created_at: user.created_at,
-              diamond_count: diamondCount,
-              status: user.status === 'active' ? 'active' : 'inactive',
-              is_premium: user.is_premium || false,
-              subscription_plan: user.subscription_plan || 'free',
-              fastapi_status: diamondCount > 0 ? 'connected' as const : 'no_data' as const
-            } as UserDiamondCount;
-          } catch {
-            return {
-              telegram_id: user.telegram_id,
-              first_name: user.first_name || 'Unknown',
-              last_name: user.last_name || '',
-              username: user.username || '',
-              created_at: user.created_at,
-              diamond_count: 0,
-              status: user.status === 'active' ? 'active' : 'inactive',
-              is_premium: user.is_premium || false,
-              subscription_plan: user.subscription_plan || 'free',
-              fastapi_status: 'error' as const
-            } as UserDiamondCount;
-          }
+          const { count, status, timeMs } = await fetchDiamondsForUser(user.telegram_id);
+          totalFetchTime += timeMs;
+          
+          return {
+            telegram_id: user.telegram_id,
+            first_name: user.first_name || 'Unknown',
+            last_name: user.last_name || '',
+            username: user.username || '',
+            created_at: user.created_at,
+            diamond_count: count,
+            status: user.status === 'active' ? 'active' : 'inactive',
+            is_premium: user.is_premium || false,
+            subscription_plan: user.subscription_plan || 'free',
+            fastapi_status: status,
+            fetch_time_ms: timeMs
+          } as UserDiamondCount;
         });
 
         const batchResults = await Promise.all(batchPromises);
         userDiamondData.push(...batchResults);
 
-        // Update UI progressively for better UX
+        // Update progress
+        const processed = Math.min(i + BATCH_SIZE, totalUsers);
+        setProgress({
+          current: processed,
+          total: totalUsers,
+          percentage: Math.round((processed / totalUsers) * 100),
+          currentUser: batch[batch.length - 1]?.first_name
+        });
+
+        // Update UI progressively
         setUserCounts([...userDiamondData]);
+        
+        // Small delay between batches to prevent overwhelming the server
+        if (i + BATCH_SIZE < allUsers.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
 
       setLastUpdated(new Date());
+      setProgress(null);
       
-      // Cache the final results
-      cache.set(userDiamondData, stats);
+      // Calculate final stats
+      const finalStats = {
+        totalUsers: userDiamondData.length,
+        usersWithDiamonds: userDiamondData.filter(u => u.diamond_count > 0).length,
+        usersWithZeroDiamonds: userDiamondData.filter(u => u.diamond_count === 0).length,
+        totalDiamonds: userDiamondData.reduce((sum, u) => sum + u.diamond_count, 0),
+        avgDiamondsPerUser: userDiamondData.length > 0 
+          ? Math.round((userDiamondData.reduce((sum, u) => sum + u.diamond_count, 0) / userDiamondData.length) * 10) / 10 
+          : 0,
+        premiumUsers: userDiamondData.filter(u => u.is_premium).length,
+        fastapiConnectedUsers: userDiamondData.filter(u => u.fastapi_status === 'connected').length
+      };
       
-      console.log(`📊 BULK: Completed loading ${userDiamondData.length} users`);
+      // Cache the results
+      cache.set(userDiamondData, finalStats);
+      
+      const avgFetchTime = Math.round(totalFetchTime / userDiamondData.length);
+      console.log(`📊 BULK: Completed! ${finalStats.totalDiamonds} total diamonds, ${finalStats.fastapiConnectedUsers} connected users, avg fetch time: ${avgFetchTime}ms`);
+      
+      toast({
+        title: "✅ Data Loaded",
+        description: `${finalStats.totalDiamonds} diamonds from ${finalStats.fastapiConnectedUsers} users`
+      });
       
     } catch (error) {
       console.error('❌ BULK: Error in fetchBulkDiamondCounts:', error);
@@ -281,18 +347,20 @@ export function useBulkUserDiamondCounts() {
       });
     } finally {
       setLoading(false);
+      setProgress(null);
     }
-  };
+  }, []);
 
-  const forceRefresh = () => {
+  const forceRefresh = useCallback(() => {
     cache.clear();
-    fetchBulkDiamondCounts();
-  };
+    fetchBulkDiamondCounts(true);
+  }, [fetchBulkDiamondCounts]);
 
   useEffect(() => {
-    // Load from cache first if available
+    // Clear any potentially corrupted cache on mount
     cache.loadFromStorage();
     const cachedData = cache.get();
+    
     if (cachedData) {
       setUserCounts(cachedData.userCounts);
       setLastUpdated(new Date());
@@ -300,8 +368,8 @@ export function useBulkUserDiamondCounts() {
     }
     
     // Always fetch fresh data
-    fetchBulkDiamondCounts();
-  }, []);
+    fetchBulkDiamondCounts(false);
+  }, [fetchBulkDiamondCounts]);
 
   return {
     userCounts,
@@ -309,6 +377,7 @@ export function useBulkUserDiamondCounts() {
     loading,
     lastUpdated,
     forceRefresh,
+    progress,
     cacheInfo: {
       isValid: cache.isValid(),
       lastUpdated: lastUpdated,
