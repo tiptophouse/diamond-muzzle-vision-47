@@ -82,8 +82,8 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         gridle: data.gridle,
         culet: data.culet?.toUpperCase(),
         rapnet: data.rapnet ? Number(data.rapnet) : null,
-        // Add the total price field that FastAPI expects
-        price: roundToInteger(Number(data.price)),
+        // Only include price if it's explicitly needed, otherwise let backend calculate from ppc
+        // price: roundToInteger(Number(data.price)), 
       };
 
       // Remove null/undefined values

@@ -1,13 +1,8 @@
 import { http } from '@/api/http';
+import { AuctionCreateRequest } from '@/types/fastapi-models';
 
-// Types matching FastAPI OpenAPI contract
-export interface CreateAuctionRequest {
-  diamond_id: number;
-  start_time: string; // ISO datetime
-  end_time: string; // ISO datetime
-  start_price: number;
-  min_increment: number;
-}
+// Re-export from fastapi-models to ensure consistency
+export type { AuctionCreateRequest } from '@/types/fastapi-models';
 
 export interface AuctionDiamond {
   id: number;
@@ -47,16 +42,16 @@ export interface AuctionUpdateRequest {
 }
 
 export interface BidSchema {
-  id: number;
-  auction_id: number;
+  id: string;
+  auction_id: string;
   user_id: number;
   amount: number;
   created_at: string;
 }
 
 export interface Auction {
-  id: number;
-  auction_diamond_id: number;
+  id: string;
+  auction_diamond_id: number; // Diamond ID is still number based on DiamondDataSchema
   start_time: string;
   end_time: string;
   start_price: number;
@@ -75,7 +70,7 @@ export interface PlaceBidRequest {
 /**
  * Create a new auction via FastAPI
  */
-export async function createAuction(request: CreateAuctionRequest): Promise<Auction> {
+export async function createAuction(request: AuctionCreateRequest): Promise<Auction> {
   return http<Auction>('/api/v1/auctions/', {
     method: 'POST',
     body: JSON.stringify(request),
@@ -94,7 +89,7 @@ export async function listAuctions(): Promise<Auction[]> {
 /**
  * Get a single auction by ID
  */
-export async function getAuction(auctionId: number): Promise<Auction> {
+export async function getAuction(auctionId: string): Promise<Auction> {
   return http<Auction>(`/api/v1/auctions/${auctionId}`, {
     method: 'GET',
   });
@@ -103,7 +98,7 @@ export async function getAuction(auctionId: number): Promise<Auction> {
 /**
  * Update an auction
  */
-export async function updateAuction(auctionId: number, request: AuctionUpdateRequest): Promise<Auction> {
+export async function updateAuction(auctionId: string, request: AuctionUpdateRequest): Promise<Auction> {
   return http<Auction>(`/api/v1/auctions/${auctionId}`, {
     method: 'PATCH',
     body: JSON.stringify(request),
@@ -113,7 +108,7 @@ export async function updateAuction(auctionId: number, request: AuctionUpdateReq
 /**
  * Place a bid on an auction
  */
-export async function placeBid(auctionId: number, request: PlaceBidRequest): Promise<BidSchema> {
+export async function placeBid(auctionId: string, request: PlaceBidRequest): Promise<BidSchema> {
   return http<BidSchema>(`/api/v1/auctions/${auctionId}/bid`, {
     method: 'POST',
     body: JSON.stringify(request),
@@ -123,7 +118,7 @@ export async function placeBid(auctionId: number, request: PlaceBidRequest): Pro
 /**
  * Close an auction
  */
-export async function closeAuction(auctionId: number): Promise<number | null> {
+export async function closeAuction(auctionId: string): Promise<number | null> {
   return http<number | null>(`/api/v1/auctions/${auctionId}/close`, {
     method: 'POST',
   });

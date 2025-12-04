@@ -1,3 +1,5 @@
+import { getCurrentUserId } from "@/lib/api/auth";
+
 export const apiEndpoints = {
   // Health check
   alive: () => `/api/v1/alive`,
@@ -6,22 +8,36 @@ export const apiEndpoints = {
   getAllStones: (limit?: number, offset?: number) => {
     let url = `/api/v1/get_all_stones`;
     const params = [];
+    const userId = getCurrentUserId();
+    if (userId) params.push(`user_id=${userId}`);
     if (limit !== undefined) params.push(`limit=${limit}`);
     if (offset !== undefined) params.push(`offset=${offset}`);
     return url + (params.length ? `?${params.join('&')}` : '');
   },
   
   // Create diamond - POST /api/v1/diamonds (user_id from JWT)
-  addDiamond: () => `/api/v1/diamonds`,
+  addDiamond: () => {
+    const userId = getCurrentUserId();
+    return userId ? `/api/v1/diamonds?user_id=${userId}` : `/api/v1/diamonds`;
+  },
   
   // Batch diamond upload - POST /api/v1/diamonds/batch (user_id from JWT)
-  addDiamondsBatch: () => `/api/v1/diamonds/batch`,
+  addDiamondsBatch: () => {
+    const userId = getCurrentUserId();
+    return userId ? `/api/v1/diamonds/batch?user_id=${userId}` : `/api/v1/diamonds/batch`;
+  },
   
   // Update diamond - PUT /api/v1/diamonds/{diamond_id} (user_id from JWT)
-  updateDiamond: (diamondId: number) => `/api/v1/diamonds/${diamondId}`,
+  updateDiamond: (diamondId: number) => {
+    const userId = getCurrentUserId();
+    return userId ? `/api/v1/diamonds/${diamondId}?user_id=${userId}` : `/api/v1/diamonds/${diamondId}`;
+  },
   
   // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id} (user_id from JWT)
-  deleteDiamond: (diamondId: number) => `/api/v1/delete_stone/${diamondId}`,
+  deleteDiamond: (diamondId: number) => {
+    const userId = getCurrentUserId();
+    return userId ? `/api/v1/delete_stone/${diamondId}?user_id=${userId}` : `/api/v1/delete_stone/${diamondId}`;
+  },
   
   // SFTP endpoints - JWT-based auth (no user_id in URL)
   sftpProvision: () => `/api/v1/sftp/provision`,

@@ -31,7 +31,7 @@ interface CreateAuctionModalProps {
   diamond: DiamondData;
   sellerTelegramId: number;
   sellerUsername?: string;
-  onSuccess?: (auctionId: number) => void;
+  onSuccess?: (auctionId: string) => void;
 }
 
 export function CreateAuctionModal({
@@ -98,11 +98,11 @@ export function CreateAuctionModal({
 
       // Step 1: Create auction via FastAPI
       const auction = await createAuctionMutation.mutateAsync({
-        diamond_id: diamond.id,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        start_price: Number(startingPrice),
+        stock_number: stockNumber,
+        starting_price: Number(startingPrice),
         min_increment: Number(minIncrement),
+        duration_hours: Number(expiryHours),
+        currency: 'USD'
       });
 
       console.log('✅ Auction created via FastAPI:', auction);

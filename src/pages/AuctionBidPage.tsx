@@ -18,10 +18,9 @@ export default function AuctionBidPage() {
   const { toast } = useToast();
 
   const action = searchParams.get('action');
-  const numericAuctionId = Number(auctionId);
-
-  const { data: auction, isLoading, error } = useAuction(numericAuctionId);
-  const placeBidMutation = usePlaceBid(numericAuctionId);
+  
+  const { data: auction, isLoading, error } = useAuction(auctionId || '');
+  const placeBidMutation = usePlaceBid(auctionId || '');
 
   // Auto-trigger bid if action=bid and auction is active
   useEffect(() => {

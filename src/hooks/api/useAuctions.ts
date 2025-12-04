@@ -6,7 +6,7 @@ import {
   updateAuction,
   placeBid,
   closeAuction,
-  CreateAuctionRequest,
+  AuctionCreateRequest,
   AuctionUpdateRequest,
   PlaceBidRequest,
   Auction
@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const QUERY_KEYS = {
   auctions: ['auctions'] as const,
-  auction: (id: number) => ['auctions', id] as const,
+  auction: (id: string) => ['auctions', id] as const,
 };
 
 /**
@@ -33,7 +33,7 @@ export function useAuctions() {
 /**
  * Hook to get a single auction
  */
-export function useAuction(auctionId: number) {
+export function useAuction(auctionId: string) {
   return useQuery({
     queryKey: QUERY_KEYS.auction(auctionId),
     queryFn: () => getAuction(auctionId),
@@ -51,7 +51,7 @@ export function useCreateAuction() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (request: CreateAuctionRequest) => createAuction(request),
+    mutationFn: (request: AuctionCreateRequest) => createAuction(request),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.auctions });
       hapticFeedback.notification('success');
@@ -74,7 +74,7 @@ export function useCreateAuction() {
 /**
  * Hook to update an auction
  */
-export function useUpdateAuction(auctionId: number) {
+export function useUpdateAuction(auctionId: string) {
   const queryClient = useQueryClient();
   const { hapticFeedback } = useTelegramWebApp();
   const { toast } = useToast();
@@ -104,7 +104,7 @@ export function useUpdateAuction(auctionId: number) {
 /**
  * Hook to place a bid
  */
-export function usePlaceBid(auctionId: number) {
+export function usePlaceBid(auctionId: string) {
   const queryClient = useQueryClient();
   const { hapticFeedback } = useTelegramWebApp();
   const { toast } = useToast();
@@ -134,7 +134,7 @@ export function usePlaceBid(auctionId: number) {
 /**
  * Hook to close an auction
  */
-export function useCloseAuction(auctionId: number) {
+export function useCloseAuction(auctionId: string) {
   const queryClient = useQueryClient();
   const { hapticFeedback } = useTelegramWebApp();
   const { toast } = useToast();
