@@ -27,6 +27,7 @@ export function OptimizedUserDiamondCounts() {
     loading,
     lastUpdated,
     forceRefresh,
+    progress,
     cacheInfo
   } = useBulkUserDiamondCounts();
 
@@ -99,15 +100,31 @@ export function OptimizedUserDiamondCounts() {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center space-x-2">
-            <RefreshCw className="h-6 w-6 animate-spin" />
-            <span>Loading user diamond data using optimized bulk loading...</span>
-          </div>
-          {cacheInfo.isValid && (
-            <div className="text-center mt-2 text-sm text-muted-foreground">
-              Showing cached data while refreshing...
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="flex items-center space-x-2">
+              <RefreshCw className="h-6 w-6 animate-spin text-primary" />
+              <span className="font-medium">Loading real diamond data from FastAPI...</span>
             </div>
-          )}
+            {progress && (
+              <div className="w-full max-w-md space-y-2">
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Fetching user {progress.current} of {progress.total}</span>
+                  <span>{progress.percentage}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${progress.percentage}%` }}
+                  />
+                </div>
+                {progress.currentUser && (
+                  <div className="text-xs text-muted-foreground text-center">
+                    Processing: {progress.currentUser}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -188,6 +205,22 @@ export function OptimizedUserDiamondCounts() {
               <span>Last updated: {formatLastUpdated(lastUpdated)}</span>
             </div>
           </div>
+          
+          {/* Progress bar for refresh */}
+          {loading && progress && (
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Refreshing: {progress.current}/{progress.total} users</span>
+                <span>{progress.percentage}%</span>
+              </div>
+              <div className="h-1 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${progress.percentage}%` }}
+                />
+              </div>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
