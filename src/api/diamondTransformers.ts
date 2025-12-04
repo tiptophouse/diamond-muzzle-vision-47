@@ -124,21 +124,51 @@ export function transformToFastAPIUpdate(formData: Partial<DiamondFormData>): Fa
 }
 
 /**
- * Get diamond ID from stock number
- * FastAPI requires integer diamond_id, but we might only have stock_number
- * This needs to query the inventory to find the ID
+ * Get diamond ID from diamond object
+ * FastAPI requires integer diamond_id
+ * Handles various field names and types from different data sources
  */
 export function extractDiamondId(diamond: any): number | null {
-  // Try multiple possible ID fields
-  if (diamond.id && typeof diamond.id === 'number') return diamond.id;
-  if (diamond.diamondId && typeof diamond.diamondId === 'number') return diamond.diamondId;
-  if (diamond.diamond_id && typeof diamond.diamond_id === 'number') return diamond.diamond_id;
-  
-  // Try to parse string IDs
-  if (diamond.id && typeof diamond.id === 'string') {
-    const parsed = parseInt(diamond.id);
-    if (!isNaN(parsed)) return parsed;
+  if (!diamond) {
+    console.warn('⚠️ extractDiamondId: diamond object is null/undefined');
+    return null;
   }
+
+  // Priority order for ID fields
+  const idFields = ['diamond_id', 'diamondId', 'id', 'inventory_id', 'inventoryId'];
+  
+  for (const field of idFields) {
+    const value = diamond[field];
+    
+    if (value === undefined || value === null) continue;
+    
+    // Direct number
+    if (typeof value === 'number' && !isNaN(value) && value > 0) {
+      console.log(`✅ extractDiamondId: Found ID ${value} in field '${field}'`);
+      return value;
+    }
+    
+    // String that can be parsed to number
+    if (typeof value === 'string') {
+      // Handle composite IDs like "user_123_diamond_456" - extract last number
+      const matches = value.match(/(\d+)/g);
+      if (matches && matches.length > 0) {
+        // Take the last numeric segment (likely the actual diamond ID)
+        const parsed = parseInt(matches[matches.length - 1], 10);
+        if (!isNaN(parsed) && parsed > 0) {
+          console.log(`✅ extractDiamondId: Parsed ID ${parsed} from field '${field}' value '${value}'`);
+          return parsed;
+        }
+      }
+    }
+  }
+  
+  // Log available fields for debugging
+  const availableFields = Object.keys(diamond).filter(k => 
+    ['id', 'diamond_id', 'diamondId', 'inventory_id', 'stock', 'stockNumber', 'stock_number'].includes(k)
+  );
+  console.warn('⚠️ extractDiamondId: Could not extract numeric ID. Available fields:', availableFields, 'Values:', 
+    availableFields.map(f => `${f}=${diamond[f]}`).join(', '));
   
   return null;
 }

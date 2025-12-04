@@ -64,14 +64,31 @@ export function CreateAuctionModal({
       return;
     }
 
-    if (!diamond.id || diamond.id === 0) {
+    // Extract diamond ID - handle various formats
+    let diamondId = diamond.id;
+    
+    // If ID is a string, try to parse it
+    if (typeof diamondId === 'string') {
+      const parsed = parseInt(diamondId, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        diamondId = parsed;
+      } else {
+        // Try to extract from composite string like "user_123_diamond_456"
+        const matches = diamondId.match(/(\d+)/g);
+        if (matches && matches.length > 0) {
+          diamondId = parseInt(matches[matches.length - 1], 10);
+        }
+      }
+    }
+
+    if (!diamondId || diamondId === 0 || (typeof diamondId === 'number' && isNaN(diamondId))) {
       toast({ 
         title: '❌ שגיאה', 
         description: `מזהה יהלום חסר (ID: ${diamond.id})`, 
         variant: 'destructive' 
       });
       hapticFeedback.notification('error');
-      console.error('❌ Diamond ID missing or zero:', diamond);
+      console.error('❌ Diamond ID missing or invalid:', diamond);
       return;
     }
 
@@ -91,14 +108,14 @@ export function CreateAuctionModal({
       endTime.setHours(endTime.getHours() + Number(expiryHours));
 
       console.log('🔨 Creating auction via FastAPI...', {
-        diamond_id: diamond.id,
+        diamond_id: diamondId,
         start_price: Number(startingPrice),
         min_increment: Number(minIncrement),
       });
 
       // Step 1: Create auction via FastAPI
       const auction = await createAuctionMutation.mutateAsync({
-        diamond_id: diamond.id,
+        diamond_id: diamondId as number,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         start_price: Number(startingPrice),
@@ -115,7 +132,9 @@ export function CreateAuctionModal({
 
       // Step 2: Send message to Telegram group (non-blocking)
       try {
-        const { error: sendError } = await supabase.functions.invoke('send-auction-message', {
+        console.log('📤 Sending auction to Telegram group...');
+        
+        const { data: sendData, error: sendError } = await supabase.functions.invoke('send-auction-message', {
           body: {
             auction_id: auction.id.toString(),
             stock_number: stockNumber,
@@ -133,17 +152,26 @@ export function CreateAuctionModal({
               clarity: diamond.clarity,
               cut: diamond.cut,
               stock_number: stockNumber,
-              price_per_carat: diamond.price / diamond.carat,
+              price_per_carat: diamond.carat > 0 ? Math.round(diamond.price / diamond.carat) : diamond.price,
               picture: diamond.picture,
             },
           }
         });
+
+        console.log('📤 Telegram message response:', { sendData, sendError });
 
         if (sendError) {
           console.error('⚠️ Failed to send auction message to group:', sendError);
           toast({ 
             title: '⚠️ המכרז נוצר', 
             description: 'אך השיתוף לקבוצה נכשל. ניתן לשתף ידנית.',
+            variant: 'default'
+          });
+        } else if (sendData?.success === false) {
+          console.error('⚠️ Auction message failed:', sendData?.error);
+          toast({ 
+            title: '⚠️ המכרז נוצר', 
+            description: sendData?.error || 'השיתוף לקבוצה נכשל',
             variant: 'default'
           });
         } else {
@@ -156,6 +184,11 @@ export function CreateAuctionModal({
       } catch (shareError) {
         console.error('⚠️ Error sharing auction:', shareError);
         // Don't fail the whole operation - auction was created
+        toast({ 
+          title: '⚠️ המכרז נוצר', 
+          description: 'אך לא ניתן לשתף לקבוצה כרגע',
+          variant: 'default'
+        });
       }
 
       onOpenChange(false);
@@ -165,9 +198,23 @@ export function CreateAuctionModal({
       console.error('❌ Failed to create auction:', error);
       hapticFeedback.notification('error');
       
+      // Provide more specific error message
+      let errorMessage = 'אנא נסה שוב';
+      if (error.message) {
+        if (error.message.includes('authentication') || error.message.includes('401')) {
+          errorMessage = 'נדרש אימות מחדש. אנא רענן את האפליקציה';
+        } else if (error.message.includes('not found') || error.message.includes('404')) {
+          errorMessage = 'היהלום לא נמצא במערכת';
+        } else if (error.message.includes('already')) {
+          errorMessage = 'כבר קיים מכרז פעיל עבור יהלום זה';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: '❌ שגיאה ביצירת מכרז',
-        description: error.message || 'אנא נסה שוב',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
