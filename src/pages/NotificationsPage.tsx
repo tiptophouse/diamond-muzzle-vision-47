@@ -42,7 +42,7 @@ const NotificationsPage = () => {
       setLoadingInventory(true);
       try {
         const response = await http<{ diamonds: any[] }>(
-          apiEndpoints.getAllStones(userId),
+          apiEndpoints.getAllStones(),
           { method: 'GET' }
         );
         

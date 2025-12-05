@@ -190,7 +190,7 @@ export function useAddDiamond(onSuccess?: () => void) {
           await new Promise(resolve => setTimeout(resolve, 1500));
           
           // Fetch fresh inventory to verify
-          const verifyEndpoint = apiEndpoints.getAllStones(100, 0);
+          const verifyEndpoint = apiEndpoints.getAllStones();
           const verifyResponse = await api.get(verifyEndpoint);
           
           if (verifyResponse.error) {
