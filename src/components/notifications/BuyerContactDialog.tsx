@@ -76,9 +76,9 @@ export function BuyerContactDialog({
         throw new Error('User not authenticated');
       }
 
-      // Fetch full diamond details from FastAPI
+      // Fetch full diamond details from FastAPI (JWT identifies user)
       const { data: allDiamonds, error } = await api.get<any[]>(
-        apiEndpoints.getAllStones(userId)
+        apiEndpoints.getAllStones()
       );
 
       if (error || !allDiamonds) {

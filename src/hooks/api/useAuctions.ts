@@ -6,17 +6,17 @@ import {
   updateAuction,
   placeBid,
   closeAuction,
-  AuctionCreateRequest,
   AuctionUpdateRequest,
   PlaceBidRequest,
   Auction
 } from '@/lib/api/auctions';
+import { AuctionCreateRequest } from '@/types/fastapi-models';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useToast } from '@/hooks/use-toast';
 
 const QUERY_KEYS = {
   auctions: ['auctions'] as const,
-  auction: (id: string) => ['auctions', id] as const,
+  auction: (id: number) => ['auctions', id] as const,
 };
 
 /**
@@ -26,19 +26,20 @@ export function useAuctions() {
   return useQuery({
     queryKey: QUERY_KEYS.auctions,
     queryFn: listAuctions,
-    refetchInterval: 5000, // Real-time updates every 5 seconds
+    refetchInterval: 5000,
   });
 }
 
 /**
  * Hook to get a single auction
+ * @param auctionId - INTEGER auction ID per OpenAPI spec
  */
-export function useAuction(auctionId: string) {
+export function useAuction(auctionId: number) {
   return useQuery({
     queryKey: QUERY_KEYS.auction(auctionId),
     queryFn: () => getAuction(auctionId),
-    refetchInterval: 3000, // More frequent updates for active auction
-    enabled: !!auctionId,
+    refetchInterval: 3000,
+    enabled: !!auctionId && auctionId > 0,
   });
 }
 
@@ -60,11 +61,11 @@ export function useCreateAuction() {
         description: `מכרז #${data.id} נוצר ומחכה לשיתוף`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       hapticFeedback.notification('error');
       toast({
         title: '❌ שגיאה ביצירת מכרז',
-        description: error?.response?.data?.detail || 'לא ניתן ליצור מכרז כרגע',
+        description: error.message || 'לא ניתן ליצור מכרז כרגע',
         variant: 'destructive',
       });
     },
@@ -73,8 +74,9 @@ export function useCreateAuction() {
 
 /**
  * Hook to update an auction
+ * @param auctionId - INTEGER auction ID per OpenAPI spec
  */
-export function useUpdateAuction(auctionId: string) {
+export function useUpdateAuction(auctionId: number) {
   const queryClient = useQueryClient();
   const { hapticFeedback } = useTelegramWebApp();
   const { toast } = useToast();
@@ -90,11 +92,11 @@ export function useUpdateAuction(auctionId: string) {
         description: 'המכרז עודכן בהצלחה',
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       hapticFeedback.notification('error');
       toast({
         title: '❌ שגיאה בעדכון מכרז',
-        description: error?.response?.data?.detail || 'לא ניתן לעדכן מכרז כרגע',
+        description: error.message || 'לא ניתן לעדכן מכרז כרגע',
         variant: 'destructive',
       });
     },
@@ -103,8 +105,9 @@ export function useUpdateAuction(auctionId: string) {
 
 /**
  * Hook to place a bid
+ * @param auctionId - INTEGER auction ID per OpenAPI spec
  */
-export function usePlaceBid(auctionId: string) {
+export function usePlaceBid(auctionId: number) {
   const queryClient = useQueryClient();
   const { hapticFeedback } = useTelegramWebApp();
   const { toast } = useToast();
@@ -120,11 +123,11 @@ export function usePlaceBid(auctionId: string) {
         description: 'ההצעה שלך נרשמה במכרז',
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       hapticFeedback.notification('error');
       toast({
         title: '❌ שגיאה בהגשת הצעה',
-        description: error?.response?.data?.detail || 'לא ניתן להציע כרגע',
+        description: error.message || 'לא ניתן להציע כרגע',
         variant: 'destructive',
       });
     },
@@ -133,8 +136,9 @@ export function usePlaceBid(auctionId: string) {
 
 /**
  * Hook to close an auction
+ * @param auctionId - INTEGER auction ID per OpenAPI spec
  */
-export function useCloseAuction(auctionId: string) {
+export function useCloseAuction(auctionId: number) {
   const queryClient = useQueryClient();
   const { hapticFeedback } = useTelegramWebApp();
   const { toast } = useToast();
@@ -150,11 +154,11 @@ export function useCloseAuction(auctionId: string) {
         description: 'המכרז סגור וההצעה הזוכה נקבעה',
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       hapticFeedback.notification('error');
       toast({
         title: '❌ שגיאה בסגירת מכרז',
-        description: error?.response?.data?.detail || 'לא ניתן לסגור מכרז כרגע',
+        description: error.message || 'לא ניתן לסגור מכרז כרגע',
         variant: 'destructive',
       });
     },

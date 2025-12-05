@@ -118,8 +118,8 @@ export function useInsightsData() {
     try {
       console.log('Fetching real insights for user:', user.id);
       
-      // Get user's diamonds
-      const response = await api.get<Diamond[]>(apiEndpoints.getAllStones(user.id));
+      // Get user's diamonds (JWT auth identifies user)
+      const response = await api.get<Diamond[]>(apiEndpoints.getAllStones());
       
       if (response.data && response.data.length > 0) {
         const diamonds = response.data.filter(d => 

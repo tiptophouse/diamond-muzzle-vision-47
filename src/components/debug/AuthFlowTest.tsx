@@ -51,7 +51,7 @@ export function AuthFlowTest() {
 
       setStatus('✅ Testing protected API call...');
 
-      const response = await http(apiEndpoints.getAllStones(userId));
+      const response = await http(apiEndpoints.getAllStones());
       setStatus(`✅ Authentication flow complete! Got ${Array.isArray(response) ? response.length : 'data'} from API`);
 
     } catch (error) {

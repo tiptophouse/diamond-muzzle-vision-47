@@ -1,45 +1,25 @@
-import { getCurrentUserId } from "@/lib/api/config";
+// API Endpoints - Aligned with FastAPI OpenAPI spec
 
 export const apiEndpoints = {
   // Health check
   alive: () => `/api/v1/alive`,
   
-  // Stone/Diamond management - All use JWT for user_id
-  getAllStones: (limit?: number, offset?: number) => {
-    let url = `/api/v1/get_all_stones`;
-    const params = [];
-    const userId = getCurrentUserId();
-    if (userId) params.push(`user_id=${userId}`);
-    if (limit !== undefined) params.push(`limit=${limit}`);
-    if (offset !== undefined) params.push(`offset=${offset}`);
-    return url + (params.length ? `?${params.join('&')}` : '');
-  },
+  // Stone/Diamond management - JWT auth only (no user_id in URL per OpenAPI spec)
+  getAllStones: () => `/api/v1/get_all_stones`,
   
-  // Create diamond - POST /api/v1/diamonds (user_id from JWT)
-  addDiamond: () => {
-    const userId = getCurrentUserId();
-    return userId ? `/api/v1/diamonds?user_id=${userId}` : `/api/v1/diamonds`;
-  },
+  // Create diamond - POST /api/v1/diamonds (JWT auth only)
+  addDiamond: () => `/api/v1/diamonds`,
   
-  // Batch diamond upload - POST /api/v1/diamonds/batch (user_id from JWT)
-  addDiamondsBatch: () => {
-    const userId = getCurrentUserId();
-    return userId ? `/api/v1/diamonds/batch?user_id=${userId}` : `/api/v1/diamonds/batch`;
-  },
+  // Batch diamond upload - POST /api/v1/diamonds/batch (JWT auth only)
+  addDiamondsBatch: () => `/api/v1/diamonds/batch`,
   
-  // Update diamond - PUT /api/v1/diamonds/{diamond_id} (user_id from JWT)
-  updateDiamond: (diamondId: number) => {
-    const userId = getCurrentUserId();
-    return userId ? `/api/v1/diamonds/${diamondId}?user_id=${userId}` : `/api/v1/diamonds/${diamondId}`;
-  },
+  // Update diamond - PUT /api/v1/diamonds/{diamond_id} (JWT auth only)
+  updateDiamond: (diamondId: number) => `/api/v1/diamonds/${diamondId}`,
   
-  // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id} (user_id from JWT)
-  deleteDiamond: (diamondId: number) => {
-    const userId = getCurrentUserId();
-    return userId ? `/api/v1/delete_stone/${diamondId}?user_id=${userId}` : `/api/v1/delete_stone/${diamondId}`;
-  },
+  // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id} (JWT auth only)
+  deleteDiamond: (diamondId: number) => `/api/v1/delete_stone/${diamondId}`,
   
-  // SFTP endpoints - JWT-based auth (no user_id in URL)
+  // SFTP endpoints - JWT auth only
   sftpProvision: () => `/api/v1/sftp/provision`,
   sftpStatus: () => `/api/v1/sftp/status`,
   sftpTestConnection: () => `/api/v1/sftp/test-connection`,
@@ -47,12 +27,12 @@ export const apiEndpoints = {
   
   // Reports
   createReport: () => `/api/v1/create-report`,
-  getReport: (diamondId: string) => `/api/v1/get-report?diamond_id=${diamondId}`,
+  getReport: (diamondId: number) => `/api/v1/get-report?diamond_id=${diamondId}`,
   
   // Payment
   paymentRequest: () => `/api/v1/payment_request`,
   
-  // CORRECTED Authentication endpoint
+  // Authentication endpoint
   signIn: () => `/api/v1/sign-in/`,
   
   // Legacy endpoints (keeping for compatibility)
@@ -62,7 +42,6 @@ export const apiEndpoints = {
   getDashboardStats: (userId: number) => `/api/v1/users/${userId}/dashboard/stats`,
   getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
-  // Get inventory - GET /api/v1/get_inventory?user_id={user_id}
   getInventory: (userId: number) => `/api/v1/get_inventory?user_id=${userId}`,
   
   // Payment management endpoints
@@ -71,27 +50,38 @@ export const apiEndpoints = {
   getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
   getPaymentStats: () => `/api/v1/payments/stats`,
 
-  // Search endpoints - JWT-based (no user_id in URL)
-  getSearchResults: (limit: number = 10, offset: number = 0) => `/api/v1/get_search_results?limit=${limit}&offset=${offset}`,
-  getSearchResultsCount: () => `/api/v1/get_search_results_count`,
+  // Search endpoints - REQUIRES user_id per OpenAPI spec
+  getSearchResults: (userId: number, limit: number = 50, offset: number = 0, resultType?: string) => {
+    let url = `/api/v1/get_search_results?user_id=${userId}&limit=${limit}&offset=${offset}`;
+    if (resultType) url += `&result_type=${resultType}`;
+    return url;
+  },
+  getSearchResultsCount: (userId: number, resultType?: string) => {
+    let url = `/api/v1/get_search_results_count?user_id=${userId}`;
+    if (resultType) url += `&result_type=${resultType}`;
+    return url;
+  },
   
-  // Seller notification endpoints - JWT-based (no user_id in URL)
-  sellerNotifications: (limit: number = 20, offset: number = 0) => `/api/v1/seller/notifications?limit=${limit}&offset=${offset}`,
-  sellerNotificationsCount: () => `/api/v1/seller/notifications/count`,
-  getSellerNotifications: (params?: { limit?: number; offset?: number }) => {
+  // Seller notification endpoints - REQUIRES user_id per OpenAPI spec
+  sellerNotifications: (userId: number, limit: number = 50, offset: number = 0) => 
+    `/api/v1/seller/notifications?user_id=${userId}&limit=${limit}&offset=${offset}`,
+  sellerNotificationsCount: (userId: number) => 
+    `/api/v1/seller/notifications/count?user_id=${userId}`,
+  getSellerNotifications: (userId: number, params?: { limit?: number; offset?: number }) => {
     const limit = params?.limit || 50;
     const offset = params?.offset || 0;
-    return `/api/v1/seller/notifications?limit=${limit}&offset=${offset}`;
+    return `/api/v1/seller/notifications?user_id=${userId}&limit=${limit}&offset=${offset}`;
   },
-  getSellerNotificationsCount: () => `/api/v1/seller/notifications/count`,
+  getSellerNotificationsCount: (userId: number) => 
+    `/api/v1/seller/notifications/count?user_id=${userId}`,
   
-  // Billing & Subscriptions - ADDED
+  // Billing & Subscriptions - JWT auth only
   getBilling: () => `/api/v1/billing`,
   cancelSubscription: () => `/api/v1/billing/cancel-subscription`,
   updatePaymentMethod: () => `/api/v1/billing/update-payment-method`,
   trialSubscribe: () => `/api/v1/billing/trial-subscribe`,
-  getActiveSubscription: (userId: number) => `/api/v1/user/active-subscription`,
-  checkSubscriptionStatus: (userId: number) => `/api/v1/user/active-subscription`, // POST endpoint
+  getActiveSubscription: () => `/api/v1/user/active-subscription`,
+  checkSubscriptionStatus: () => `/api/v1/user/active-subscription`,
   
   // Client and admin endpoints
   getAllClients: () => `/api/v1/clients`,
@@ -104,19 +94,16 @@ export const apiEndpoints = {
   deleteAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/delete-all`,
   updateAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/update-all`,
   
-  // Auction endpoints
+  // Auction endpoints - auction_id is INTEGER per OpenAPI spec
   auctions: {
-    create: () => `/api/v1/auctions`,
-    getById: (auctionId: string) => `/api/v1/auctions/${auctionId}`,
-    getAll: (params?: { status?: string; limit?: number; offset?: number }) => {
-      const query = new URLSearchParams();
-      if (params?.status) query.set('status', params.status);
-      if (params?.limit) query.set('limit', String(params.limit));
-      if (params?.offset) query.set('offset', String(params.offset));
-      return `/api/v1/auctions?${query.toString()}`;
-    },
-    placeBid: (auctionId: string) => `/api/v1/auctions/${auctionId}/bid`,
-    cancel: (auctionId: string) => `/api/v1/auctions/${auctionId}/cancel`,
+    create: () => `/api/v1/auctions/`,
+    getById: (auctionId: number) => `/api/v1/auctions/${auctionId}`,
+    getAll: () => `/api/v1/auctions/`,
+    placeBid: (auctionId: number) => `/api/v1/auctions/${auctionId}/bid`,
+    close: (auctionId: number) => `/api/v1/auctions/${auctionId}/close`,
+    update: (auctionId: number) => `/api/v1/auctions/${auctionId}`,
+    // Legacy endpoints
+    cancel: (auctionId: number) => `/api/v1/auctions/${auctionId}/cancel`,
     myAuctions: (userId: number) => `/api/v1/users/${userId}/auctions`,
     myBids: (userId: number) => `/api/v1/users/${userId}/bids`,
   },

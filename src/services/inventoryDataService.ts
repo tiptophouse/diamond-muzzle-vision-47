@@ -36,8 +36,8 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     // ONLY use FastAPI - no cache, no localStorage fallbacks
     console.log('🔍 INVENTORY SERVICE: Calling FastAPI get_all_stones endpoint...');
     
-    // Add pagination for large inventories (>5000 diamonds load in batches)
-    const endpoint = apiEndpoints.getAllStones(10000, 0); // Fetch up to 10k diamonds
+    // FastAPI returns all diamonds for authenticated user via JWT
+    const endpoint = apiEndpoints.getAllStones();
     console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
     const result = await api.get(endpoint);

@@ -159,7 +159,7 @@ export function CreateAuctionModal({
       }
 
       onOpenChange(false);
-      onSuccess?.(auction.id);
+      onSuccess?.(String(auction.id));
       
     } catch (error: any) {
       console.error('❌ Failed to create auction:', error);
