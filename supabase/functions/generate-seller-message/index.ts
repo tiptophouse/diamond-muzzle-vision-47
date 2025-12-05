@@ -126,7 +126,7 @@ Return ONLY valid JSON in this format:
     console.error('❌ Error in generate-seller-message:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: (error as Error).message,
         messages: [] 
       }),
       {

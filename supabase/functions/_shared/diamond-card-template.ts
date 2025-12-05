@@ -259,7 +259,7 @@ export async function sendDiamondCard(
 
     return { success: false, error: textResult.description };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
 
@@ -321,6 +321,6 @@ export async function editDiamondCard(
 
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
