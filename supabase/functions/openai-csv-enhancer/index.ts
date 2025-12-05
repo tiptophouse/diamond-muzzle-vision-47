@@ -137,7 +137,7 @@ Return only the JSON object, no additional text.`;
       const enhanced = { ...row };
       
       // Apply OpenAI mappings first
-      mappings.forEach(mapping => {
+      mappings.forEach((mapping: any) => {
         if (enhanced[mapping.field] === mapping.original_value) {
           enhanced[mapping.field] = mapping.corrected_value;
         }

@@ -57,14 +57,14 @@ serve(async (req) => {
         error_details: errors.data?.slice(0, 10) || [],
         api_calls_today: apiUsage.data?.length || 0,
         avg_response_time: apiUsage.data?.reduce((sum: number, item: any) => sum + (item.response_time_ms || 0), 0) / (apiUsage.data?.length || 1),
-        avg_session_duration: systemHealth.data?.reduce((sum: number, item: any) => {
+        avg_session_duration: (systemHealth.data || []).reduce((sum: number, item: any) => {
           const duration = item.total_duration;
           if (duration) {
             const [hours, minutes, seconds] = duration.split(':').map(Number);
             return sum + (hours * 3600 + minutes * 60 + seconds);
           }
           return sum;
-        }, 0) / (systemHealth.data?.length || 1)
+        }, 0) / ((systemHealth.data || []).length || 1)
       };
     } else if (agent_type === 'ceo') {
       // CEO: Business metrics
@@ -182,7 +182,7 @@ serve(async (req) => {
         total_shares: shares.data?.length || 0,
         engagement_rate: (uniqueViewers / (shares.data?.length || 1)) * 100,
         notifications_sent: notifications.data?.length || 0,
-        notification_read_rate: (notifications.data?.filter((n: any) => n.read_at).length / (notifications.data?.length || 1)) * 100
+        notification_read_rate: ((notifications.data || []).filter((n: any) => n.read_at).length / ((notifications.data || []).length || 1)) * 100
       };
     }
 
@@ -285,7 +285,7 @@ Be concise, data-driven, and provide actionable marketing tactics.`
     console.error("❌ Executive Agent Error:", error);
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: (error as Error).message,
         response: "I encountered an error analyzing the data. The issue has been logged. Based on what I can see, this might be due to backend connectivity. Please ensure the FastAPI backend is accessible and try again."
       }),
       { 

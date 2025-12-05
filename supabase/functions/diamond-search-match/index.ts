@@ -85,7 +85,7 @@ serve(async (req) => {
     for (const [ownerId, diamonds] of ownerGroups) {
       try {
         // Calculate match scores and sort diamonds
-        const diamondsWithScores = diamonds.map(diamond => {
+        const diamondsWithScores = diamonds.map((diamond: any) => {
           let score = 0
           let criteria = 0
           
@@ -116,7 +116,7 @@ serve(async (req) => {
         })
 
         // Sort by match score
-        diamondsWithScores.sort((a, b) => b.match_score - a.match_score)
+        diamondsWithScores.sort((a: any, b: any) => b.match_score - a.match_score)
 
         // Create dynamic message with individual diamond links
         const searcherInfo = searcherName ? ` (${searcherName})` : ''
@@ -132,7 +132,7 @@ serve(async (req) => {
         ].filter(Boolean).join('\n• ')
 
         // Create individual diamond cards with share buttons
-        const diamondButtons = diamondsWithScores.slice(0, 5).map(diamond => {
+        const diamondButtons = diamondsWithScores.slice(0, 5).map((diamond: any) => {
           const price = diamond.price_per_carat ? (diamond.price_per_carat * diamond.weight) : 'צור קשר'
           const matchPercent = Math.round(diamond.match_score * 100)
           
@@ -249,7 +249,7 @@ _בחר יהלום לצפייה או שיתוף עם הלקוח_`
   } catch (error) {
     console.error('Error in diamond-search-match function:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

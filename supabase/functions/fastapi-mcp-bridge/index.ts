@@ -70,7 +70,7 @@ serve(async (req) => {
       id: 0,
       error: {
         code: -32603,
-        message: error.message || 'Internal error',
+        message: (error as Error).message || 'Internal error',
       },
     };
 

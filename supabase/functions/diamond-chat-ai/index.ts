@@ -127,7 +127,7 @@ Keep responses concise but informative. Use emojis sparingly and professionally.
     console.log('📥 OpenAI Response received');
 
     let response = aiResult.choices[0].message.content || "I apologize, but I couldn't process your request right now.";
-    let recommendedDiamonds = [];
+    let recommendedDiamonds: any[] = [];
     let marketInsights = null;
     let priceAnalysis = null;
 

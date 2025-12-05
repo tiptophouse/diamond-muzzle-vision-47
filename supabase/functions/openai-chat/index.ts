@@ -88,29 +88,29 @@ serve(async (req) => {
           // Generate comprehensive inventory analysis
           if (count > 0) {
             // Analyze shapes
-            const shapeCount = diamonds.reduce((acc, d) => {
+            const shapeCount = diamonds.reduce((acc: Record<string, number>, d: any) => {
               acc[d.shape] = (acc[d.shape] || 0) + 1;
               return acc;
             }, {});
             
             // Analyze colors
-            const colorCount = diamonds.reduce((acc, d) => {
+            const colorCount = diamonds.reduce((acc: Record<string, number>, d: any) => {
               acc[d.color] = (acc[d.color] || 0) + 1;
               return acc;
             }, {});
             
             // Analyze clarity
-            const clarityCount = diamonds.reduce((acc, d) => {
+            const clarityCount = diamonds.reduce((acc: Record<string, number>, d: any) => {
               acc[d.clarity] = (acc[d.clarity] || 0) + 1;
               return acc;
             }, {});
             
             // Calculate price statistics
-            const prices = diamonds.filter(d => d.price_per_carat).map(d => d.price_per_carat);
-            const totalValue = diamonds.reduce((sum, d) => sum + (d.price_per_carat * d.weight || 0), 0);
+            const prices = diamonds.filter((d: any) => d.price_per_carat).map((d: any) => d.price_per_carat);
+            const totalValue = diamonds.reduce((sum: number, d: any) => sum + (d.price_per_carat * d.weight || 0), 0);
             
             // Size analysis
-            const caratRanges = diamonds.reduce((acc, d) => {
+            const caratRanges = diamonds.reduce((acc: { under_1ct: number; '1_to_2ct': number; '2_to_3ct': number; over_3ct: number }, d: any) => {
               const weight = d.weight;
               if (weight < 1) acc['under_1ct']++;
               else if (weight < 2) acc['1_to_2ct']++;
@@ -125,10 +125,10 @@ serve(async (req) => {
               colors: colorCount,
               clarity: clarityCount,
               caratRanges,
-              averagePrice: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0,
+              averagePrice: prices.length > 0 ? Math.round(prices.reduce((a: number, b: number) => a + b, 0) / prices.length) : 0,
               totalValue: Math.round(totalValue),
-              largestDiamond: Math.max(...diamonds.map(d => d.weight)),
-              mostExpensive: Math.max(...diamonds.filter(d => d.price_per_carat).map(d => d.price_per_carat * d.weight))
+              largestDiamond: Math.max(...diamonds.map((d: any) => d.weight)),
+              mostExpensive: Math.max(...diamonds.filter((d: any) => d.price_per_carat).map((d: any) => d.price_per_carat * d.weight))
             };
             
             inventoryContext = `CURRENT INVENTORY DATA (LIVE FROM DATABASE):
@@ -137,18 +137,18 @@ serve(async (req) => {
 • Color grades: ${Object.entries(colorCount).map(([k,v]) => `${k}: ${v}`).join(', ')}
 • Clarity grades: ${Object.entries(clarityCount).map(([k,v]) => `${k}: ${v}`).join(', ')}
 • Size ranges: Under 1ct: ${caratRanges.under_1ct}, 1-2ct: ${caratRanges['1_to_2ct']}, 2-3ct: ${caratRanges['2_to_3ct']}, Over 3ct: ${caratRanges.over_3ct}
-• Portfolio value: $${inventoryStats.totalValue.toLocaleString()}
-• Average price per carat: $${inventoryStats.averagePrice.toLocaleString()}
-• Largest diamond: ${inventoryStats.largestDiamond} carats
-• Most expensive piece: $${inventoryStats.mostExpensive.toLocaleString()}`;
+• Portfolio value: $${(inventoryStats as any).totalValue.toLocaleString()}
+• Average price per carat: $${(inventoryStats as any).averagePrice.toLocaleString()}
+• Largest diamond: ${(inventoryStats as any).largestDiamond} carats
+• Most expensive piece: $${(inventoryStats as any).mostExpensive.toLocaleString()}`;
 
           } else {
             inventoryContext = "CURRENT INVENTORY: No diamonds found in your inventory.";
           }
 
         } catch (apiError) {
-            console.error('❌ FastAPI Error fetching inventory:', apiError.message);
-            inventoryContext = `ERROR: Unable to fetch real-time inventory data. Backend connection failed: ${apiError.message}`;
+            console.error('❌ FastAPI Error fetching inventory:', (apiError as Error).message);
+            inventoryContext = `ERROR: Unable to fetch real-time inventory data. Backend connection failed: ${(apiError as Error).message}`;
         }
     } else {
         console.log('🤖 No user_id provided, skipping inventory fetch.');
@@ -246,7 +246,7 @@ Keep responses professional, knowledgeable, and data-driven using the user's rea
 
     return new Response(JSON.stringify({ 
       response: fallbackResponse,
-      error: error.message,
+      error: (error as Error).message,
       success: false
     }), {
       status: 200,

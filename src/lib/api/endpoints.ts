@@ -1,4 +1,4 @@
-import { getCurrentUserId } from "@/lib/api/auth";
+import { getCurrentUserId } from "@/lib/api/config";
 
 export const apiEndpoints = {
   // Health check

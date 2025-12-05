@@ -183,7 +183,7 @@ Please provide a helpful response as a diamond expert.`;
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: (error as Error).message,
         details: 'Failed to generate AI response'
       }),
       {

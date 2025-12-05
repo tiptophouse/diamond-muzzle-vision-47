@@ -81,7 +81,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Diamond post generation error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -134,9 +134,9 @@ async function getDiamondData(telegram_id: number, certificate_number?: string, 
         let diamonds = Array.isArray(inventoryData) ? inventoryData : inventoryData.data || [];
         
         if (certificate_number) {
-          diamonds = diamonds.filter(d => d.certificate_number == certificate_number);
+          diamonds = diamonds.filter((d: any) => d.certificate_number == certificate_number);
         } else if (stock_number) {
-          diamonds = diamonds.filter(d => d.stock_number === stock_number);
+          diamonds = diamonds.filter((d: any) => d.stock_number === stock_number);
         }
         
         if (diamonds.length > 0) {
