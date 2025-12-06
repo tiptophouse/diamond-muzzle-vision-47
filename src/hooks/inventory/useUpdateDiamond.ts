@@ -1,6 +1,6 @@
-
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { api, apiEndpoints } from '@/lib/api';
+import { api, apiEndpoints, getBackendAuthToken, signInToBackend } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { roundToInteger } from '@/utils/numberUtils';
@@ -8,27 +8,78 @@ import { roundToInteger } from '@/utils/numberUtils';
 export function useUpdateDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
+    // Check if already updating to prevent double submission
+    if (isUpdating) {
+      console.warn('⚠️ UPDATE: Already updating, skipping duplicate request');
+      return false;
+    }
+
     if (!user?.id) {
       console.error('❌ UPDATE: User not authenticated - BLOCKING');
-      const error = 'User authentication required to update diamonds';
       toast({
         variant: "destructive",
-        title: "❌ Authentication Error",
-        description: error,
+        title: "❌ נדרש אימות",
+        description: "אנא התחבר מחדש דרך טלגרם",
       });
-      alert(`❌ UPDATE DIAMOND FAILED\n\n${error}\n\nPlease ensure you're logged in through Telegram.`);
       return false;
     }
 
     // Parse and validate diamond ID
     const numericId = parseInt(diamondId);
     if (isNaN(numericId) || typeof numericId !== 'number') {
-      const error = `Invalid diamond_id: got ${diamondId} (${typeof diamondId}), expected number`;
-      console.error('❌ UPDATE VALIDATION FAIL:', error);
-      alert(`❌ VALIDATION ERROR\n\n${error}\n\nCannot proceed with UPDATE.`);
+      console.error('❌ UPDATE VALIDATION FAIL: Invalid diamond_id:', diamondId);
+      toast({
+        variant: "destructive",
+        title: "❌ שגיאת אימות",
+        description: "מזהה יהלום לא תקין",
+      });
       return false;
+    }
+
+    setIsUpdating(true);
+
+    // Ensure we have a valid token before making the request
+    let token = getBackendAuthToken();
+    if (!token) {
+      console.log('🔄 UPDATE: No token found, attempting to refresh...');
+      try {
+        const tg = window.Telegram?.WebApp;
+        if (tg?.initData) {
+          token = await signInToBackend(tg.initData);
+          if (!token) {
+            console.error('❌ UPDATE: Token refresh failed');
+            toast({
+              variant: "destructive",
+              title: "❌ שגיאת אימות",
+              description: "לא ניתן לחדש את ההתחברות. אנא סגור ופתח מחדש את האפליקציה.",
+            });
+            setIsUpdating(false);
+            return false;
+          }
+          console.log('✅ UPDATE: Token refreshed successfully');
+        } else {
+          console.error('❌ UPDATE: No Telegram initData available for token refresh');
+          toast({
+            variant: "destructive",
+            title: "❌ שגיאת אימות",
+            description: "אנא פתח את האפליקציה מטלגרם",
+          });
+          setIsUpdating(false);
+          return false;
+        }
+      } catch (refreshError) {
+        console.error('❌ UPDATE: Token refresh error:', refreshError);
+        toast({
+          variant: "destructive",
+          title: "❌ שגיאת אימות",
+          description: "שגיאה בחידוש ההתחברות",
+        });
+        setIsUpdating(false);
+        return false;
+      }
     }
 
     console.info('[CRUD START]', { 
@@ -36,23 +87,17 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       diamondId: numericId,
       userId: user.id,
       stockNumber: data.stockNumber,
-      payload: JSON.stringify(data).substring(0, 500)
     });
 
     // Show loading toast
     toast({
-      title: "⏳ Updating Diamond...",
-      description: `Updating stock ${data.stockNumber}`
+      title: "⏳ מעדכן יהלום...",
+      description: `מעדכן מלאי ${data.stockNumber}`
     });
 
     try {
-      console.log('📝 UPDATE: Starting update for diamond:', numericId);
-      console.log('📝 UPDATE: Form data received:', data);
-      
       const endpoint = apiEndpoints.updateDiamond(numericId);
       console.log('📝 UPDATE: Using endpoint:', endpoint);
-      console.log('📝 UPDATE: User ID:', user.id, 'type:', typeof user.id);
-      console.log('📝 UPDATE: Diamond ID:', numericId, 'type:', typeof numericId);
       
       // Prepare update data according to FastAPI schema - ensure all numbers are integers
       const updateData = {
@@ -82,8 +127,6 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         gridle: data.gridle,
         culet: data.culet?.toUpperCase(),
         rapnet: data.rapnet ? Number(data.rapnet) : null,
-        // Only include price if it's explicitly needed, otherwise let backend calculate from ppc
-        // price: roundToInteger(Number(data.price)), 
       };
 
       // Remove null/undefined values
@@ -93,7 +136,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         }
       });
 
-      console.log('📝 UPDATE: Sending data to FastAPI (all integers):', updateData);
+      console.log('📝 UPDATE: Sending data to FastAPI:', updateData);
       
       const response = await api.put(endpoint, updateData);
       
@@ -107,15 +150,15 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         diamondId: numericId,
         userId: user.id,
         stockNumber: data.stockNumber,
-        response: response.data
       });
 
       toast({
-        title: "✅ Diamond Updated Successfully",
-        description: `Stock ${data.stockNumber} updated`
+        title: "✅ יהלום עודכן בהצלחה",
+        description: `מלאי ${data.stockNumber} עודכן`
       });
       
       if (onSuccess) onSuccess();
+      setIsUpdating(false);
       return true;
         
     } catch (error) {
@@ -125,33 +168,22 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         userId: user.id,
         stockNumber: data.stockNumber,
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString()
       });
       
-      const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
-      
-      const errorDetails = `
-Action: UPDATE
-Diamond ID: ${numericId}
-Stock: ${data.stockNumber}
-User ID: ${user.id}
-Error: ${errorMessage}
-${error instanceof Error && error.stack ? `\nStack: ${error.stack.substring(0, 200)}` : ''}
-      `.trim();
+      const errorMessage = error instanceof Error ? error.message : "עדכון היהלום נכשל. אנא נסה שוב.";
       
       toast({
         variant: "destructive",
-        title: "❌ Update Diamond Failed",
-        description: errorDetails,
-        duration: 10000
+        title: "❌ עדכון יהלום נכשל",
+        description: errorMessage,
+        duration: 7000
       });
-
-      alert(`❌ UPDATE DIAMOND FAILED\n\n${errorDetails}`);
       
+      setIsUpdating(false);
       return false;
     }
   };
 
-  return { updateDiamond };
+  return { updateDiamond, isUpdating };
 }
