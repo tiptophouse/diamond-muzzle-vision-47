@@ -136,10 +136,22 @@ serve(async (req) => {
     });
 
     const telegramData = await telegramResponse.json();
+    
+    console.log('📨 Telegram API Response:', {
+      ok: telegramData.ok,
+      status: telegramResponse.status,
+      description: telegramData.description,
+      result: telegramData.result ? 'present' : 'missing',
+    });
 
     if (!telegramResponse.ok || !telegramData.ok) {
-      console.error('❌ Telegram API error:', telegramData);
-      throw new Error(telegramData.description || 'Failed to send message to Telegram');
+      console.error('❌ Telegram API error:', {
+        status: telegramResponse.status,
+        description: telegramData.description,
+        error_code: telegramData.error_code,
+        parameters: telegramData.parameters,
+      });
+      throw new Error(`Telegram API Error: ${telegramData.description || 'Unknown error'} (Code: ${telegramData.error_code || 'N/A'})`);
     }
 
     const message_id = telegramData.result.message_id;

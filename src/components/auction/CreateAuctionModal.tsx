@@ -85,24 +85,27 @@ export function CreateAuctionModal({
     });
 
     try {
-      // Calculate end time
+
+      // Calculate start and end times as ISO strings
       const startTime = new Date();
       const endTime = new Date();
       endTime.setHours(endTime.getHours() + Number(expiryHours));
 
       console.log('🔨 Creating auction via FastAPI...', {
         diamond_id: diamond.id,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
         start_price: Number(startingPrice),
         min_increment: Number(minIncrement),
       });
 
-      // Step 1: Create auction via FastAPI
+      // Step 1: Create auction via FastAPI with correct payload
       const auction = await createAuctionMutation.mutateAsync({
-        stock_number: stockNumber,
-        starting_price: Number(startingPrice),
+        diamond_id: diamond.id,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        start_price: Number(startingPrice),
         min_increment: Number(minIncrement),
-        duration_hours: Number(expiryHours),
-        currency: 'USD'
       });
 
       console.log('✅ Auction created via FastAPI:', auction);
@@ -143,7 +146,7 @@ export function CreateAuctionModal({
           console.error('⚠️ Failed to send auction message to group:', sendError);
           toast({ 
             title: '⚠️ המכרז נוצר', 
-            description: 'אך השיתוף לקבוצה נכשל. ניתן לשתף ידנית.',
+            description: `השיתוף לקבוצה נכשל: ${sendError.message || 'Unknown error'}`,
             variant: 'default'
           });
         } else {
@@ -153,9 +156,13 @@ export function CreateAuctionModal({
             description: 'המכרז נשלח בהצלחה' 
           });
         }
-      } catch (shareError) {
+      } catch (shareError: any) {
         console.error('⚠️ Error sharing auction:', shareError);
-        // Don't fail the whole operation - auction was created
+        toast({ 
+          title: '⚠️ המכרז נוצר', 
+          description: `שגיאה בשיתוף: ${shareError?.message || 'Unknown error'}`,
+          variant: 'default'
+        });
       }
 
       onOpenChange(false);
