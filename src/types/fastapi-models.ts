@@ -310,12 +310,13 @@ export interface AuctionBidSchema {
   created_at: string;
 }
 
+// Matches AuctionCreateRequest from FastAPI OpenAPI spec
 export interface AuctionCreateRequest {
-  stock_number: string;
-  starting_price: number;
+  diamond_id: number;
+  start_time: string;  // ISO datetime
+  end_time: string;    // ISO datetime
+  start_price: number;
   min_increment: number;
-  duration_hours: number;
-  currency?: string;
 }
 
 export interface PlaceBidRequest {

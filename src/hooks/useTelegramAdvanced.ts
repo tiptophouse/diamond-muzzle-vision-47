@@ -337,23 +337,37 @@ export function useTelegramAdvanced() {
     return null;
   }, []);
 
-  // Check Feature Support
-  const version = parseFloat(webAppRef.current?.version || '0');
-  const features = {
-    hasSecondaryButton: !!webAppRef.current?.SecondaryButton,
-    hasBottomBar: !!webAppRef.current?.BottomBar,
-    hasAccelerometer: !!webAppRef.current?.Accelerometer,
-    hasGyroscope: !!webAppRef.current?.Gyroscope,
-    hasDeviceOrientation: !!webAppRef.current?.DeviceOrientation,
-    hasStorySharing: version >= 7.8 && !!webAppRef.current?.shareToStory,
-    hasFileDownload: !!webAppRef.current?.downloadFile,
-    hasEmojiStatus: !!webAppRef.current?.setEmojiStatus,
-    hasFullscreen: !!webAppRef.current?.requestFullscreen,
-    hasHomeScreen: !!webAppRef.current?.addToHomeScreen,
-    hasContactSharing: !!webAppRef.current?.requestContact,
-    hasWriteAccess: !!webAppRef.current?.requestWriteAccess,
-    hasPhoneAccess: !!webAppRef.current?.requestPhoneAccess,
-  };
+  // Check Feature Support - recalculate when initialized
+  const getFeatures = useCallback(() => {
+    const webApp = webAppRef.current;
+    const version = parseFloat(webApp?.version || '0');
+    return {
+      hasSecondaryButton: !!webApp?.SecondaryButton,
+      hasBottomBar: !!webApp?.BottomBar,
+      hasAccelerometer: !!webApp?.Accelerometer,
+      hasGyroscope: !!webApp?.Gyroscope,
+      hasDeviceOrientation: !!webApp?.DeviceOrientation,
+      hasStorySharing: version >= 7.8 && !!webApp?.shareToStory,
+      hasFileDownload: !!webApp?.downloadFile,
+      hasEmojiStatus: !!webApp?.setEmojiStatus,
+      hasFullscreen: !!webApp?.requestFullscreen,
+      hasHomeScreen: !!webApp?.addToHomeScreen,
+      hasContactSharing: !!webApp?.requestContact,
+      hasWriteAccess: !!webApp?.requestWriteAccess,
+      hasPhoneAccess: !!webApp?.requestPhoneAccess,
+      version,
+    };
+  }, []);
+
+  // Features object that updates when initialized
+  const [features, setFeatures] = useState(getFeatures);
+  
+  // Recalculate features when initialization completes
+  useEffect(() => {
+    if (isInitialized) {
+      setFeatures(getFeatures());
+    }
+  }, [isInitialized, getFeatures]);
 
   // Emoji Status (Telegram 7.0+)
   const setEmojiStatus = useCallback(async (customEmojiId: string, duration?: number) => {

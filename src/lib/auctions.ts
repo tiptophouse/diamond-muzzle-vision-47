@@ -1,8 +1,21 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { AuctionSchema, AuctionBidSchema, AuctionCreateRequest } from '@/types/fastapi-models';
+import type { AuctionSchema, AuctionBidSchema } from '@/types/fastapi-models';
 
+// Legacy Supabase-based auction creation interface (for backwards compatibility)
+export interface LegacyAuctionCreateRequest {
+  stock_number: string;
+  starting_price: number;
+  min_increment: number;
+  duration_hours: number;
+  currency?: string;
+  seller_telegram_id: number;
+}
+
+/**
+ * @deprecated Use FastAPI createAuction from src/lib/api/auctions.ts instead
+ */
 export async function createAuction(
-  request: AuctionCreateRequest & { seller_telegram_id: number }
+  request: LegacyAuctionCreateRequest
 ): Promise<AuctionSchema> {
   const endsAt = new Date();
   endsAt.setHours(endsAt.getHours() + request.duration_hours);
